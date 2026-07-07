@@ -1,0 +1,13 @@
+
+# Auto-added by watcher
+.tox/
+__pycache__/
+node_modules/
+.venv/
+.mypy_cache/
+.env/
+.pytest_cache/
+build/
+env/
+dist/
+venv/
