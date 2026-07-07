@@ -1,0 +1,124 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { and, eq, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import { categories, repoCategories, repos, reports } from "@/db/schema";
+import { requireUser } from "@/lib/authz";
+import { decryptToken } from "@/lib/crypto";
+import { writeAudit } from "@/lib/audit";
+import {
+  fetchRepoByFullName,
+  fetchRepoLanguages,
+  isOrgMember,
+} from "@/lib/github";
+
+const URL_RE = /^(?:https?:\/\/)?github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i;
+
+export type PostRepoState = { error?: string };
+
+export async function postRepo(
+  _prev: PostRepoState,
+  formData: FormData
+): Promise<PostRepoState> {
+  const user = await requireUser();
+  if (!user.githubAccessTokenEnc || user.tokenInvalidAt) {
+    return { error: "Your GitHub session is stale — please sign in again." };
+  }
+
+  const url = String(formData.get("url") ?? "").trim();
+  const match = URL_RE.exec(url);
+  if (!match) return { error: "Enter a GitHub repo URL like github.com/owner/name." };
+  const [, ownerLogin, repoName] = match;
+
+  const categoryIds = formData.getAll("categoryIds").map(String).filter(Boolean);
+
+  const token = decryptToken(user.githubAccessTokenEnc);
+  const ghRepo = await fetchRepoByFullName(token, ownerLogin, repoName);
+  if (!ghRepo) return { error: "Repo not found on GitHub (or you can't access it)." };
+  if (ghRepo.private) return { error: "Only public repos can be listed." };
+
+  // Only owners (or org members) may list a repo — prevents listing other
+  // people's projects and the takedown disputes that follow.
+  const ownsIt =
+    ghRepo.owner.login.toLowerCase() === user.githubLogin.toLowerCase() ||
+    (ghRepo.owner.type === "Organization" &&
+      (await isOrgMember(token, ghRepo.owner.login)));
+  if (!ownsIt) {
+    return { error: "You can only post repos you own or belong to (org member)." };
+  }
+
+  let validCategoryIds: string[] = [];
+  if (categoryIds.length > 0) {
+    const cats = await db
+      .select()
+      .from(categories)
+      .where(and(inArray(categories.id, categoryIds), eq(categories.isActive, true)));
+    for (const kind of ["use_case", "sector"] as const) {
+      if (cats.filter((c) => c.kind === kind).length > 3) {
+        return { error: "Pick at most 3 categories per group." };
+      }
+    }
+    validCategoryIds = cats.map((c) => c.id);
+  }
+
+  const languages = await fetchRepoLanguages(token, ghRepo.owner.login, ghRepo.name);
+
+  const [inserted] = await db
+    .insert(repos)
+    .values({
+      githubRepoId: ghRepo.id,
+      fullName: ghRepo.full_name,
+      ownerLogin: ghRepo.owner.login,
+      name: ghRepo.name,
+      description: ghRepo.description,
+      primaryLanguage: ghRepo.language,
+      languages,
+      starsCount: ghRepo.stargazers_count,
+      avatarUrl: ghRepo.owner.avatar_url,
+      isArchived: ghRepo.archived,
+      postedByUserId: user.id,
+      lastSyncedAt: new Date(),
+    })
+    .onConflictDoNothing({ target: repos.githubRepoId })
+    .returning({ id: repos.id });
+
+  if (!inserted) return { error: "This repo is already listed." };
+
+  if (validCategoryIds.length > 0) {
+    await db.insert(repoCategories).values(
+      validCategoryIds.map((categoryId) => ({ repoId: inserted.id, categoryId }))
+    );
+  }
+
+  await writeAudit(db, {
+    actorUserId: user.id,
+    actorType: "user",
+    action: "listing.create",
+    entityType: "repo",
+    entityId: inserted.id,
+    metadata: { fullName: ghRepo.full_name },
+  });
+
+  revalidatePath("/");
+  redirect(`/repos/${inserted.id}`);
+}
+
+export async function reportRepo(repoId: string, reason: string) {
+  const user = await requireUser();
+  const repo = await db.query.repos.findFirst({ where: eq(repos.id, repoId) });
+  if (!repo) throw new Error("Repo not found");
+  await db.insert(reports).values({
+    repoId,
+    reporterUserId: user.id,
+    reason: reason.slice(0, 500) || "No reason given",
+  });
+  await writeAudit(db, {
+    actorUserId: user.id,
+    actorType: "user",
+    action: "listing.report",
+    entityType: "repo",
+    entityId: repoId,
+  });
+}
