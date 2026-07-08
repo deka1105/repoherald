@@ -140,7 +140,7 @@ export const SPONSOR_ALERT_TEMPLATES: SponsorAlertTemplate[] = [
 ];
 
 /** Which design notify.ts actually sends. */
-export const DEFAULT_SPONSOR_ALERT_TEMPLATE_ID = "card";
+export const DEFAULT_SPONSOR_ALERT_TEMPLATE_ID = "announcement";
 
 export function renderSponsorAlert(
   data: SponsorAlertData,
