@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,17 @@ import {
 } from "@/components/ui/dialog";
 
 const SEEN_KEY = "rh_welcome_seen";
+const SEEN_EVENT = "rh-welcome-change";
+
+function subscribeSeen(cb: () => void) {
+  window.addEventListener(SEEN_EVENT, cb);
+  return () => window.removeEventListener(SEEN_EVENT, cb);
+}
+
+function markSeen() {
+  localStorage.setItem(SEEN_KEY, "1");
+  window.dispatchEvent(new Event(SEEN_EVENT));
+}
 
 const STEPS = [
   {
@@ -30,40 +41,24 @@ const STEPS = [
 ];
 
 /**
- * One-time welcome modal shown to a logged-in user on first visit. "Seen" is
- * tracked in localStorage (same lightweight pattern as the landing sponsor
- * panel) — no server round-trip, dismissal is per-device and permanent.
+ * One-time welcome modal for a logged-in user's first visit. "Seen" lives in
+ * localStorage (same lightweight pattern as the landing sponsor panel): SSR
+ * renders it closed, and it opens after hydration only if not previously seen.
+ * Dismissal is per-device and permanent — no server round-trip.
  */
 export function WelcomeGuide() {
-  const [open, setOpen] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(SEEN_KEY)) setOpen(true);
-    } catch {
-      // localStorage unavailable (private mode / SSR) — just don't show it.
-    }
-  }, []);
-
-  const markSeen = () => {
-    try {
-      localStorage.setItem(SEEN_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const dismiss = () => {
-    markSeen();
-    setOpen(false);
-  };
+  const open = !useSyncExternalStore(
+    subscribeSeen,
+    () => localStorage.getItem(SEEN_KEY) === "1",
+    () => true
+  );
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) dismiss();
+        if (!next) markSeen();
       }}
     >
       <DialogContent>
@@ -87,12 +82,12 @@ export function WelcomeGuide() {
         </ol>
 
         <DialogFooter>
-          <Button variant="outline" onClick={dismiss}>
+          <Button variant="outline" onClick={markSeen}>
             Skip for now
           </Button>
           <Button
             onClick={() => {
-              dismiss();
+              markSeen();
               router.push("/post");
             }}
           >
