@@ -88,7 +88,7 @@ export function WelcomeGuide() {
           <Button
             onClick={() => {
               markSeen();
-              router.push("/post");
+              router.push("/");
             }}
           >
             Get started
