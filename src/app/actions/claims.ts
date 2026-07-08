@@ -14,7 +14,10 @@ export type ClaimState = { error?: string; success?: string };
 export async function claimStar(repoId: string): Promise<ClaimState> {
   const user = await requireUser();
 
-  if (!user.mintEligible) {
+  const eligible =
+    user.eligibilityOverride === "allowed" ||
+    (user.eligibilityOverride !== "blocked" && user.mintEligible);
+  if (!eligible) {
     return {
       error:
         "Your GitHub account doesn't meet the minimum activity requirements to earn credits yet.",

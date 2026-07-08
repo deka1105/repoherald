@@ -47,6 +47,7 @@ export async function startSponsorship(
         sponsorUserId: user.id,
         sponsorName: user.githubLogin,
         durationDays: priceConf.days,
+        starsCap: priceConf.starsCap,
         createdVia: "stripe",
         stripePriceId: priceId,
       })

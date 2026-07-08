@@ -8,6 +8,8 @@ export type FeedFilters = {
   language?: string;
   useCase?: string;
   sector?: string;
+  q?: string;
+  sort?: "donations";
 };
 
 export type FeedRepo = {
@@ -21,6 +23,7 @@ export type FeedRepo = {
   categoryLabels: string[];
   highlighted: boolean;
   sponsored: boolean;
+  donationCount: number;
   score: number;
 };
 
@@ -61,7 +64,9 @@ type ScoredRow = {
   avatar_url: string | null;
   is_archived: boolean;
   remaining_minutes: number;
+  donation_count: number;
   score: number;
+  sort_key: number;
   category_labels: string[] | null;
 };
 
@@ -99,11 +104,33 @@ export async function getFeed(opts: {
       WHERE rc.repo_id = r.id AND c.kind = 'sector' AND c.slug = ${f.sector}
     )`);
   }
+  if (f.q) {
+    // Free-text search: repo name, owner/contributor login, description,
+    // or category label.
+    const like = `%${f.q}%`;
+    filterConds.push(sql`(
+      r.full_name ILIKE ${like}
+      OR r.owner_login ILIKE ${like}
+      OR r.description ILIKE ${like}
+      OR EXISTS (
+        SELECT 1 FROM repo_categories rc
+        JOIN categories c ON c.id = rc.category_id
+        WHERE rc.repo_id = r.id AND c.label ILIKE ${like}
+      )
+    )`);
+  }
   const where = sql.join(filterConds, sql` AND `);
 
   const keyset = cursor
-    ? sql`WHERE (s.score, s.id) < (${cursor.score}, ${cursor.id}::uuid)`
+    ? sql`WHERE (s.sort_key, s.id) < (${cursor.score}, ${cursor.id}::uuid)`
     : sql``;
+
+  // "donations" sort keys the page on donation count (score breaks ties);
+  // default keys on the highlight-boosted score.
+  const sortKeyExpr =
+    f.sort === "donations"
+      ? sql`(donation_count * 1000000.0 + score)`
+      : sql`score`;
 
   const result = await db.execute(sql`
     WITH scored AS (
@@ -121,6 +148,10 @@ export async function getFeed(opts: {
           LIMIT 1
         ), 0) AS remaining_minutes,
         (
+          SELECT count(*) FROM highlights h
+          WHERE h.repo_id = r.id AND h.source = 'donation' AND h.status != 'cancelled'
+        )::int AS donation_count,
+        (
           SELECT array_agg(c.label ORDER BY c.label)
           FROM repo_categories rc JOIN categories c ON c.id = rc.category_id
           WHERE rc.repo_id = r.id
@@ -134,10 +165,13 @@ export async function getFeed(opts: {
     final AS (
       SELECT *, (100.0 * remaining_minutes / 60.0 + base_score) AS score
       FROM scored
+    ),
+    keyed AS (
+      SELECT *, ${sortKeyExpr} AS sort_key FROM final
     )
-    SELECT * FROM final s
+    SELECT * FROM keyed s
     ${keyset}
-    ORDER BY s.score DESC, s.id DESC
+    ORDER BY s.sort_key DESC, s.id DESC
     LIMIT ${PAGE_SIZE + 1}
   `);
 
@@ -156,13 +190,16 @@ export async function getFeed(opts: {
     categoryLabels: r.category_labels ?? [],
     highlighted: Number(r.remaining_minutes) > 0,
     sponsored: false,
+    donationCount: Number(r.donation_count),
     score: Number(r.score),
   }));
 
+  // The cursor pages on sort_key (score, or the donation-weighted key), so it
+  // must carry sort_key — not score — or donations-sorted pages would skip rows.
   const last = page[page.length - 1];
   const nextCursor =
     hasMore && last
-      ? encodeCursor({ asOf: asOfIso, score: Number(last.score), id: last.id })
+      ? encodeCursor({ asOf: asOfIso, score: Number(last.sort_key), id: last.id })
       : null;
 
   // Sponsored placement is global (unfiltered): up to 2 pinned on top, plus
@@ -170,6 +207,10 @@ export async function getFeed(opts: {
   const sponsoredResult = await db.execute(sql`
     SELECT r.id, r.full_name, r.description, r.primary_language, r.stars_count,
       r.avatar_url, r.is_archived, s.id AS sponsorship_id,
+      (
+        SELECT count(*) FROM highlights h
+        WHERE h.repo_id = r.id AND h.source = 'donation' AND h.status != 'cancelled'
+      )::int AS donation_count,
       (
         SELECT array_agg(c.label ORDER BY c.label)
         FROM repo_categories rc JOIN categories c ON c.id = rc.category_id
@@ -180,6 +221,8 @@ export async function getFeed(opts: {
     WHERE s.status = 'active'
       AND s.starts_at <= ${asOfIso}::timestamptz
       AND s.ends_at > ${asOfIso}::timestamptz
+      AND (s.stars_cap IS NULL
+        OR r.stars_count - coalesce(s.stars_at_start, 0) < s.stars_cap)
       AND r.status = 'active'
   `);
   const sponsoredRows = sponsoredResult.rows as unknown as (ScoredRow & {
@@ -198,6 +241,7 @@ export async function getFeed(opts: {
     categoryLabels: r.category_labels ?? [],
     highlighted: false,
     sponsored: true,
+    donationCount: Number(r.donation_count),
     score: 0,
   });
 

@@ -16,6 +16,49 @@ import {
 
 const URL_RE = /^(?:https?:\/\/)?github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i;
 
+function slugify(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/** Create user-supplied categories (comma-separated labels) and return their ids. */
+async function createUserCategories(
+  kind: "use_case" | "sector",
+  raw: string
+): Promise<string[]> {
+  const labels = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length >= 2 && s.length <= 40)
+    .slice(0, 3);
+  const ids: string[] = [];
+  for (const label of labels) {
+    const slug = slugify(label);
+    if (!slug) continue;
+    const [row] = await db
+      .insert(categories)
+      .values({ kind, slug, label })
+      .onConflictDoNothing()
+      .returning({ id: categories.id });
+    if (row) {
+      ids.push(row.id);
+    } else {
+      // Already exists (maybe deactivated) — reuse it if active.
+      const existing = await db.query.categories.findFirst({
+        where: and(
+          eq(categories.kind, kind),
+          eq(categories.slug, slug),
+          eq(categories.isActive, true)
+        ),
+      });
+      if (existing) ids.push(existing.id);
+    }
+  }
+  return ids;
+}
+
 export type PostRepoState = { error?: string };
 
 export async function postRepo(
@@ -40,8 +83,9 @@ export async function postRepo(
   if (ghRepo.private) return { error: "Only public repos can be listed." };
 
   // Only owners (or org members) may list a repo — prevents listing other
-  // people's projects and the takedown disputes that follow.
+  // people's projects and the takedown disputes that follow. Admins are exempt.
   const ownsIt =
+    user.isAdmin ||
     ghRepo.owner.login.toLowerCase() === user.githubLogin.toLowerCase() ||
     (ghRepo.owner.type === "Organization" &&
       (await isOrgMember(token, ghRepo.owner.login)));
@@ -49,18 +93,30 @@ export async function postRepo(
     return { error: "You can only post repos you own or belong to (org member)." };
   }
 
+  const newUseCaseIds = await createUserCategories(
+    "use_case",
+    String(formData.get("newUseCases") ?? "")
+  );
+  const newSectorIds = await createUserCategories(
+    "sector",
+    String(formData.get("newSectors") ?? "")
+  );
+
   let validCategoryIds: string[] = [];
-  if (categoryIds.length > 0) {
-    const cats = await db
-      .select()
-      .from(categories)
-      .where(and(inArray(categories.id, categoryIds), eq(categories.isActive, true)));
-    for (const kind of ["use_case", "sector"] as const) {
-      if (cats.filter((c) => c.kind === kind).length > 3) {
-        return { error: "Pick at most 3 categories per group." };
+  {
+    const allIds = [...new Set([...categoryIds, ...newUseCaseIds, ...newSectorIds])];
+    if (allIds.length > 0) {
+      const cats = await db
+        .select()
+        .from(categories)
+        .where(and(inArray(categories.id, allIds), eq(categories.isActive, true)));
+      for (const kind of ["use_case", "sector"] as const) {
+        if (cats.filter((c) => c.kind === kind).length > 3) {
+          return { error: "Pick at most 3 categories per group (including new ones)." };
+        }
       }
+      validCategoryIds = cats.map((c) => c.id);
     }
-    validCategoryIds = cats.map((c) => c.id);
   }
 
   const languages = await fetchRepoLanguages(token, ghRepo.owner.login, ghRepo.name);

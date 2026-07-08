@@ -1,88 +1,91 @@
-import Link from "next/link";
-import { asc, eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
+import { auth } from "@/auth";
 import { db } from "@/db";
-import { categories } from "@/db/schema";
-import { getFeed } from "@/lib/feed";
-import { RepoCard } from "@/components/repo-card";
-import { FilterBar } from "@/components/filter-bar";
-import { Button } from "@/components/ui/button";
+import { getFeed, type FeedRepo } from "@/lib/feed";
+import { FeedHome } from "@/components/feed-home";
+import { Header } from "@/components/header";
+import { UserCount } from "@/components/user-count";
+import { Landing, type LandingCard } from "@/components/landing/landing";
+import { CreditNotifier } from "@/components/credit-notifier";
+
+function fmtStars(n: number): string {
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+}
+
+function toCard(r: FeedRepo): LandingCard {
+  return {
+    id: r.id,
+    fullName: r.fullName,
+    description: r.description,
+    chips: [
+      ...(r.primaryLanguage ? [r.primaryLanguage] : []),
+      ...r.categoryLabels.slice(0, 2),
+    ].slice(0, 3),
+    stars: fmtStars(r.starsCount),
+    sponsored: r.sponsored,
+    highlighted: r.highlighted,
+  };
+}
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const session = await auth();
   const params = await searchParams;
   const one = (v: string | string[] | undefined) =>
     typeof v === "string" && v ? v : undefined;
-  const filters = {
-    language: one(params.language),
-    useCase: one(params.useCase),
-    sector: one(params.sector),
-  };
 
-  const [{ items, pinned, nextCursor }, cats, langRows] = await Promise.all([
-    getFeed({ cursor: one(params.cursor), filters }),
-    db
-      .select()
-      .from(categories)
-      .where(eq(categories.isActive, true))
-      .orderBy(asc(categories.label)),
+  if (session?.user) {
+    return (
+      <>
+        <Header />
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-24 md:pb-14">
+          <FeedHome
+            cursor={one(params.cursor)}
+            filters={{
+              language: one(params.language),
+              useCase: one(params.useCase),
+              sector: one(params.sector),
+              q: one(params.q),
+              sort: one(params.sort) === "donations" ? "donations" : undefined,
+            }}
+          />
+        </main>
+        <UserCount />
+        <CreditNotifier />
+      </>
+    );
+  }
+
+  const [{ items, pinned }, statsResult] = await Promise.all([
+    getFeed({}),
     db.execute(sql`
-      SELECT DISTINCT unnest(languages) AS lang FROM repos
-      WHERE status = 'active' ORDER BY lang LIMIT 50
+      SELECT
+        (SELECT count(*) FROM repos WHERE status = 'active')::int AS repo_count,
+        (SELECT count(*) FROM star_mints)::int AS stars_claimed,
+        (SELECT count(*) FROM users)::int AS user_count
     `),
   ]);
-  const languages = (langRows.rows as unknown as { lang: string }[]).map(
-    (r) => r.lang
-  );
+  const stats = statsResult.rows[0] as unknown as {
+    repo_count: number;
+    stars_claimed: number;
+    user_count: number;
+  };
 
-  const nextParams = new URLSearchParams();
-  for (const [k, v] of Object.entries(filters)) if (v) nextParams.set(k, v);
-  if (nextCursor) nextParams.set("cursor", nextCursor);
+  const cards = [...pinned, ...items.filter((i) => !i.sponsored)]
+    .slice(0, 3)
+    .map(toCard);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Discover repos</h1>
-        <Button asChild size="sm">
-          <Link href="/post">Post a repo</Link>
-        </Button>
-      </div>
-      <FilterBar
-        languages={languages}
-        useCases={cats
-          .filter((c) => c.kind === "use_case")
-          .map((c) => ({ value: c.slug, label: c.label }))}
-        sectors={cats
-          .filter((c) => c.kind === "sector")
-          .map((c) => ({ value: c.slug, label: c.label }))}
-      />
-      {pinned.length > 0 && (
-        <div className="space-y-3">
-          {pinned.map((r) => (
-            <RepoCard key={`pin-${r.id}`} repo={r} />
-          ))}
-        </div>
-      )}
-      {items.length === 0 && pinned.length === 0 ? (
-        <p className="py-16 text-center text-sm text-muted-foreground">
-          No repos match. Try clearing filters, or post the first one.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {items.map((r, i) => (
-            <RepoCard key={`${r.id}-${i}`} repo={r} />
-          ))}
-        </div>
-      )}
-      {nextCursor && (
-        <div className="flex justify-center pt-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/?${nextParams.toString()}`}>Load more</Link>
-          </Button>
-        </div>
-      )}
-    </div>
+    <Landing
+      stats={{
+        repoCount: stats.repo_count,
+        starsClaimed: stats.stars_claimed,
+        userCount: stats.user_count,
+      }}
+      cards={cards}
+    />
   );
 }

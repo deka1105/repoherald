@@ -5,13 +5,19 @@ import {
   creditEntries,
   highlights,
   repos,
+  socialShares,
   sponsorships,
   starMints,
   users,
 } from "@/db/schema";
 import { decryptToken } from "@/lib/crypto";
-import { clawbackMint, REVOCATION_WINDOW_DAYS } from "@/lib/credits";
+import {
+  clawbackMint,
+  clawbackShareReward,
+  REVOCATION_WINDOW_DAYS,
+} from "@/lib/credits";
 import { writeAudit } from "@/lib/audit";
+import { log } from "@/lib/log";
 import { refundSponsorshipForRepo } from "@/lib/stripe";
 import {
   GithubAuthError,
@@ -155,6 +161,17 @@ async function expireSponsors() {
     .where(
       and(eq(sponsorships.status, "active"), lt(sponsorships.endsAt, sql`now()`))
     );
+  // "N days or M stars, whichever first": expire once the repo has gained
+  // stars_cap stars since activation (stars refresh in the daily sync).
+  await db.execute(sql`
+    UPDATE sponsorships s
+    SET status = 'expired', ends_at = now()
+    FROM repos r
+    WHERE r.id = s.repo_id
+      AND s.status = 'active'
+      AND s.stars_cap IS NOT NULL
+      AND r.stars_count - coalesce(s.stars_at_start, 0) >= s.stars_cap
+  `);
 }
 
 async function flipHighlightStatuses() {
@@ -243,6 +260,59 @@ async function expireCredits() {
   }
 }
 
+/**
+ * Liveness check for social-share posts within their 7-day window. Only an
+ * explicit 404/410 counts as "gone" — social platforms often gate bots behind
+ * logins or 403s, and absence of proof isn't proof of deletion.
+ */
+async function checkSocialShares() {
+  const window = await db
+    .select()
+    .from(socialShares)
+    .where(
+      and(
+        sql`${socialShares.status} IN ('pending', 'approved')`,
+        gt(socialShares.createdAt, sql`now() - interval '7 days'`),
+        or(
+          isNull(socialShares.lastCheckedAt),
+          lt(socialShares.lastCheckedAt, sql`now() - interval '20 hours'`)
+        )
+      )
+    )
+    .limit(100);
+
+  for (const share of window) {
+    let gone = false;
+    try {
+      const res = await fetch(share.url, {
+        method: "GET",
+        redirect: "follow",
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; repoherald-check)" },
+        signal: AbortSignal.timeout(10_000),
+      });
+      gone = res.status === 404 || res.status === 410;
+    } catch {
+      // Network hiccup — treat as alive; we'll check again tomorrow.
+    }
+
+    if (gone) {
+      if (share.status === "approved") {
+        await clawbackShareReward(share.id, "post_removed_within_7_days");
+      } else {
+        await db
+          .update(socialShares)
+          .set({ status: "rejected" })
+          .where(eq(socialShares.id, share.id));
+      }
+    } else {
+      await db
+        .update(socialShares)
+        .set({ lastCheckedAt: new Date() })
+        .where(eq(socialShares.id, share.id));
+    }
+  }
+}
+
 async function syncRepos() {
   const stale = await db
     .select({ repo: repos, user: users })
@@ -309,11 +379,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { checked, revoked } = await reverifyStars();
-  await expireSponsors();
-  await flipHighlightStatuses();
-  await expireCredits();
-  await syncRepos();
-
-  return NextResponse.json({ ok: true, checked, revoked });
+  try {
+    const { checked, revoked } = await reverifyStars();
+    await expireSponsors();
+    await flipHighlightStatuses();
+    await expireCredits();
+    await syncRepos();
+    await checkSocialShares();
+    log.info("cron.reverify", { checked, revoked });
+    return NextResponse.json({ ok: true, checked, revoked });
+  } catch (e) {
+    log.error("cron.reverify.failed", e);
+    return NextResponse.json({ ok: false }, { status: 500 });
+  }
 }

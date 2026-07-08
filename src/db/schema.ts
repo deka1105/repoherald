@@ -26,11 +26,23 @@ export const users = pgTable("users", {
   githubPublicRepos: integer("github_public_repos"),
   githubFollowers: integer("github_followers"),
   mintEligible: boolean("mint_eligible").notNull().default(false),
+  // Admin override: 'allowed'/'blocked' beats the heuristic; null = heuristic.
+  eligibilityOverride: text("eligibility_override", {
+    enum: ["allowed", "blocked"],
+  }),
+  // Deprecated: claim limits are now counted from credit_entries mints
+  // (see getClaimUsage in src/lib/credits.ts). Kept to avoid a drop migration.
   dailyMintCount: integer("daily_mint_count").notNull().default(0),
   dailyMintDate: date("daily_mint_date"),
   isAdmin: boolean("is_admin").notNull().default(false),
   // Cache of SUM(credit_entries.delta); ledger is source of truth. May go negative (clawback debt).
   creditBalance: integer("credit_balance").notNull().default(0),
+  // Ledger entries after this moment are "unseen" → surfaced as notifications.
+  creditsSeenAt: timestamp("credits_seen_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  // Opt-in: email me when a new sponsored repo goes live. Off by default (consent).
+  sponsorAlertsOptIn: boolean("sponsor_alerts_opt_in").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -134,9 +146,12 @@ export const creditEntries = pgTable(
         "highlight_cancellation_refund",
         "credit_expiry",
         "admin_adjustment",
+        "social_share_reward",
+        "social_share_clawback",
       ],
     }).notNull(),
     starMintId: uuid("star_mint_id").references(() => starMints.id),
+    socialShareId: uuid("social_share_id"),
     highlightId: uuid("highlight_id"),
     adminUserId: uuid("admin_user_id").references(() => users.id),
     memo: text("memo"),
@@ -150,7 +165,47 @@ export const creditEntries = pgTable(
     uniqueIndex("credit_entries_clawback_uq")
       .on(t.starMintId)
       .where(sql`type = 'revocation_clawback'`),
+    uniqueIndex("credit_entries_share_reward_uq")
+      .on(t.socialShareId)
+      .where(sql`type = 'social_share_reward'`),
+    uniqueIndex("credit_entries_share_clawback_uq")
+      .on(t.socialShareId)
+      .where(sql`type = 'social_share_clawback'`),
     index("credit_entries_user_idx").on(t.userId, t.createdAt),
+  ]
+);
+
+// Social share rewards: one credit per platform once an admin approves the
+// submitted post URL; the URL must stay live for 7 days or the reward is
+// clawed back.
+export const socialShares = pgTable(
+  "social_shares",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    platform: text("platform", {
+      enum: ["reddit", "instagram", "facebook", "x", "tiktok"],
+    }).notNull(),
+    url: text("url").notNull(),
+    urlNormalized: text("url_normalized").notNull().unique(),
+    status: text("status", {
+      enum: ["pending", "approved", "rejected", "revoked"],
+    })
+      .notNull()
+      .default("pending"),
+    reviewedByUserId: uuid("reviewed_by_user_id").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // One live (pending/approved) submission per platform per user.
+    uniqueIndex("social_shares_user_platform_live_uq")
+      .on(t.userId, t.platform)
+      .where(sql`status IN ('pending', 'approved')`),
+    index("social_shares_status_idx").on(t.status, t.createdAt),
   ]
 );
 
@@ -197,6 +252,10 @@ export const sponsorships = pgTable(
     startsAt: timestamp("starts_at", { withTimezone: true }),
     endsAt: timestamp("ends_at", { withTimezone: true }),
     durationDays: integer("duration_days"),
+    // Sponsorship also ends when the repo gains this many stars ("7 days or
+    // 75 stars, whichever first"). Null = time-only.
+    starsCap: integer("stars_cap"),
+    starsAtStart: integer("stars_at_start"),
     status: text("status", {
       enum: ["pending_payment", "active", "expired", "cancelled"],
     })
@@ -256,4 +315,24 @@ export const reports = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("reports_status_idx").on(t.status, t.createdAt)]
+);
+
+// User-submitted support queries. Anyone can file one (email required); a
+// logged-in user's id is attached so admins can see who asked.
+export const supportTickets = pgTable(
+  "support_tickets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id),
+    email: text("email").notNull(),
+    subject: text("subject"),
+    message: text("message").notNull(),
+    status: text("status", { enum: ["open", "resolved"] })
+      .notNull()
+      .default("open"),
+    resolvedByUserId: uuid("resolved_by_user_id").references(() => users.id),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("support_tickets_status_idx").on(t.status, t.createdAt)]
 );

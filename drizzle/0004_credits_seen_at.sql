@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "credits_seen_at" timestamp with time zone DEFAULT now() NOT NULL;

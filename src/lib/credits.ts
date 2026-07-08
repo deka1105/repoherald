@@ -4,13 +4,16 @@ import {
   creditEntries,
   highlights,
   repos,
+  socialShares,
   starMints,
   users,
 } from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
+import { log } from "@/lib/log";
 import type { Tx } from "@/db";
 
-export const DAILY_MINT_CAP = 20;
+export const DAILY_MINT_CAP = 6;
+export const WEEKLY_MINT_CAP = 20;
 export const CLAIMS_PER_MINUTE = 5;
 export const SELF_HIGHLIGHT_MINUTES = 60;
 export const DONATION_MINUTES = 15;
@@ -18,6 +21,27 @@ export const MAX_QUEUED_MINUTES_PER_REPO = 24 * 60;
 export const REVOCATION_WINDOW_DAYS = 100;
 
 export class CreditError extends Error {}
+
+/**
+ * Claims used in the current UTC day and ISO week (Monday start), counted
+ * from mint ledger entries — the same numbers mintCredit enforces against.
+ */
+export async function getClaimUsage(userId: string, tx: Tx | typeof db = db) {
+  const [row] = await tx
+    .select({
+      day: sql<number>`count(*) FILTER (WHERE ${creditEntries.createdAt} >= date_trunc('day', now()))::int`,
+      week: sql<number>`count(*)::int`,
+    })
+    .from(creditEntries)
+    .where(
+      and(
+        eq(creditEntries.userId, userId),
+        eq(creditEntries.type, "mint"),
+        gte(creditEntries.createdAt, sql`date_trunc('week', now())`)
+      )
+    );
+  return { day: row.day, week: row.week };
+}
 
 async function lockUser(tx: Tx, userId: string) {
   const [user] = await tx
@@ -59,12 +83,18 @@ async function applyDelta(
  */
 export async function mintCredit(userId: string, repoId: string, githubRepoId: number) {
   return db.transaction(async (tx) => {
-    const user = await lockUser(tx, userId);
+    await lockUser(tx, userId);
 
-    const today = new Date().toISOString().slice(0, 10);
-    const dailyCount = user.dailyMintDate === today ? user.dailyMintCount : 0;
-    if (dailyCount >= DAILY_MINT_CAP) {
-      throw new CreditError("Daily claim limit reached — try again tomorrow.");
+    const usage = await getClaimUsage(userId, tx);
+    if (usage.day >= DAILY_MINT_CAP) {
+      throw new CreditError(
+        `Daily claim limit reached (${DAILY_MINT_CAP}/day) — try again tomorrow.`
+      );
+    }
+    if (usage.week >= WEEKLY_MINT_CAP) {
+      throw new CreditError(
+        `Weekly claim limit reached (${WEEKLY_MINT_CAP}/week) — try again next week.`
+      );
     }
 
     const [{ recent }] = await tx
@@ -89,10 +119,6 @@ export async function mintCredit(userId: string, repoId: string, githubRepoId: n
     if (!mint) return null; // already claimed once, ever — including revoked
 
     await applyDelta(tx, userId, { delta: 1, type: "mint", starMintId: mint.id });
-    await tx
-      .update(users)
-      .set({ dailyMintCount: dailyCount + 1, dailyMintDate: today })
-      .where(eq(users.id, userId));
     await writeAudit(tx, {
       actorUserId: userId,
       actorType: "user",
@@ -101,6 +127,7 @@ export async function mintCredit(userId: string, repoId: string, githubRepoId: n
       entityId: mint.id,
       metadata: { repoId },
     });
+    log.info("credit.mint", { userId, repoId, mintId: mint.id });
     return mint.id;
   });
 }
@@ -181,7 +208,98 @@ export async function spendCredit(
       entityId: highlight.id,
       metadata: { repoId, minutes },
     });
+    log.info("credit.spend", { userId, repoId, kind, minutes, highlightId: highlight.id });
     return highlight.id;
+  });
+}
+
+/** Approve a social share and grant its +1 reward, atomically. */
+export async function grantShareReward(shareId: string, adminUserId: string) {
+  return db.transaction(async (tx) => {
+    const [share] = await tx
+      .select()
+      .from(socialShares)
+      .where(eq(socialShares.id, shareId))
+      .for("update");
+    if (!share || share.status !== "pending") return false;
+
+    await lockUser(tx, share.userId);
+    const [entry] = await tx
+      .insert(creditEntries)
+      .values({
+        userId: share.userId,
+        delta: 1,
+        type: "social_share_reward",
+        socialShareId: shareId,
+        adminUserId,
+        memo: `${share.platform} share`,
+      })
+      .onConflictDoNothing()
+      .returning({ id: creditEntries.id });
+    if (!entry) return false;
+
+    await tx
+      .update(users)
+      .set({ creditBalance: sql`${users.creditBalance} + 1` })
+      .where(eq(users.id, share.userId));
+    await tx
+      .update(socialShares)
+      .set({ status: "approved", reviewedByUserId: adminUserId, reviewedAt: new Date() })
+      .where(eq(socialShares.id, shareId));
+    await writeAudit(tx, {
+      actorUserId: adminUserId,
+      actorType: "admin",
+      action: "share.approve",
+      entityType: "social_share",
+      entityId: shareId,
+      metadata: { userId: share.userId, platform: share.platform },
+    });
+    log.info("share.approved", { shareId, userId: share.userId });
+    return true;
+  });
+}
+
+/** Revoke a share reward (post deleted within the 7-day window). The debit
+ * can push the balance negative — same debt model as star clawbacks. */
+export async function clawbackShareReward(shareId: string, reason: string) {
+  return db.transaction(async (tx) => {
+    const [share] = await tx
+      .select()
+      .from(socialShares)
+      .where(eq(socialShares.id, shareId))
+      .for("update");
+    if (!share || share.status !== "approved") return;
+
+    await lockUser(tx, share.userId);
+    const [entry] = await tx
+      .insert(creditEntries)
+      .values({
+        userId: share.userId,
+        delta: -1,
+        type: "social_share_clawback",
+        socialShareId: shareId,
+        memo: reason,
+      })
+      .onConflictDoNothing()
+      .returning({ id: creditEntries.id });
+    if (!entry) return;
+
+    await tx
+      .update(users)
+      .set({ creditBalance: sql`${users.creditBalance} - 1` })
+      .where(eq(users.id, share.userId));
+    await tx
+      .update(socialShares)
+      .set({ status: "revoked" })
+      .where(eq(socialShares.id, shareId));
+    await writeAudit(tx, {
+      actorType: "system",
+      action: "share.clawback",
+      entityType: "social_share",
+      entityId: shareId,
+      metadata: { userId: share.userId, reason },
+    });
+    log.info("share.clawback", { shareId, userId: share.userId, reason });
   });
 }
 
@@ -293,5 +411,6 @@ export async function clawbackMint(starMintId: string) {
       entityId: starMintId,
       metadata: { userId: mint.userId, finalBalance: balance },
     });
+    log.info("credit.clawback", { starMintId, userId: mint.userId, finalBalance: balance });
   });
 }

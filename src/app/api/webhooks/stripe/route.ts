@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { sponsorships, stripeEvents } from "@/db/schema";
+import { repos, sponsorships, stripeEvents } from "@/db/schema";
 import { getStripe } from "@/lib/stripe";
 import { writeAudit } from "@/lib/audit";
+import { log } from "@/lib/log";
+import { notifySponsorshipActivated } from "@/lib/notify";
 
 export async function POST(request: Request) {
   const body = await request.text();
@@ -30,6 +32,8 @@ export async function POST(request: Request) {
     .returning({ id: stripeEvents.id });
   if (!claimed) return NextResponse.json({ ok: true, duplicate: true });
 
+  log.info("stripe.webhook", { eventId: event.id, type: event.type });
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
@@ -38,12 +42,19 @@ export async function POST(request: Request) {
       const durationDays = Number(session.metadata?.duration_days ?? 0) || 7;
       const startsAt = new Date();
       const endsAt = new Date(startsAt.getTime() + durationDays * 86_400_000);
+      // Star-cap countdown starts from the repo's star count at activation.
+      const [row] = await db
+        .select({ starsCount: repos.starsCount })
+        .from(repos)
+        .innerJoin(sponsorships, eq(sponsorships.repoId, repos.id))
+        .where(eq(sponsorships.id, sponsorshipId));
       await db
         .update(sponsorships)
         .set({
           status: "active",
           startsAt,
           endsAt,
+          starsAtStart: row?.starsCount ?? 0,
           stripePaymentIntentId:
             typeof session.payment_intent === "string"
               ? session.payment_intent
@@ -58,6 +69,8 @@ export async function POST(request: Request) {
         entityId: sponsorshipId,
         metadata: { durationDays, amountCents: session.amount_total },
       });
+      // Best-effort email to opted-in users; never blocks the webhook.
+      await notifySponsorshipActivated(sponsorshipId);
       break;
     }
     case "checkout.session.expired": {

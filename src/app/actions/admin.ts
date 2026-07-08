@@ -8,11 +8,14 @@ import {
   creditEntries,
   reports,
   repos,
+  socialShares,
   sponsorships,
   starMints,
+  supportTickets,
   users,
 } from "@/db/schema";
 import { requireAdmin } from "@/lib/authz";
+import { grantShareReward } from "@/lib/credits";
 import { writeAudit } from "@/lib/audit";
 import { refundSponsorshipForRepo } from "@/lib/stripe";
 
@@ -104,6 +107,27 @@ export async function adjustCredits(formData: FormData) {
   return ok();
 }
 
+export async function setEligibilityOverride(
+  userId: string,
+  override: "allowed" | "blocked" | null
+) {
+  const admin = await requireAdmin();
+  await db
+    .update(users)
+    .set({ eligibilityOverride: override })
+    .where(eq(users.id, userId));
+  await writeAudit(db, {
+    actorUserId: admin.id,
+    actorType: "admin",
+    action: "user.eligibility_override",
+    entityType: "user",
+    entityId: userId,
+    metadata: { override },
+  });
+  revalidatePath("/admin/users");
+  return ok();
+}
+
 export async function toggleAdmin(userId: string, makeAdmin: boolean) {
   const admin = await requireAdmin();
   if (admin.id === userId && !makeAdmin) {
@@ -161,16 +185,24 @@ export async function toggleCategory(categoryId: string, isActive: boolean) {
   return ok();
 }
 
+const ADMIN_PLANS: Record<string, { days: number; starsCap: number }> = {
+  "7d": { days: 7, starsCap: 75 },
+  "15d": { days: 15, starsCap: 160 },
+  "30d": { days: 30, starsCap: 350 },
+};
+
 export async function adminCreateSponsorship(formData: FormData) {
   const admin = await requireAdmin();
   const repoId = String(formData.get("repoId") ?? "");
-  const days = Number(formData.get("days") ?? 0);
+  const plan = ADMIN_PLANS[String(formData.get("plan") ?? "")];
   const sponsorName = String(formData.get("sponsorName") ?? "").trim() || null;
-  if (!repoId || !Number.isInteger(days) || days < 1 || days > 365) {
-    return { error: "Repo and a duration between 1 and 365 days are required." };
+  if (!repoId || !plan) {
+    return { error: "Repo and a plan are required." };
   }
+  const repo = await db.query.repos.findFirst({ where: eq(repos.id, repoId) });
+  if (!repo) return { error: "Repo not found." };
   const startsAt = new Date();
-  const endsAt = new Date(startsAt.getTime() + days * 86_400_000);
+  const endsAt = new Date(startsAt.getTime() + plan.days * 86_400_000);
   try {
     const [s] = await db
       .insert(sponsorships)
@@ -179,7 +211,9 @@ export async function adminCreateSponsorship(formData: FormData) {
         sponsorName,
         startsAt,
         endsAt,
-        durationDays: days,
+        durationDays: plan.days,
+        starsCap: plan.starsCap,
+        starsAtStart: repo.starsCount,
         status: "active",
         createdVia: "admin",
       })
@@ -190,13 +224,37 @@ export async function adminCreateSponsorship(formData: FormData) {
       action: "sponsorship.create",
       entityType: "sponsorship",
       entityId: s.id,
-      metadata: { repoId, days },
+      metadata: { repoId, days: plan.days, starsCap: plan.starsCap },
     });
   } catch {
     return { error: "This repo already has a live sponsorship." };
   }
   revalidatePath("/admin/sponsorships");
   revalidatePath("/");
+  return ok();
+}
+
+export async function approveShare(shareId: string) {
+  const admin = await requireAdmin();
+  await grantShareReward(shareId, admin.id);
+  revalidatePath("/admin/rewards");
+  return ok();
+}
+
+export async function rejectShare(shareId: string) {
+  const admin = await requireAdmin();
+  await db
+    .update(socialShares)
+    .set({ status: "rejected", reviewedByUserId: admin.id, reviewedAt: new Date() })
+    .where(eq(socialShares.id, shareId));
+  await writeAudit(db, {
+    actorUserId: admin.id,
+    actorType: "admin",
+    action: "share.reject",
+    entityType: "social_share",
+    entityId: shareId,
+  });
+  revalidatePath("/admin/rewards");
   return ok();
 }
 
@@ -215,5 +273,29 @@ export async function adminCancelSponsorship(sponsorshipId: string) {
   });
   revalidatePath("/admin/sponsorships");
   revalidatePath("/");
+  return ok();
+}
+
+export async function setSupportTicketStatus(
+  ticketId: string,
+  status: "open" | "resolved"
+) {
+  const admin = await requireAdmin();
+  await db
+    .update(supportTickets)
+    .set({
+      status,
+      resolvedByUserId: status === "resolved" ? admin.id : null,
+      resolvedAt: status === "resolved" ? new Date() : null,
+    })
+    .where(eq(supportTickets.id, ticketId));
+  await writeAudit(db, {
+    actorUserId: admin.id,
+    actorType: "admin",
+    action: status === "resolved" ? "support.resolve" : "support.reopen",
+    entityType: "support_ticket",
+    entityId: ticketId,
+  });
+  revalidatePath("/admin/support");
   return ok();
 }

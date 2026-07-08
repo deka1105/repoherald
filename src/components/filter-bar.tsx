@@ -1,6 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -52,6 +55,34 @@ function Filter({
   );
 }
 
+function SearchBox() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [value, setValue] = useState(searchParams.get("q") ?? "");
+
+  const submit = () => {
+    const params = new URLSearchParams(searchParams);
+    if (value.trim()) params.set("q", value.trim());
+    else params.delete("q");
+    params.delete("cursor");
+    router.push(`/?${params.toString()}`);
+  };
+
+  return (
+    <div className="relative w-full sm:w-auto">
+      <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && submit()}
+        onBlur={submit}
+        placeholder="Search name, owner, category…"
+        className="h-8 w-full pl-8 text-sm sm:w-56"
+      />
+    </div>
+  );
+}
+
 export function FilterBar({
   languages,
   useCases,
@@ -63,6 +94,7 @@ export function FilterBar({
 }) {
   return (
     <div className="flex flex-wrap gap-2">
+      <SearchBox />
       <Filter
         param="language"
         placeholder="All languages"
@@ -70,6 +102,11 @@ export function FilterBar({
       />
       <Filter param="useCase" placeholder="All use cases" options={useCases} />
       <Filter param="sector" placeholder="All sectors" options={sectors} />
+      <Filter
+        param="sort"
+        placeholder="Sort: Trending"
+        options={[{ value: "donations", label: "Sort: Most donated" }]}
+      />
     </div>
   );
 }

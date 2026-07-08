@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { Gift, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +15,7 @@ export type RepoCardData = {
   categoryLabels?: string[];
   highlighted?: boolean;
   sponsored?: boolean;
+  donationCount?: number;
 };
 
 export function RepoCard({ repo }: { repo: RepoCardData }) {
@@ -54,6 +55,12 @@ export function RepoCard({ repo }: { repo: RepoCardData }) {
             <span className="inline-flex items-center gap-1">
               <Star className="size-3" /> {repo.starsCount.toLocaleString()}
             </span>
+            {(repo.donationCount ?? 0) > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <Gift className="size-3" /> {repo.donationCount!.toLocaleString()}{" "}
+                {repo.donationCount === 1 ? "donation" : "donations"}
+              </span>
+            )}
             {repo.primaryLanguage && <span>{repo.primaryLanguage}</span>}
             {repo.categoryLabels?.map((label) => (
               <Badge key={label} variant="outline" className="font-normal">

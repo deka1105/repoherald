@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# session logs may contain secrets
+SessionHistory1.txt
+
+# Auto-added by watcher
+.mypy_cache/
+.tox/
+__pycache__/
+venv/
+dist/
+.venv/
+.pytest_cache/
