@@ -2,6 +2,7 @@ import { and, asc, eq, gt } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { creditEntries, users } from "@/db/schema";
+import { WELCOME_BONUS_CREDITS } from "@/lib/credits";
 import { CreditNotifierClient } from "./credit-notifier-client";
 
 const MESSAGES: Record<string, (memo: string | null) => string> = {
