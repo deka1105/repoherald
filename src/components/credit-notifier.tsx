@@ -13,6 +13,7 @@ const MESSAGES: Record<string, (memo: string | null) => string> = {
   revocation_clawback: () => "A star you claimed was revoked — 1 credit removed",
   social_share_clawback: () => "A shared post disappeared — its credit was removed",
   credit_expiry: (memo) => `Credits expired${memo ? `: ${memo}` : ""}`,
+  welcome_bonus: () => `Welcome! ${WELCOME_BONUS_CREDITS} credits added to get you started 🎉`,
 };
 
 /** Surfaces ledger changes that happened while the user wasn't looking
