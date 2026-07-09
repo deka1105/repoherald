@@ -148,6 +148,7 @@ export const creditEntries = pgTable(
         "admin_adjustment",
         "social_share_reward",
         "social_share_clawback",
+        "welcome_bonus",
       ],
     }).notNull(),
     starMintId: uuid("star_mint_id").references(() => starMints.id),
