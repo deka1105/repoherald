@@ -19,8 +19,46 @@ export const SELF_HIGHLIGHT_MINUTES = 60;
 export const DONATION_MINUTES = 15;
 export const MAX_QUEUED_MINUTES_PER_REPO = 24 * 60;
 export const REVOCATION_WINDOW_DAYS = 100;
+export const WELCOME_BONUS_CREDITS = 10;
 
 export class CreditError extends Error {}
+
+/**
+ * Grant the one-time signup bonus to a newly created user. Idempotent: the
+ * partial unique index on (user_id) WHERE type='welcome_bonus' makes a second
+ * grant impossible even if two sign-ins race. Returns false when already granted.
+ */
+export async function grantWelcomeCredit(userId: string) {
+  return db.transaction(async (tx) => {
+    await lockUser(tx, userId);
+    const [entry] = await tx
+      .insert(creditEntries)
+      .values({
+        userId,
+        delta: WELCOME_BONUS_CREDITS,
+        type: "welcome_bonus",
+        memo: "Welcome bonus",
+      })
+      .onConflictDoNothing()
+      .returning({ id: creditEntries.id });
+    if (!entry) return false;
+
+    await tx
+      .update(users)
+      .set({ creditBalance: sql`${users.creditBalance} + ${WELCOME_BONUS_CREDITS}` })
+      .where(eq(users.id, userId));
+    await writeAudit(tx, {
+      actorUserId: userId,
+      actorType: "system",
+      action: "credit.welcome_bonus",
+      entityType: "user",
+      entityId: userId,
+      metadata: { credits: WELCOME_BONUS_CREDITS },
+    });
+    log.info("credit.welcome_bonus", { userId, credits: WELCOME_BONUS_CREDITS });
+    return true;
+  });
+}
 
 /**
  * Claims used in the current UTC day and ISO week (Monday start), counted
