@@ -1,8 +1,10 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
+import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { encryptToken } from "@/lib/crypto";
+import { grantWelcomeCredit } from "@/lib/credits";
 
 type GithubProfile = {
   id: number;
