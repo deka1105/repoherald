@@ -48,12 +48,12 @@ export async function grantWelcomeCredit(userId: string) {
       .set({ creditBalance: sql`${users.creditBalance} + ${WELCOME_BONUS_CREDITS}` })
       .where(eq(users.id, userId));
     await writeAudit(tx, {
-      actorUserId: userId,
+      actorUserId: null,
       actorType: "system",
       action: "credit.welcome_bonus",
       entityType: "user",
       entityId: userId,
-      metadata: { credits: WELCOME_BONUS_CREDITS },
+      metadata: { userId, credits: WELCOME_BONUS_CREDITS },
     });
     log.info("credit.welcome_bonus", { userId, credits: WELCOME_BONUS_CREDITS });
     return true;
