@@ -69,10 +69,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             target: users.githubId,
             set: isBootstrapAdmin ? { ...values, isAdmin: true } : values,
           })
-          .returning({ id: users.id, isAdmin: users.isAdmin });
+          // xmax = 0 marks a freshly inserted row (vs. an ON CONFLICT update),
+          // so the welcome bonus fires exactly once, on first sign-in.
+          .returning({
+            id: users.id,
+            isAdmin: users.isAdmin,
+            isNew: sql<boolean>`(xmax = 0)`,
+          });
         token.userId = row.id;
         token.isAdmin = row.isAdmin;
         token.githubLogin = p.login;
+        if (row.isNew) {
+          await grantWelcomeCredit(row.id);
+        }
       }
       return token;
     },
