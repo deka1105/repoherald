@@ -172,6 +172,11 @@ export const creditEntries = pgTable(
     uniqueIndex("credit_entries_share_clawback_uq")
       .on(t.socialShareId)
       .where(sql`type = 'social_share_clawback'`),
+    // One welcome bonus per user, ever — guarantees the signup grant is
+    // idempotent even under concurrent sign-ins.
+    uniqueIndex("credit_entries_welcome_uq")
+      .on(t.userId)
+      .where(sql`type = 'welcome_bonus'`),
     index("credit_entries_user_idx").on(t.userId, t.createdAt),
   ]
 );
