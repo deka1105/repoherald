@@ -19,7 +19,7 @@ export default async function AccountPage() {
   const session = await auth();
   if (!session?.user) redirect("/");
 
-  const [user, myRepos] = await Promise.all([
+  const [user, myRepos, cookieStore] = await Promise.all([
     db.query.users.findFirst({ where: eq(users.id, session.user.id) }),
     db
       .select({
@@ -31,8 +31,11 @@ export default async function AccountPage() {
       .from(repos)
       .where(eq(repos.postedByUserId, session.user.id))
       .orderBy(desc(repos.createdAt)),
+    cookies(),
   ]);
   if (!user) redirect("/");
+
+  const feedLayout = parseFeedLayout(cookieStore.get(FEED_LAYOUT_COOKIE)?.value);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
