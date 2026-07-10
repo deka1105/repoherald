@@ -58,6 +58,15 @@ export default async function AccountPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">Feed layout</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FeedLayoutChooser initial={feedLayout} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Your posts</CardTitle>
         </CardHeader>
         <CardContent>
