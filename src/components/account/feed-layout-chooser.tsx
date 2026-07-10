@@ -59,7 +59,7 @@ export function FeedLayoutChooser({ initial }: { initial: FeedLayout }) {
   const choose = (id: FeedLayout) => {
     if (id === value) return;
     setValue(id);
-    document.cookie = `${FEED_LAYOUT_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
+    persistLayout(id);
     // Bust the router cache so the feed re-renders in the new layout next visit.
     router.refresh();
   };
