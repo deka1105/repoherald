@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { Gift } from "lucide-react";
 import { spendOnHighlight } from "@/app/actions/highlights";
+import { trackEvent } from "@/lib/track-client";
 import { Button } from "@/components/ui/button";
 
 export function DonateButton({ repoId }: { repoId: string }) {
