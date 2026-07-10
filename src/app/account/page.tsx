@@ -1,11 +1,14 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { repos, users } from "@/db/schema";
+import { FEED_LAYOUT_COOKIE, parseFeedLayout } from "@/lib/feed-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeChooser } from "@/components/account/theme-chooser";
+import { FeedLayoutChooser } from "@/components/account/feed-layout-chooser";
 import { MyPosts } from "@/components/account/my-posts";
 import { SponsorAlerts } from "@/app/(app)/wallet/sponsor-alerts";
 import { DeleteAccount } from "@/app/(app)/wallet/delete-account";
