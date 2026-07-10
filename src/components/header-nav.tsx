@@ -43,6 +43,7 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
           {user && <Link href="/wallet">Wallet</Link>}
           {user && <Link href="/account">Account</Link>}
           {user?.isAdmin && <Link href="/admin">Admin</Link>}
+          {user?.isAdmin && <Link href="/admin/analytics">Analytics</Link>}
         </div>
         <ModeToggle />
         {user ? (
