@@ -50,6 +50,7 @@ const TABS: Tab[] = [
     label: "Support",
     Icon: LifeBuoy,
     isActive: (p) => p.startsWith("/support"),
+    hideForAdmin: true,
   },
   {
     href: "/account",
@@ -72,7 +73,10 @@ const TABS: Tab[] = [
 export function MobileNav({ user }: { user: NavUser | null }) {
   const pathname = usePathname();
   const tabs = TABS.filter(
-    (t) => (!t.requiresUser || user) && (!t.adminOnly || user?.isAdmin)
+    (t) =>
+      (!t.requiresUser || user) &&
+      (!t.adminOnly || user?.isAdmin) &&
+      (!t.hideForAdmin || !user?.isAdmin)
   );
 
   return (
