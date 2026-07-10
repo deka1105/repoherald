@@ -9,6 +9,10 @@ import {
   type FeedLayout,
 } from "@/lib/feed-layout";
 
+function persistLayout(id: FeedLayout) {
+  document.cookie = `${FEED_LAYOUT_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
+}
+
 function Bar() {
   return <div className="h-2 rounded-sm bg-muted-foreground/25" />;
 }
