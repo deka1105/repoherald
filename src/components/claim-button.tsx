@@ -28,7 +28,8 @@ export function ClaimButton({
   return (
     <Button
       disabled={pending}
-      onClick={() =>
+      onClick={() => {
+        trackEvent("claim_click", { repoId });
         startTransition(async () => {
           const result = await claimStar(repoId);
           if (result.error) toast.error(result.error);
@@ -36,8 +37,8 @@ export function ClaimButton({
             toast.success(result.success);
             setClaimed(true);
           }
-        })
-      }
+        });
+      }}
     >
       <Star className="mr-1 size-4" />
       {pending ? "Verifying…" : "I starred this — claim credit"}
