@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { signInWithGitHub, signOutAction } from "@/app/actions/auth";
+import { useTheme } from "@/components/theme-provider";
+import { ThemePicker } from "@/components/theme-picker";
 import "@/components/landing/landing.css";
 
 export type NavUser = {
@@ -20,19 +21,14 @@ function GitHubIcon() {
 }
 
 export function HeaderNav({ user }: { user: NavUser | null }) {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  const shield = theme === "dark" ? "/brand/shield-white.png" : "/brand/shield-black.png";
-
-  const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    // Drives the whole app's shadcn dark tokens, not just the nav chrome.
-    document.documentElement.classList.toggle("dark", next === "dark");
-  };
+  const { theme } = useTheme();
+  // The chrome (rh-* tokens) only renders light/dark; each design theme maps
+  // to one of those via its mode.
+  const mode = theme.mode;
+  const shield = mode === "dark" ? "/brand/shield-white.png" : "/brand/shield-black.png";
 
   return (
-    <header className="rh-chrome" data-theme={theme}>
+    <header className="rh-chrome" data-theme={mode}>
       <nav className="rh-nav">
         <Link href="/" className="rh-wordmark">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -47,14 +43,7 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
           {user && <Link href="/wallet">Wallet</Link>}
           {user?.isAdmin && <Link href="/admin">Admin</Link>}
         </div>
-        <button
-          type="button"
-          className="rh-themebtn"
-          aria-label="Toggle dark mode"
-          onClick={toggleTheme}
-        >
-          {theme === "dark" ? "☀" : "☾"}
-        </button>
+        <ThemePicker />
         {user ? (
           <div className="rh-user">
             {user.image ? (
