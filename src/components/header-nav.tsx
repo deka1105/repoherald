@@ -44,6 +44,7 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
           {user && <Link href="/account">Account</Link>}
           {user?.isAdmin && <Link href="/admin">Admin</Link>}
         </div>
+        <ModeToggle />
         {user ? (
           <div className="rh-user">
             {user.image ? (
