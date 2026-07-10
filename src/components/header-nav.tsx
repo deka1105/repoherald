@@ -39,7 +39,8 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
           <Link href="/">Explore</Link>
           <Link href="/post">Post a repo</Link>
           <Link href="/sponsor">Sponsor</Link>
-          <Link href="/support">Support</Link>
+          {/* Admins manage tickets at /admin/support; filing one is pointless for them. */}
+          {!user?.isAdmin && <Link href="/support">Support</Link>}
           {user && <Link href="/wallet">Wallet</Link>}
           {user && <Link href="/account">Account</Link>}
           {user?.isAdmin && <Link href="/admin">Admin</Link>}
