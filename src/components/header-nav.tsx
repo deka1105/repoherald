@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { signInWithGitHub, signOutAction } from "@/app/actions/auth";
 import { useTheme } from "@/components/theme-provider";
+import { ModeToggle } from "@/components/mode-toggle";
 import "@/components/landing/landing.css";
 
 export type NavUser = {
