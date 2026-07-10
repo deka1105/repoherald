@@ -40,9 +40,9 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
           <Link href="/sponsor">Sponsor</Link>
           <Link href="/support">Support</Link>
           {user && <Link href="/wallet">Wallet</Link>}
+          {user && <Link href="/account">Account</Link>}
           {user?.isAdmin && <Link href="/admin">Admin</Link>}
         </div>
-        <ThemePicker />
         {user ? (
           <div className="rh-user">
             {user.image ? (
