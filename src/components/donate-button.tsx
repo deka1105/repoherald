@@ -14,13 +14,14 @@ export function DonateButton({ repoId }: { repoId: string }) {
     <Button
       variant="outline"
       disabled={pending}
-      onClick={() =>
+      onClick={() => {
+        trackEvent("donate_click", { repoId });
         startTransition(async () => {
           const result = await spendOnHighlight(repoId, "donation");
           if (result.error) toast.error(result.error);
           if (result.success) toast.success(result.success);
-        })
-      }
+        });
+      }}
     >
       <Gift className="mr-1 size-4" />
       {pending ? "Donating…" : "Donate 15 min highlight (1 credit)"}
