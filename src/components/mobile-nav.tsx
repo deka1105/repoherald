@@ -21,6 +21,7 @@ type Tab = {
   isActive: (pathname: string) => boolean;
   requiresUser?: boolean;
   adminOnly?: boolean;
+  hideForAdmin?: boolean;
 };
 
 const TABS: Tab[] = [
