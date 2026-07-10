@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     "0.0.0.0";
 
   let type: AnalyticsEventType = b.type;
-  let path = typeof b.path === "string" ? b.path.slice(0, 512) : null;
+  const path = typeof b.path === "string" ? b.path.slice(0, 512) : null;
   let repoId = isUuid(b.repoId) ? b.repoId : null;
 
   // A page view of /repos/{uuid} is a post open — record it as repo_view.
