@@ -342,3 +342,37 @@ export const supportTickets = pgTable(
   },
   (t) => [index("support_tickets_status_idx").on(t.status, t.createdAt)]
 );
+
+// First-party analytics fact table. Append-only. repo_id/user_id are plain
+// UUIDs (NOT foreign keys) so this stays decoupled from the dimension tables:
+// client-supplied ids can't raise FK errors, account deletion isn't blocked,
+// and writes take no locks on repos/users. Joins happen in the admin queries.
+// visitor_id is a cookieless daily-rotating hash (see src/lib/analytics.ts).
+export const analyticsEvents = pgTable(
+  "analytics_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    type: text("type", {
+      enum: [
+        "page_view",
+        "repo_view",
+        "claim_click",
+        "donate_click",
+        "github_click",
+      ],
+    }).notNull(),
+    path: text("path"),
+    repoId: uuid("repo_id"),
+    userId: uuid("user_id"),
+    visitorId: text("visitor_id").notNull(),
+    referrerHost: text("referrer_host"),
+    // Traffic from signed-in admins, so KPIs can exclude self-visits.
+    isAdmin: boolean("is_admin").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("analytics_events_type_created_idx").on(t.type, t.createdAt),
+    index("analytics_events_repo_type_idx").on(t.repoId, t.type),
+    index("analytics_events_created_idx").on(t.createdAt),
+  ]
+);
