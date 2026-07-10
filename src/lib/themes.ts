@@ -31,3 +31,24 @@ export function getTheme(id: string | null | undefined): Theme {
 export function isThemeId(id: string | null | undefined): boolean {
   return THEMES.some((t) => t.id === id);
 }
+
+/** Blocking <head> script that applies the persisted theme before first paint,
+ * so there's no flash of the default theme on load. Kept dependency-free and
+ * generated from THEMES so it can't drift from the registry. Lives here (not in
+ * the client provider) so the server layout can call it. */
+export function themeInitScript(): string {
+  const ids = THEMES.map((t) => t.id);
+  const modes = Object.fromEntries(THEMES.map((t) => [t.id, t.mode]));
+  return (
+    `(function(){try{` +
+    `var ids=${JSON.stringify(ids)},modes=${JSON.stringify(modes)};` +
+    `var id=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});` +
+    `if(!id||ids.indexOf(id)===-1)id=${JSON.stringify(DEFAULT_THEME_ID)};` +
+    `var r=document.documentElement;` +
+    `ids.forEach(function(t){r.classList.remove('theme-'+t)});` +
+    `r.classList.add('theme-'+id);` +
+    `r.classList.toggle('dark',modes[id]==='dark');` +
+    `r.setAttribute('data-theme',modes[id]);` +
+    `}catch(e){}})();`
+  );
+}
