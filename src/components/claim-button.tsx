@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Star } from "lucide-react";
 import { claimStar } from "@/app/actions/claims";
+import { trackEvent } from "@/lib/track-client";
 import { Button } from "@/components/ui/button";
 
 export function ClaimButton({
