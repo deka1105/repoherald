@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PageTracker } from "@/components/page-tracker";
 import { themeInitScript } from "@/lib/themes";
 import "./globals.css";
 
@@ -67,6 +68,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
+        <PageTracker />
       </body>
     </html>
   );
