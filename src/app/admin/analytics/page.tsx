@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
