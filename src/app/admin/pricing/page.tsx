@@ -223,6 +223,17 @@ export default async function AdminPricingPage({
                 <Input name="amount" type="number" step="0.01" min={0} className="h-9" />
               </div>
               <div className="space-y-1">
+                <Label className="text-xs">Disc %</Label>
+                <Input
+                  name="discountPercent"
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={0}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1">
                 <Label className="text-xs">Order</Label>
                 <Input name="sortOrder" type="number" defaultValue={0} className="h-9" />
               </div>
@@ -230,7 +241,7 @@ export default async function AdminPricingPage({
                 <input type="checkbox" name="active" defaultChecked className="size-4" />
                 Active
               </label>
-              <div className="col-span-2 sm:col-span-7">
+              <div className="col-span-2 sm:col-span-8">
                 <Button type="submit" size="sm" variant="secondary">
                   Add plan
                 </Button>
