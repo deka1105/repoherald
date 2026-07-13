@@ -43,6 +43,7 @@ export async function savePlan(fd: FormData) {
   const durationDays = Number(s(fd, "durationDays"));
   const starsCap = intOrNull(s(fd, "starsCap"));
   const amountCents = dollarsToCents(s(fd, "amount"));
+  const discountPercent = Number(s(fd, "discountPercent") || "0");
   const active = fd.get("active") === "on";
   const sortOrder = Number(s(fd, "sortOrder") || "0");
 
@@ -50,6 +51,8 @@ export async function savePlan(fd: FormData) {
   if (!Number.isInteger(durationDays) || durationDays <= 0)
     fail("Duration must be a positive whole number of days.");
   if (amountCents == null) fail("Enter a valid price.");
+  if (!Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 100)
+    fail("Discount must be a whole percent between 0 and 100.");
 
   if (id) {
     await db
