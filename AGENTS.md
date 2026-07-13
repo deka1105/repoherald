@@ -27,3 +27,10 @@ No test framework yet.
 - **GitHub API:** `src/lib/github.ts` — star verification uses the starring user's own token (`GET /user/starred/{owner}/{repo}`), scopes `read:user user:email` only.
 - **Highlight status** is always derived from `starts_at`/`ends_at` timestamps in queries; the `status` column is reporting-only.
 - **Env vars:** see `.env.example`. `TOKEN_ENCRYPTION_KEY` encrypts GitHub tokens at rest (AES-256-GCM in `src/lib/crypto.ts`).
+
+## Migration gotchas (learned the hard way)
+
+- Never edit an already-applied migration file — drizzle records it in the journal and won't re-run it; add a new migration instead.
+- Never hand-write a future `when` timestamp in `drizzle/meta/_journal.json`: drizzle only applies entries whose `when` is greater than the last applied migration's `created_at`, so a future-dated entry makes every later migration get silently skipped (`drizzle-kit migrate` prints success even when it applies nothing).
+- Code ships to prod on push to main; apply schema migrations to Neon before/with the push, never after.
+- Pricing is DB-driven (`sponsor_plans` via `src/lib/pricing.ts`); never hardcode plan prices in UI — render them with `src/components/plan-price.tsx`.
