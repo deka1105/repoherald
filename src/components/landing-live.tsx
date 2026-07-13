@@ -279,7 +279,8 @@ export function Landing({
             <div className="rh-plan" key={p.key}>
               <div className="rh-plan-top">
                 <span className="rh-plan-duration">
-                  {p.durationDays} days · {p.starsCap} stars
+                  {p.durationDays} days
+                  {p.starsCap != null && <> · {p.starsCap} stars</>}
                 </span>
                 <span className="rh-plan-price">
                   <PlanPrice
