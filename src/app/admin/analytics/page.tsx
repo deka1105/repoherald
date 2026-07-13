@@ -264,6 +264,9 @@ export default async function AdminAnalyticsPage() {
                       <TableCell className="text-right tabular-nums">
                         {pct(p.claim_clicks, p.opens)}
                       </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {p.github_clicks}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
