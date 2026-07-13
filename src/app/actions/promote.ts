@@ -29,13 +29,15 @@ export async function startPromotion(
   const repo = await db.query.repos.findFirst({ where: eq(repos.id, repoId) });
   if (!repo || repo.status !== "active") return { error: "Pick an active listing." };
 
-  // Validate the discount (if any) before touching Stripe.
+  // The plan's own sale discount sets the base price; a discount code (if any)
+  // stacks on top of that reduced price.
+  const baseCents = discountedCents(plan.amountCents, plan.discountPercent);
   let discountCodeId: string | null = null;
   let discountAmountCents = 0;
-  let finalCents = plan.amountCents;
-  let free = false;
+  let finalCents = baseCents;
+  let free = baseCents < 50; // a 100% plan sale is a free comp on its own
   if (rawCode) {
-    const d = await computeDiscount(rawCode, user.id, plan.amountCents);
+    const d = await computeDiscount(rawCode, user.id, baseCents);
     if (!d.ok) return { error: d.error };
     discountCodeId = d.code.id;
     discountAmountCents = d.amountOffCents;
