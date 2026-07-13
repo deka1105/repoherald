@@ -63,7 +63,14 @@ export function PromoteForm({
           <SelectContent>
             {plans.map((p) => (
               <SelectItem key={p.key} value={p.key}>
-                {p.label} — {money(p.amountCents, p.currency)}
+                <span className="flex items-center gap-2">
+                  {p.label} —{" "}
+                  <PlanPrice
+                    amountCents={p.amountCents}
+                    discountPercent={p.discountPercent}
+                    currency={p.currency}
+                  />
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
