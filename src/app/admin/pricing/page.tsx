@@ -102,7 +102,7 @@ export default async function AdminPricingPage({
               <form
                 key={p.id}
                 action={savePlan}
-                className="grid grid-cols-2 items-end gap-3 rounded-md border p-3 sm:grid-cols-7"
+                className="grid grid-cols-2 items-end gap-3 rounded-md border p-3 sm:grid-cols-8"
               >
                 <input type="hidden" name="id" value={p.id} />
                 <div className="space-y-1">
