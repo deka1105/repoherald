@@ -70,6 +70,7 @@ export default function RootLayout({
           <Toaster />
         </ThemeProvider>
         <PageTracker />
+        <GithubClickTracker />
       </body>
     </html>
   );
