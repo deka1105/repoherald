@@ -57,6 +57,13 @@
       "when": 1783673520000,
       "tag": "0007_analytics_events",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784073600000,
+      "tag": "0008_pricing_discounts",
+      "breakpoints": true
     }
   ]
 }
