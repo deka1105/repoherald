@@ -267,11 +267,15 @@ export const sponsorships = pgTable(
     })
       .notNull()
       .default("pending_payment"),
-    createdVia: text("created_via", { enum: ["stripe", "admin"] }).notNull(),
+    // "promo" = comped free via a 100%-off (or below-Stripe-minimum) discount code.
+    createdVia: text("created_via", { enum: ["stripe", "admin", "promo"] }).notNull(),
     stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
     stripePaymentIntentId: text("stripe_payment_intent_id"),
     stripePriceId: text("stripe_price_id"),
     amountCents: integer("amount_cents"),
+    // Discount applied at checkout (in-house engine, see src/lib/pricing.ts).
+    discountCodeId: uuid("discount_code_id"),
+    discountAmountCents: integer("discount_amount_cents"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
