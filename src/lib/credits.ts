@@ -120,18 +120,21 @@ async function applyDelta(
  * atomically. Returns null when the (user, repo) pair already minted.
  */
 export async function mintCredit(userId: string, repoId: string, githubRepoId: number) {
+  // Admin-tunable caps (fall back to the exported defaults). Read outside the
+  // lock — a stale cap by a few seconds is harmless.
+  const caps = await getClaimCaps();
   return db.transaction(async (tx) => {
     await lockUser(tx, userId);
 
     const usage = await getClaimUsage(userId, tx);
-    if (usage.day >= DAILY_MINT_CAP) {
+    if (usage.day >= caps.daily) {
       throw new CreditError(
-        `Daily claim limit reached (${DAILY_MINT_CAP}/day) — try again tomorrow.`
+        `Daily claim limit reached (${caps.daily}/day) — try again tomorrow.`
       );
     }
-    if (usage.week >= WEEKLY_MINT_CAP) {
+    if (usage.week >= caps.weekly) {
       throw new CreditError(
-        `Weekly claim limit reached (${WEEKLY_MINT_CAP}/week) — try again next week.`
+        `Weekly claim limit reached (${caps.weekly}/week) — try again next week.`
       );
     }
 
