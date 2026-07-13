@@ -200,7 +200,7 @@ export default async function AdminPricingPage({
 
             <form
               action={savePlan}
-              className="grid grid-cols-2 items-end gap-3 rounded-md border border-dashed p-3 sm:grid-cols-7"
+              className="grid grid-cols-2 items-end gap-3 rounded-md border border-dashed p-3 sm:grid-cols-8"
             >
               <div className="space-y-1">
                 <Label className="text-xs">Key</Label>
