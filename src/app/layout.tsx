@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageTracker } from "@/components/page-tracker";
+import { GithubClickTracker } from "@/components/github-click-tracker";
 import { themeInitScript } from "@/lib/themes";
 import "./globals.css";
 
