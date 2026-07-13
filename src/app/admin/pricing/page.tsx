@@ -14,6 +14,7 @@ import {
   updateClaimCaps,
 } from "@/app/actions/admin-pricing";
 import { Header } from "@/components/header";
+import { PlanPrice } from "@/components/plan-price";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

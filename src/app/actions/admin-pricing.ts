@@ -89,6 +89,7 @@ export async function savePlan(fd: FormData) {
         durationDays,
         starsCap,
         amountCents,
+        discountPercent,
         active,
         sortOrder: Number.isInteger(sortOrder) ? sortOrder : 0,
       })
