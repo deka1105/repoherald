@@ -10,8 +10,11 @@ import {
 } from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/log";
+import { getClaimCaps } from "@/lib/pricing";
 import type { Tx } from "@/db";
 
+// Defaults; live values come from app_settings via getClaimCaps() (admin-tunable
+// in /admin/pricing). These remain the fallback and the label on static pages.
 export const DAILY_MINT_CAP = 6;
 export const WEEKLY_MINT_CAP = 20;
 export const CLAIMS_PER_MINUTE = 5;
