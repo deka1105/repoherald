@@ -1,0 +1,104 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { startPromotion, type PromoteState } from "@/app/actions/promote";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+type PlanOption = {
+  key: string;
+  label: string;
+  amountCents: number;
+  currency: string;
+};
+
+function money(cents: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(cents / 100);
+}
+
+export function PromoteForm({
+  repos,
+  plans,
+}: {
+  repos: { id: string; fullName: string }[];
+  plans: PlanOption[];
+}) {
+  const [state, action, pending] = useActionState<PromoteState, FormData>(
+    startPromotion,
+    {}
+  );
+  const [planKey, setPlanKey] = useState(plans[0]?.key ?? "");
+  const selected = plans.find((p) => p.key === planKey) ?? plans[0];
+
+  return (
+    <form action={action} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Repo</Label>
+        <Select name="repoId" defaultValue={repos[0]?.id}>
+          <SelectTrigger>
+            <SelectValue placeholder="Pick a repo" />
+          </SelectTrigger>
+          <SelectContent>
+            {repos.map((r) => (
+              <SelectItem key={r.id} value={r.id}>
+                {r.fullName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Plan (ends at the day limit or star gain, whichever first)</Label>
+        <Select name="plan" value={planKey} onValueChange={setPlanKey}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {plans.map((p) => (
+              <SelectItem key={p.key} value={p.key}>
+                {p.label} — {money(p.amountCents, p.currency)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="discountCode">Discount code (optional)</Label>
+        <Input
+          id="discountCode"
+          name="discountCode"
+          placeholder="e.g. LAUNCH20"
+          autoCapitalize="characters"
+          autoComplete="off"
+          className="uppercase"
+        />
+        <p className="text-xs text-muted-foreground">
+          Any discount is applied on the Stripe payment page before you pay.
+        </p>
+      </div>
+
+      {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+
+      <Button type="submit" disabled={pending}>
+        {pending
+          ? "Redirecting…"
+          : selected
+            ? `Continue — ${money(selected.amountCents, selected.currency)}`
+            : "Continue to payment"}
+      </Button>
+    </form>
+  );
+}
