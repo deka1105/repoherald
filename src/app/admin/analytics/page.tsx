@@ -32,6 +32,7 @@ type PostRow = {
   uniques: number;
   claim_clicks: number;
   donate_clicks: number;
+  github_clicks: number;
 };
 type PageRow = { path: string; views: number; visitors: number };
 type SourceRow = { referrer_host: string; visitors: number };
