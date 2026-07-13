@@ -10,6 +10,7 @@ import { getStripe } from "@/lib/stripe";
 import { writeAudit } from "@/lib/audit";
 import { notifySponsorshipActivated } from "@/lib/notify";
 import { computeDiscount, getPlanByKey, recordRedemption } from "@/lib/pricing";
+import { discountedCents } from "@/components/plan-price";
 
 export type PromoteState = { error?: string };
 
