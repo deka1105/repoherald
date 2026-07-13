@@ -64,6 +64,13 @@
       "when": 1784073600000,
       "tag": "0008_pricing_discounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783972557784,
+      "tag": "0009_reconcile_pricing",
+      "breakpoints": true
     }
   ]
 }
