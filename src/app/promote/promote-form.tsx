@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { startPromotion, type PromoteState } from "@/app/actions/promote";
+import { PlanPrice } from "@/components/plan-price";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,15 +18,9 @@ type PlanOption = {
   key: string;
   label: string;
   amountCents: number;
+  discountPercent: number;
   currency: string;
 };
-
-function money(cents: number, currency: string) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(cents / 100);
-}
 
 export function PromoteForm({
   repos,
