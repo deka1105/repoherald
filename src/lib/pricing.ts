@@ -89,6 +89,53 @@ export async function setClaimCap(key: "daily_mint_cap" | "weekly_mint_cap", val
   invalidateCapsCache();
 }
 
+export type AvailableDiscount = {
+  code: string;
+  description: string;
+  minCents: number | null;
+  expiresAt: string | null;
+  note: string | null;
+  userScoped: boolean;
+};
+
+/**
+ * Discount codes a given user can currently use: active, unexpired, with
+ * redemptions remaining, and either global or scoped to them. Powers the
+ * post-login "you have a discount" prompt. Newest first, capped at 6.
+ */
+export async function getAvailableDiscounts(
+  userId: string
+): Promise<AvailableDiscount[]> {
+  const rows = await db
+    .select()
+    .from(discountCodes)
+    .where(
+      and(
+        eq(discountCodes.active, true),
+        or(isNull(discountCodes.userId), eq(discountCodes.userId, userId)),
+        or(isNull(discountCodes.expiresAt), gt(discountCodes.expiresAt, new Date())),
+        or(
+          isNull(discountCodes.maxRedemptions),
+          sql`${discountCodes.timesRedeemed} < ${discountCodes.maxRedemptions}`
+        )
+      )
+    )
+    .orderBy(desc(discountCodes.createdAt))
+    .limit(6);
+
+  return rows.map((r) => ({
+    code: r.code,
+    description:
+      r.kind === "percent"
+        ? `${r.value}% off`
+        : `${formatCents(r.value)} off`,
+    minCents: r.minAmountCents,
+    expiresAt: r.expiresAt ? r.expiresAt.toISOString() : null,
+    note: r.note,
+    userScoped: r.userId != null,
+  }));
+}
+
 export type DiscountResult =
   | { ok: true; code: DiscountCode; amountOffCents: number; finalCents: number; free: boolean }
   | { ok: false; error: string };
