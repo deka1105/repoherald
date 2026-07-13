@@ -38,7 +38,7 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
         <div className="rh-navlinks">
           <Link href="/">Explore</Link>
           <Link href="/post">Post a repo</Link>
-          <Link href="/sponsor">Sponsor</Link>
+          <Link href="/promote">Sponsor</Link>
           {/* Admins manage tickets at /admin/support; filing one is pointless for them. */}
           {!user?.isAdmin && <Link href="/support">Support</Link>}
           {user && <Link href="/wallet">Wallet</Link>}
