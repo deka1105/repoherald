@@ -143,22 +143,30 @@ export async function computeDiscount(
 }
 
 /**
- * Atomically bump a code's redemption counter, refusing to exceed maxRedemptions.
- * Returns true if the increment succeeded (a redemption slot was reserved).
+ * Record a redemption for a sponsorship and bump the code's counter — idempotent
+ * via the unique index on discount_redemptions.sponsorship_id, so Stripe webhook
+ * retries never double-count. Safe to call from both the free and paid paths.
  */
-export async function tryReserveRedemption(codeId: string): Promise<boolean> {
-  const res = await db
-    .update(discountCodes)
-    .set({ timesRedeemed: sql`${discountCodes.timesRedeemed} + 1` })
-    .where(
-      and(
-        eq(discountCodes.id, codeId),
-        or(
-          isNull(discountCodes.maxRedemptions),
-          sql`${discountCodes.timesRedeemed} < ${discountCodes.maxRedemptions}`
-        )
-      )
-    )
-    .returning({ id: discountCodes.id });
-  return res.length > 0;
+export async function recordRedemption(input: {
+  codeId: string;
+  userId: string;
+  sponsorshipId: string;
+  amountOffCents: number;
+}) {
+  const [inserted] = await db
+    .insert(discountRedemptions)
+    .values({
+      discountCodeId: input.codeId,
+      userId: input.userId,
+      sponsorshipId: input.sponsorshipId,
+      amountOffCents: input.amountOffCents,
+    })
+    .onConflictDoNothing()
+    .returning({ id: discountRedemptions.id });
+  if (inserted) {
+    await db
+      .update(discountCodes)
+      .set({ timesRedeemed: sql`${discountCodes.timesRedeemed} + 1` })
+      .where(eq(discountCodes.id, input.codeId));
+  }
 }
