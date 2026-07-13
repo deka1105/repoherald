@@ -78,7 +78,8 @@ export default async function AdminAnalyticsPage() {
         count(*) FILTER (WHERE e.type='repo_view')::int AS opens,
         count(DISTINCT e.visitor_id) FILTER (WHERE e.type='repo_view')::int AS uniques,
         count(*) FILTER (WHERE e.type='claim_click')::int AS claim_clicks,
-        count(*) FILTER (WHERE e.type='donate_click')::int AS donate_clicks
+        count(*) FILTER (WHERE e.type='donate_click')::int AS donate_clicks,
+        count(*) FILTER (WHERE e.type='github_click')::int AS github_clicks
       FROM analytics_events e
       JOIN repos r ON r.id = e.repo_id
       WHERE e.is_admin = false AND e.repo_id IS NOT NULL
