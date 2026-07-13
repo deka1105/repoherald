@@ -17,7 +17,12 @@ export function ModeToggle() {
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       onClick={() => setThemeId(isDark ? "light" : "dark")}
     >
-      {isDark ? <Sun size={15} aria-hidden /> : <Moon size={15} aria-hidden />}
+      {/* .rh-themebtn (root-owned landing.css) centers a text glyph via
+          line-height, which leaves an SVG sitting on the baseline; the flex
+          wrapper centers it without overriding the button's display rules. */}
+      <span className="flex h-full w-full items-center justify-center">
+        {isDark ? <Sun size={15} aria-hidden /> : <Moon size={15} aria-hidden />}
+      </span>
     </button>
   );
 }
