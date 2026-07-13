@@ -40,10 +40,10 @@ const TABS: Tab[] = [
     requiresUser: true,
   },
   {
-    href: "/sponsor",
+    href: "/promote",
     label: "Sponsor",
     Icon: Megaphone,
-    isActive: (p) => p.startsWith("/sponsor"),
+    isActive: (p) => p.startsWith("/promote") || p.startsWith("/sponsor"),
   },
   {
     href: "/support",
