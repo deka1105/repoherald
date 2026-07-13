@@ -145,6 +145,17 @@ export default async function AdminPricingPage({
                   />
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">Disc %</Label>
+                  <Input
+                    name="discountPercent"
+                    type="number"
+                    min={0}
+                    max={100}
+                    defaultValue={p.discountPercent}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs">Order</Label>
                   <Input
                     name="sortOrder"
@@ -162,7 +173,7 @@ export default async function AdminPricingPage({
                   />
                   Active
                 </label>
-                <div className="col-span-2 flex gap-2 sm:col-span-7">
+                <div className="col-span-2 flex flex-wrap items-center gap-3 sm:col-span-8">
                   <Button type="submit" size="sm">
                     Save
                   </Button>
@@ -175,6 +186,14 @@ export default async function AdminPricingPage({
                   >
                     Delete
                   </Button>
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">Sells at </span>
+                    <PlanPrice
+                      amountCents={p.amountCents}
+                      discountPercent={p.discountPercent}
+                      currency={p.currency}
+                    />
+                  </span>
                 </div>
               </form>
             ))}
