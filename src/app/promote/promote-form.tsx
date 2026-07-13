@@ -92,14 +92,26 @@ export function PromoteForm({
         </p>
       </div>
 
+      {selected && (
+        <p className="text-sm">
+          <span className="text-muted-foreground">You&apos;ll pay: </span>
+          <PlanPrice
+            amountCents={selected.amountCents}
+            discountPercent={selected.discountPercent}
+            currency={selected.currency}
+          />
+          {selected.discountPercent > 0 && (
+            <span className="ml-1 text-xs text-green-600 dark:text-green-400">
+              ({selected.discountPercent}% off)
+            </span>
+          )}
+        </p>
+      )}
+
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
       <Button type="submit" disabled={pending}>
-        {pending
-          ? "Redirecting…"
-          : selected
-            ? `Continue — ${money(selected.amountCents, selected.currency)}`
-            : "Continue to payment"}
+        {pending ? "Redirecting…" : "Continue to payment"}
       </Button>
     </form>
   );
