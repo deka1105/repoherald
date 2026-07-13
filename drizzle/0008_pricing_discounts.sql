@@ -5,6 +5,7 @@ CREATE TABLE "sponsor_plans" (
 	"duration_days" integer NOT NULL,
 	"stars_cap" integer,
 	"amount_cents" integer NOT NULL,
+	"discount_percent" integer DEFAULT 0 NOT NULL,
 	"currency" text DEFAULT 'usd' NOT NULL,
 	"active" boolean DEFAULT true NOT NULL,
 	"sort_order" integer DEFAULT 0 NOT NULL,
