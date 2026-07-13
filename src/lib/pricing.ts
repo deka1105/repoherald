@@ -1,7 +1,12 @@
 import "server-only";
 import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { appSettings, discountCodes, sponsorPlans } from "@/db/schema";
+import {
+  appSettings,
+  discountCodes,
+  discountRedemptions,
+  sponsorPlans,
+} from "@/db/schema";
 
 export type SponsorPlan = typeof sponsorPlans.$inferSelect;
 export type DiscountCode = typeof discountCodes.$inferSelect;
