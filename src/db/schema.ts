@@ -394,6 +394,10 @@ export const sponsorPlans = pgTable(
     // Sponsorship also ends when the repo gains this many stars. Null = time-only.
     starsCap: integer("stars_cap"),
     amountCents: integer("amount_cents").notNull(),
+    // Plan-level sale discount (0–100%). When > 0, the buyer pays the reduced
+    // price and the UI shows the original struck through. Applied before any
+    // discount code, which stacks on top of the reduced price.
+    discountPercent: integer("discount_percent").notNull().default(0),
     currency: text("currency").notNull().default("usd"),
     active: boolean("active").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
