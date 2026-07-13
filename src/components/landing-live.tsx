@@ -42,7 +42,7 @@ export type LandingCard = {
 export type LandingPlan = {
   key: string;
   durationDays: number;
-  starsCap: number;
+  starsCap: number | null;
   amountCents: number;
   discountPercent: number;
   currency: string;
