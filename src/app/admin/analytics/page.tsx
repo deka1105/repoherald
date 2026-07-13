@@ -248,6 +248,7 @@ export default async function AdminAnalyticsPage() {
                     <TableHead className="text-right">Opens</TableHead>
                     <TableHead className="text-right">Uniques</TableHead>
                     <TableHead className="text-right">Claim CTR</TableHead>
+                    <TableHead className="text-right">GH clicks</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
