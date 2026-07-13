@@ -380,3 +380,84 @@ export const analyticsEvents = pgTable(
     index("analytics_events_created_idx").on(t.createdAt),
   ]
 );
+
+// Admin-editable sponsorship plans. Replaces the old hardcoded SPONSOR_PRICES +
+// STRIPE_PRICE_* env ids: Checkout now uses dynamic price_data from amountCents,
+// so admins can change prices/caps without touching Stripe or redeploying.
+export const sponsorPlans = pgTable(
+  "sponsor_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull().unique(),
+    label: text("label").notNull(),
+    durationDays: integer("duration_days").notNull(),
+    // Sponsorship also ends when the repo gains this many stars. Null = time-only.
+    starsCap: integer("stars_cap"),
+    amountCents: integer("amount_cents").notNull(),
+    currency: text("currency").notNull().default("usd"),
+    active: boolean("active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("sponsor_plans_active_sort_idx").on(t.active, t.sortOrder)]
+);
+
+// Simple key→integer store for site-wide tunables (e.g. daily/weekly claim caps).
+// Source of truth for star-claim limits; src/lib/credits.ts falls back to the
+// exported defaults when a key is absent.
+export const appSettings = pgTable("app_settings", {
+  key: text("key").primaryKey(),
+  value: integer("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// In-house discount codes for sponsorship checkout. userId NULL = global code;
+// otherwise the code only works for that one user. Redemptions are recorded in
+// discount_redemptions on successful payment (or free comp).
+export const discountCodes = pgTable(
+  "discount_codes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    code: text("code").notNull().unique(), // stored normalized (upper, trimmed)
+    kind: text("kind", { enum: ["percent", "fixed"] }).notNull(),
+    // percent: 1–100; fixed: amount off in cents.
+    value: integer("value").notNull(),
+    // Null = global; otherwise restricted to this user.
+    userId: uuid("user_id").references(() => users.id),
+    // Null = unlimited redemptions.
+    maxRedemptions: integer("max_redemptions"),
+    timesRedeemed: integer("times_redeemed").notNull().default(0),
+    // Only applies when the pre-discount total is at least this many cents.
+    minAmountCents: integer("min_amount_cents"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    active: boolean("active").notNull().default(true),
+    note: text("note"),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("discount_codes_active_idx").on(t.active)]
+);
+
+export const discountRedemptions = pgTable(
+  "discount_redemptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    discountCodeId: uuid("discount_code_id")
+      .notNull()
+      .references(() => discountCodes.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    sponsorshipId: uuid("sponsorship_id").references(() => sponsorships.id),
+    amountOffCents: integer("amount_off_cents").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("discount_redemptions_code_idx").on(t.discountCodeId),
+    // One redemption row per sponsorship, so webhook retries don't double-count.
+    uniqueIndex("discount_redemptions_sponsorship_uq")
+      .on(t.sponsorshipId)
+      .where(sql`sponsorship_id IS NOT NULL`),
+  ]
+);
