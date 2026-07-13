@@ -67,6 +67,7 @@ export default async function PromotePage({
                   key: p.key,
                   label: p.label,
                   amountCents: p.amountCents,
+                  discountPercent: p.discountPercent,
                   currency: p.currency,
                 }))}
               />
