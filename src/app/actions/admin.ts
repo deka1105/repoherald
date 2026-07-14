@@ -162,7 +162,7 @@ export async function setUserRole(
 }
 
 export async function createCategory(formData: FormData) {
-  const admin = await requireAdmin();
+  const actor = await requireModerator();
   const kind = String(formData.get("kind") ?? "");
   const label = String(formData.get("label") ?? "").trim();
   if (!label || (kind !== "use_case" && kind !== "sector")) {
