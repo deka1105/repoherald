@@ -84,8 +84,30 @@ export async function getFeed(opts: {
   const asOf = cursor
     ? new Date(cursor.asOf)
     : new Date(Math.floor(Date.now() / AS_OF_BUCKET_MS) * AS_OF_BUCKET_MS);
-  const asOfIso = asOf.toISOString();
-  const f = opts.filters ?? {};
+  return fetchFeedCached(asOf.toISOString(), opts.cursor ?? null, opts.filters ?? {});
+}
+
+// Results are already deterministic within an as_of bucket (scoring inputs and
+// the seeded sponsor rotation are all keyed on it), so serving a cached page is
+// indistinguishable from re-running the query — this just stops every page view
+// from hitting the DB. Cached via unstable_cache rather than "use cache":
+// Cache Components isn't enabled, and turning it on is an app-wide change.
+const fetchFeedCached = unstable_cache(fetchFeed, ["feed"], {
+  revalidate: AS_OF_BUCKET_MS / 1000,
+  tags: ["feed"],
+});
+
+async function fetchFeed(
+  asOfIso: string,
+  rawCursor: string | null,
+  f: FeedFilters
+): Promise<{
+  items: FeedRepo[];
+  pinned: FeedRepo[];
+  nextCursor: string | null;
+  asOf: string;
+}> {
+  const cursor = decodeCursor(rawCursor ?? undefined);
 
   const filterConds = [sql`r.status = 'active'`];
   if (f.language) {
