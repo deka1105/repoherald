@@ -15,6 +15,16 @@ export async function requireUser() {
 
 export async function requireAdmin() {
   const user = await requireUser();
-  if (!user.isAdmin) throw new Error("Not authorized");
+  if (user.role !== "admin") throw new Error("Not authorized");
+  return user;
+}
+
+/** Moderator-or-above: content/community tools. Money, credits, roles, and
+ * pricing must keep using requireAdmin. */
+export async function requireModerator() {
+  const user = await requireUser();
+  if (user.role !== "admin" && user.role !== "moderator") {
+    throw new Error("Not authorized");
+  }
   return user;
 }
