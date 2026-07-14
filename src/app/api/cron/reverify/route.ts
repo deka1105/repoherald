@@ -147,7 +147,10 @@ async function reverifyStars(): Promise<{ checked: number; revoked: number }> {
           .where(eq(users.id, userId));
         continue;
       }
-      if (e instanceof GithubRateLimitError) break;
+      // Rate limits are per user token: skip this user's remaining mints
+      // (lastVerifiedAt is untouched, so the next run picks them up) and
+      // keep verifying everyone else.
+      if (e instanceof GithubRateLimitError) continue;
       throw e;
     }
   }
