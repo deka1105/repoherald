@@ -95,6 +95,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role =
           (token.role as UserRole | undefined) ??
           (token.isAdmin ? "admin" : "user");
+        // Deprecated: only for the root-owned (app) route files that can't be
+        // edited yet (see AGENTS.md /sponsor precedent). Use role instead.
+        session.user.isAdmin = session.user.role === "admin";
         session.user.githubLogin = token.githubLogin as string;
       }
       return session;
