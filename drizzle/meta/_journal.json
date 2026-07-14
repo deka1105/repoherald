@@ -71,6 +71,13 @@
       "when": 1784073700000,
       "tag": "0009_reconcile_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784047937046,
+      "tag": "0010_aspiring_war_machine",
+      "breakpoints": true
     }
   ]
 }
