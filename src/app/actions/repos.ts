@@ -105,7 +105,7 @@ export async function postRepo(
   // Only owners (or org members) may list a repo — prevents listing other
   // people's projects and the takedown disputes that follow. Admins are exempt.
   const ownsIt =
-    user.isAdmin ||
+    user.role === "admin" ||
     ghRepo.owner.login.toLowerCase() === user.githubLogin.toLowerCase() ||
     (ghRepo.owner.type === "Organization" &&
       (await isOrgMember(token, ghRepo.owner.login)));
