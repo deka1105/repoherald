@@ -79,7 +79,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.userId = row.id;
         token.isAdmin = row.isAdmin;
         token.githubLogin = p.login;
-        if (row.isNew) {
+        if (row.isNew && values.mintEligible) {
           await grantWelcomeCredit(row.id);
         }
       }
