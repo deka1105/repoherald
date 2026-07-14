@@ -72,11 +72,12 @@ const TABS: Tab[] = [
 // links are hidden. Hidden at md+ where the top nav takes over.
 export function MobileNav({ user }: { user: NavUser | null }) {
   const pathname = usePathname();
+  const isStaff = user?.role === "admin" || user?.role === "moderator";
   const tabs = TABS.filter(
     (t) =>
       (!t.requiresUser || user) &&
-      (!t.adminOnly || user?.isAdmin) &&
-      (!t.hideForAdmin || !user?.isAdmin)
+      (!t.adminOnly || isStaff) &&
+      (!t.hideForAdmin || !isStaff)
   );
 
   return (

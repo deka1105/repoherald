@@ -42,13 +42,13 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
           <Link href="/">Explore</Link>
           <Link href="/post">Post a repo</Link>
           <Link href="/promote">Sponsor</Link>
-          {/* Admins manage tickets at /admin/support; filing one is pointless for them. */}
-          {!user?.isAdmin && <Link href="/support">Support</Link>}
+          {/* Staff manage tickets at /admin/support; filing one is pointless for them. */}
+          {!isStaff && <Link href="/support">Support</Link>}
           {user && <Link href="/wallet">Wallet</Link>}
           {user && <Link href="/account">Account</Link>}
-          {user?.isAdmin && <Link href="/admin">Admin</Link>}
-          {user?.isAdmin && <Link href="/admin/analytics">Analytics</Link>}
-          {user?.isAdmin && <Link href="/admin/pricing">Pricing</Link>}
+          {isStaff && <Link href="/admin">Admin</Link>}
+          {isAdmin && <Link href="/admin/analytics">Analytics</Link>}
+          {isAdmin && <Link href="/admin/pricing">Pricing</Link>}
         </div>
         <ModeToggle />
         {user ? (
