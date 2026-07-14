@@ -24,7 +24,7 @@ export const metadata = { title: "Alert email preview · repoherald" };
 
 export default async function EmailPreviewPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) notFound();
+  if (session?.user?.role !== "admin") notFound();
 
   return (
     <main

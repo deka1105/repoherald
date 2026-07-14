@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminAuditPage() {
+  // Exposes credit/payment metadata — admin-only even though the layout
+  // admits moderators.
+  const session = await auth();
+  if (session?.user?.role !== "admin") notFound();
   const rows = await db
     .select({ entry: auditLog, actorLogin: users.githubLogin })
     .from(auditLog)
