@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
+import { auth } from "@/auth";
 import { db } from "@/db";
 import { reports, repos, users } from "@/db/schema";
 import { resolveReport, setRepoStatus } from "@/app/actions/admin";
