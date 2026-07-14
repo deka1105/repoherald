@@ -16,6 +16,8 @@ import {
 
 const URL_RE = /^(?:https?:\/\/)?github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i;
 
+const REPO_POSTS_PER_DAY = 5;
+
 function slugify(label: string): string {
   return label
     .toLowerCase()
