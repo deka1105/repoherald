@@ -200,64 +200,60 @@ async function flipHighlightStatuses() {
 /**
  * Expire credits from mints older than 12 months, FIFO: spends are treated
  * as consuming the oldest mints first, so only the unconsumed surplus of
- * old mints expires. Never pushes a balance below zero.
+ * old mints expires. Never pushes a balance below zero. One set-based
+ * statement (ledger entry, balance debit, and audit row per user) — a
+ * per-user transaction loop would outgrow the cron's 300s window.
  */
 async function expireCredits() {
-  const rows = await db.execute(sql`
-    SELECT
-      u.id AS user_id,
-      u.credit_balance,
-      (SELECT count(*) FROM credit_entries e
-        WHERE e.user_id = u.id AND e.type = 'mint'
-          AND e.created_at < now() - interval '${sql.raw(String(CREDIT_TTL_MONTHS))} months'
-          AND NOT EXISTS (
-            SELECT 1 FROM credit_entries cb
-            WHERE cb.star_mint_id = e.star_mint_id
-              AND cb.type = 'revocation_clawback'
-          )
-      )::int AS old_mints,
-      (SELECT coalesce(sum(-e.delta), 0) FROM credit_entries e
-        WHERE e.user_id = u.id
-          AND e.type IN ('spend_self_highlight', 'spend_donation', 'credit_expiry')
-      )::int
-      - (SELECT count(*) FROM credit_entries e
-        WHERE e.user_id = u.id AND e.type = 'highlight_cancellation_refund'
-      )::int AS consumed
-    FROM users u
-    WHERE u.credit_balance > 0
+  await db.execute(sql`
+    WITH usage AS (
+      SELECT
+        u.id AS user_id,
+        u.credit_balance,
+        (SELECT count(*) FROM credit_entries e
+          WHERE e.user_id = u.id AND e.type = 'mint'
+            AND e.created_at < now() - interval '${sql.raw(String(CREDIT_TTL_MONTHS))} months'
+            AND NOT EXISTS (
+              SELECT 1 FROM credit_entries cb
+              WHERE cb.star_mint_id = e.star_mint_id
+                AND cb.type = 'revocation_clawback'
+            )
+        )::int AS old_mints,
+        (SELECT coalesce(sum(-e.delta), 0) FROM credit_entries e
+          WHERE e.user_id = u.id
+            AND e.type IN ('spend_self_highlight', 'spend_donation', 'credit_expiry')
+        )::int
+        - (SELECT count(*) FROM credit_entries e
+          WHERE e.user_id = u.id AND e.type = 'highlight_cancellation_refund'
+        )::int AS consumed
+      FROM users u
+      WHERE u.credit_balance > 0
+    ),
+    candidates AS (
+      SELECT user_id,
+        least(credit_balance, greatest(0, old_mints - consumed)) AS expirable
+      FROM usage
+      WHERE least(credit_balance, greatest(0, old_mints - consumed)) > 0
+    ),
+    expired AS (
+      INSERT INTO credit_entries (user_id, delta, type, memo)
+      SELECT user_id, -expirable, 'credit_expiry',
+        expirable || ' credit(s) older than ${sql.raw(String(CREDIT_TTL_MONTHS))} months'
+      FROM candidates
+      RETURNING user_id, -delta AS expired
+    ),
+    debited AS (
+      UPDATE users u
+      SET credit_balance = u.credit_balance - e.expired
+      FROM expired e
+      WHERE u.id = e.user_id
+      RETURNING u.id AS user_id, e.expired
+    )
+    INSERT INTO audit_log (actor_type, action, entity_type, entity_id, metadata)
+    SELECT 'system', 'credit.expire', 'user', user_id::text,
+      jsonb_build_object('expired', expired)
+    FROM debited
   `);
-
-  for (const r of rows.rows as unknown as {
-    user_id: string;
-    credit_balance: number;
-    old_mints: number;
-    consumed: number;
-  }[]) {
-    const expirable = Math.min(
-      r.credit_balance,
-      Math.max(0, r.old_mints - r.consumed)
-    );
-    if (expirable <= 0) continue;
-    await db.transaction(async (tx) => {
-      await tx.insert(creditEntries).values({
-        userId: r.user_id,
-        delta: -expirable,
-        type: "credit_expiry",
-        memo: `${expirable} credit(s) older than ${CREDIT_TTL_MONTHS} months`,
-      });
-      await tx
-        .update(users)
-        .set({ creditBalance: sql`${users.creditBalance} - ${expirable}` })
-        .where(eq(users.id, r.user_id));
-      await writeAudit(tx, {
-        actorType: "system",
-        action: "credit.expire",
-        entityType: "user",
-        entityId: r.user_id,
-        metadata: { expired: expirable },
-      });
-    });
-  }
 }
 
 /**
