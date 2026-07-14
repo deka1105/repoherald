@@ -177,8 +177,8 @@ export async function createCategory(formData: FormData) {
     .values({ kind: kind as "use_case" | "sector", slug, label })
     .onConflictDoNothing();
   await writeAudit(db, {
-    actorUserId: admin.id,
-    actorType: "admin",
+    actorUserId: actor.id,
+    actorType: actorTypeOf(actor),
     action: "category.create",
     entityType: "category",
     entityId: slug,
@@ -188,11 +188,11 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function toggleCategory(categoryId: string, isActive: boolean) {
-  const admin = await requireAdmin();
+  const actor = await requireModerator();
   await db.update(categories).set({ isActive }).where(eq(categories.id, categoryId));
   await writeAudit(db, {
-    actorUserId: admin.id,
-    actorType: "admin",
+    actorUserId: actor.id,
+    actorType: actorTypeOf(actor),
     action: isActive ? "category.activate" : "category.deactivate",
     entityType: "category",
     entityId: categoryId,
