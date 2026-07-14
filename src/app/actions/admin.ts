@@ -137,16 +137,23 @@ export async function setEligibilityOverride(
   return ok();
 }
 
-export async function toggleAdmin(userId: string, makeAdmin: boolean) {
+export async function setUserRole(
+  userId: string,
+  role: "user" | "moderator" | "admin"
+) {
   const admin = await requireAdmin();
-  if (admin.id === userId && !makeAdmin) {
+  if (admin.id === userId && role !== "admin") {
     return { error: "You can't remove your own admin access." };
   }
-  await db.update(users).set({ isAdmin: makeAdmin }).where(eq(users.id, userId));
+  // is_admin kept in sync while the deprecated column still exists.
+  await db
+    .update(users)
+    .set({ role, isAdmin: role === "admin" })
+    .where(eq(users.id, userId));
   await writeAudit(db, {
     actorUserId: admin.id,
     actorType: "admin",
-    action: makeAdmin ? "user.grant_admin" : "user.revoke_admin",
+    action: `user.set_role_${role}`,
     entityType: "user",
     entityId: userId,
   });
