@@ -161,6 +161,11 @@ export async function setUserRole(
   return ok();
 }
 
+/** @deprecated use setUserRole — kept for the root-owned users page. */
+export async function toggleAdmin(userId: string, makeAdmin: boolean) {
+  return setUserRole(userId, makeAdmin ? "admin" : "user");
+}
+
 export async function createCategory(formData: FormData) {
   const actor = await requireModerator();
   const kind = String(formData.get("kind") ?? "");

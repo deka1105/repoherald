@@ -112,6 +112,8 @@ declare module "next-auth" {
     user: {
       id: string;
       role: UserRole;
+      /** @deprecated use role — kept for root-owned (app) route files. */
+      isAdmin: boolean;
       githubLogin: string;
       name?: string | null;
       email?: string | null;

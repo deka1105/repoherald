@@ -9,7 +9,7 @@ import "@/components/landing/landing.css";
 export type NavUser = {
   githubLogin: string;
   image: string | null;
-  isAdmin: boolean;
+  role: "user" | "moderator" | "admin";
 };
 
 function GitHubIcon() {
