@@ -72,6 +72,24 @@ export async function postRepo(
     return { error: "Your GitHub session is stale — please sign in again." };
   }
 
+  // Listing spam guard: same UTC-day window as the claim caps. Admins exempt.
+  if (!user.isAdmin) {
+    const [{ postedToday }] = await db
+      .select({ postedToday: sql<number>`count(*)::int` })
+      .from(repos)
+      .where(
+        and(
+          eq(repos.postedByUserId, user.id),
+          gte(repos.createdAt, sql`date_trunc('day', now())`)
+        )
+      );
+    if (postedToday >= REPO_POSTS_PER_DAY) {
+      return {
+        error: `Daily posting limit reached (${REPO_POSTS_PER_DAY}/day) — try again tomorrow.`,
+      };
+    }
+  }
+
   const url = String(formData.get("url") ?? "").trim();
   const match = URL_RE.exec(url);
   if (!match) return { error: "Enter a GitHub repo URL like github.com/owner/name." };
