@@ -306,7 +306,7 @@ export const auditLog = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     actorUserId: uuid("actor_user_id").references(() => users.id),
     actorType: text("actor_type", {
-      enum: ["user", "admin", "system", "stripe"],
+      enum: ["user", "moderator", "admin", "system", "stripe"],
     }).notNull(),
     action: text("action").notNull(),
     entityType: text("entity_type"),
