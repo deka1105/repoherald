@@ -50,7 +50,7 @@ function pct(part: number, whole: number): string {
 
 export default async function AdminAnalyticsPage() {
   const session = await auth();
-  if (!session?.user?.isAdmin) notFound();
+  if (session?.user?.role !== "admin") notFound();
 
   const [totalsR, trendR, postsR, pagesR, sourcesR, funnelR] = await Promise.all([
     db.execute(sql`
