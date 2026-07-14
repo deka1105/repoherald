@@ -39,7 +39,7 @@ export default async function AdminPricingPage({
   searchParams: Promise<{ msg?: string; err?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.isAdmin) notFound();
+  if (session?.user?.role !== "admin") notFound();
   const { msg, err } = await searchParams;
 
   const [plans, caps, codes] = await Promise.all([

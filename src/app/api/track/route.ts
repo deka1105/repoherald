@@ -59,7 +59,9 @@ export async function POST(req: NextRequest) {
       userId: session?.user?.id ?? null,
       visitorId: visitorHash(ip, ua as string),
       referrerHost: refHost,
-      isAdmin: Boolean(session?.user?.isAdmin),
+      // Staff self-visits (admin or moderator) are excluded from KPIs.
+      isAdmin:
+        session?.user?.role === "admin" || session?.user?.role === "moderator",
     });
   } catch {
     // swallow — never surface analytics failures to the client
