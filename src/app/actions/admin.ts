@@ -61,14 +61,14 @@ export async function setRepoStatus(
 }
 
 export async function resolveReport(reportId: string) {
-  const admin = await requireAdmin();
+  const actor = await requireModerator();
   await db
     .update(reports)
     .set({ status: "resolved" })
     .where(eq(reports.id, reportId));
   await writeAudit(db, {
-    actorUserId: admin.id,
-    actorType: "admin",
+    actorUserId: actor.id,
+    actorType: actorTypeOf(actor),
     action: "report.resolve",
     entityType: "report",
     entityId: reportId,
