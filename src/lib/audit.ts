@@ -3,7 +3,7 @@ import type { Db, Tx } from "@/db";
 
 type AuditInput = {
   actorUserId?: string | null;
-  actorType: "user" | "admin" | "system" | "stripe";
+  actorType: "user" | "moderator" | "admin" | "system" | "stripe";
   action: string;
   entityType?: string;
   entityId?: string;
