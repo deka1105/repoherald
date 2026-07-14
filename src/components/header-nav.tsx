@@ -22,6 +22,9 @@ function GitHubIcon() {
 
 export function HeaderNav({ user }: { user: NavUser | null }) {
   const { theme } = useTheme();
+  // Staff = moderator or admin; both work the queues behind /admin.
+  const isStaff = user?.role === "admin" || user?.role === "moderator";
+  const isAdmin = user?.role === "admin";
   // The chrome (rh-* tokens) only renders light/dark; each design theme maps
   // to one of those via its mode.
   const mode = theme.mode;
