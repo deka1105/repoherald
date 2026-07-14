@@ -251,21 +251,21 @@ export async function adminCreateSponsorship(formData: FormData) {
 }
 
 export async function approveShare(shareId: string) {
-  const admin = await requireAdmin();
-  await grantShareReward(shareId, admin.id);
+  const actor = await requireModerator();
+  await grantShareReward(shareId, actor.id, actorTypeOf(actor));
   revalidatePath("/admin/rewards");
   return ok();
 }
 
 export async function rejectShare(shareId: string) {
-  const admin = await requireAdmin();
+  const actor = await requireModerator();
   await db
     .update(socialShares)
-    .set({ status: "rejected", reviewedByUserId: admin.id, reviewedAt: new Date() })
+    .set({ status: "rejected", reviewedByUserId: actor.id, reviewedAt: new Date() })
     .where(eq(socialShares.id, shareId));
   await writeAudit(db, {
-    actorUserId: admin.id,
-    actorType: "admin",
+    actorUserId: actor.id,
+    actorType: actorTypeOf(actor),
     action: "share.reject",
     entityType: "social_share",
     entityId: shareId,
@@ -296,18 +296,18 @@ export async function setSupportTicketStatus(
   ticketId: string,
   status: "open" | "resolved"
 ) {
-  const admin = await requireAdmin();
+  const actor = await requireModerator();
   await db
     .update(supportTickets)
     .set({
       status,
-      resolvedByUserId: status === "resolved" ? admin.id : null,
+      resolvedByUserId: status === "resolved" ? actor.id : null,
       resolvedAt: status === "resolved" ? new Date() : null,
     })
     .where(eq(supportTickets.id, ticketId));
   await writeAudit(db, {
-    actorUserId: admin.id,
-    actorType: "admin",
+    actorUserId: actor.id,
+    actorType: actorTypeOf(actor),
     action: status === "resolved" ? "support.resolve" : "support.reopen",
     entityType: "support_ticket",
     entityId: ticketId,
