@@ -1,4 +1,6 @@
 import { desc, eq } from "drizzle-orm";
+import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { db } from "@/db";
 import { auditLog, users } from "@/db/schema";
 import {

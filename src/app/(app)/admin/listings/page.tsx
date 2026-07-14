@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminListingsPage() {
+  const session = await auth();
+  // Removal triggers Stripe refunds, so the button is admin-only (the action
+  // refuses moderators server-side too). Moderators hide instead.
+  const isAdmin = session?.user?.role === "admin";
   const [listings, openReports] = await Promise.all([
     db
       .select({ repo: repos, posterLogin: users.githubLogin })
@@ -111,7 +115,7 @@ export default async function AdminListingsPage() {
                       <Button variant="outline" size="sm">Hide</Button>
                     </form>
                   )}
-                  {repo.status !== "removed" && (
+                  {isAdmin && repo.status !== "removed" && (
                     <form
                       action={async () => {
                         "use server";
