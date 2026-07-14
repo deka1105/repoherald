@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
-  creditEntries,
   highlights,
   repos,
   socialShares,
