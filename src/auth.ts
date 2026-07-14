@@ -90,7 +90,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token.userId) {
         session.user.id = token.userId as string;
-        session.user.isAdmin = Boolean(token.isAdmin);
+        // Fallback for JWTs minted before the role column existed, so admins
+        // keep access without a forced re-sign-in.
+        session.user.role =
+          (token.role as UserRole | undefined) ??
+          (token.isAdmin ? "admin" : "user");
         session.user.githubLogin = token.githubLogin as string;
       }
       return session;
@@ -98,11 +102,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
+export type UserRole = "user" | "moderator" | "admin";
+
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      isAdmin: boolean;
+      role: UserRole;
       githubLogin: string;
       name?: string | null;
       email?: string | null;
