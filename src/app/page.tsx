@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { getFeed, type FeedRepo } from "@/lib/feed";
 import { getActivePlans } from "@/lib/pricing";
+import { displayUserCount } from "@/lib/stats";
 import { FeedHome } from "@/components/feed-home";
 import { Header } from "@/components/header";
 import { UserCount } from "@/components/user-count";
@@ -85,7 +86,7 @@ export default async function HomePage({
       stats={{
         repoCount: stats.repo_count,
         starsClaimed: stats.stars_claimed,
-        userCount: stats.user_count,
+        userCount: displayUserCount(stats.user_count),
       }}
       cards={cards}
       plans={activePlans.map((p) => ({
