@@ -29,11 +29,14 @@ export class CreditError extends Error {}
 /**
  * Grant the one-time signup bonus to a newly created user. Idempotent: the
  * partial unique index on (user_id) WHERE type='welcome_bonus' makes a second
- * grant impossible even if two sign-ins race. Returns false when already granted.
+ * grant impossible even if two sign-ins race. Only mint-eligible accounts
+ * qualify — otherwise throwaway GitHub accounts each collect free highlight
+ * time. Returns false when already granted or ineligible.
  */
 export async function grantWelcomeCredit(userId: string) {
   return db.transaction(async (tx) => {
-    await lockUser(tx, userId);
+    const user = await lockUser(tx, userId);
+    if (!user.mintEligible) return false;
     const [entry] = await tx
       .insert(creditEntries)
       .values({
