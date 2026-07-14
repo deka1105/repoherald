@@ -73,7 +73,7 @@ export async function postRepo(
   }
 
   // Listing spam guard: same UTC-day window as the claim caps. Admins exempt.
-  if (!user.isAdmin) {
+  if (user.role !== "admin") {
     const [{ postedToday }] = await db
       .select({ postedToday: sql<number>`count(*)::int` })
       .from(repos)

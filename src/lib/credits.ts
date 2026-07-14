@@ -299,7 +299,7 @@ export async function grantShareReward(
       .where(eq(socialShares.id, shareId));
     await writeAudit(tx, {
       actorUserId: adminUserId,
-      actorType: "admin",
+      actorType,
       action: "share.approve",
       entityType: "social_share",
       entityId: shareId,
