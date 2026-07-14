@@ -27,6 +27,7 @@ const TYPE_LABELS: Record<string, string> = {
   admin_adjustment: "Admin adjustment",
   social_share_reward: "Social share reward",
   social_share_clawback: "Share removed — clawback",
+  welcome_bonus: "Welcome bonus",
 };
 
 export default async function WalletPage() {

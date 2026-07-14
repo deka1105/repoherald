@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/table";
 
 export default async function AdminSponsorshipsPage() {
+  // Money — admin-only even though the layout admits moderators.
+  const session = await auth();
+  if (session?.user?.role !== "admin") notFound();
   const [rows, activeRepos] = await Promise.all([
     db
       .select({ s: sponsorships, repoName: repos.fullName })
