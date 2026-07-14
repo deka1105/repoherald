@@ -63,21 +63,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           .values({
             ...values,
             githubId: p.id,
-            isAdmin: isBootstrapAdmin,
+            role: isBootstrapAdmin ? "admin" : "user",
           })
           .onConflictDoUpdate({
             target: users.githubId,
-            set: isBootstrapAdmin ? { ...values, isAdmin: true } : values,
+            // Non-bootstrap sign-ins leave role untouched so moderators and
+            // dashboard-granted admins aren't demoted on their next sign-in.
+            set: isBootstrapAdmin ? { ...values, role: "admin" } : values,
           })
           // xmax = 0 marks a freshly inserted row (vs. an ON CONFLICT update),
           // so the welcome bonus fires exactly once, on first sign-in.
           .returning({
             id: users.id,
-            isAdmin: users.isAdmin,
+            role: users.role,
             isNew: sql<boolean>`(xmax = 0)`,
           });
         token.userId = row.id;
-        token.isAdmin = row.isAdmin;
+        token.role = row.role;
         token.githubLogin = p.login;
         if (row.isNew && values.mintEligible) {
           await grantWelcomeCredit(row.id);
