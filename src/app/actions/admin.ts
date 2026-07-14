@@ -31,7 +31,12 @@ export async function setRepoStatus(
   repoId: string,
   status: "active" | "hidden" | "removed"
 ) {
-  const admin = await requireAdmin();
+  const actor = await requireModerator();
+  // Removal freezes mints and triggers Stripe refunds for sponsored repos —
+  // money moves, so it stays admin-only. Moderators hide instead.
+  if (status === "removed" && actor.role !== "admin") {
+    return { error: "Only admins can remove listings — hide it instead." };
+  }
   await db
     .update(repos)
     .set({ status, removedReason: status === "removed" ? "admin_removed" : null })
@@ -44,8 +49,8 @@ export async function setRepoStatus(
     await refundSponsorshipForRepo(repoId);
   }
   await writeAudit(db, {
-    actorUserId: admin.id,
-    actorType: "admin",
+    actorUserId: actor.id,
+    actorType: actorTypeOf(actor),
     action: `listing.${status}`,
     entityType: "repo",
     entityId: repoId,
