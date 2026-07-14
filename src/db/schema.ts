@@ -34,7 +34,14 @@ export const users = pgTable("users", {
   // (see getClaimUsage in src/lib/credits.ts). Kept to avoid a drop migration.
   dailyMintCount: integer("daily_mint_count").notNull().default(0),
   dailyMintDate: date("daily_mint_date"),
+  // Deprecated: superseded by `role` (backfilled in migration). Kept to avoid
+  // breaking the running deploy during the migration window; drop later.
   isAdmin: boolean("is_admin").notNull().default(false),
+  // Moderators get content/community tools (listings, reports, shares, support,
+  // categories); money, credits, roles, and pricing stay admin-only.
+  role: text("role", { enum: ["user", "moderator", "admin"] })
+    .notNull()
+    .default("user"),
   // Cache of SUM(credit_entries.delta); ledger is source of truth. May go negative (clawback debt).
   creditBalance: integer("credit_balance").notNull().default(0),
   // Ledger entries after this moment are "unseen" → surfaced as notifications.
