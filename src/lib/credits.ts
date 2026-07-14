@@ -261,7 +261,11 @@ export async function spendCredit(
 }
 
 /** Approve a social share and grant its +1 reward, atomically. */
-export async function grantShareReward(shareId: string, adminUserId: string) {
+export async function grantShareReward(
+  shareId: string,
+  adminUserId: string,
+  actorType: "admin" | "moderator" = "admin"
+) {
   return db.transaction(async (tx) => {
     const [share] = await tx
       .select()
