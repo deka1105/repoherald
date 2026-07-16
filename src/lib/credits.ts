@@ -477,3 +477,128 @@ export async function clawbackMint(starMintId: string) {
     log.info("credit.clawback", { starMintId, userId: mint.userId, finalBalance: balance });
   });
 }
+
+/**
+ * Grant credits for a paid credit-pack purchase (called from the Stripe
+ * webhook). Idempotent twice over: only pending_payment rows proceed (row is
+ * locked), and the partial unique index on (credit_purchase_id) WHERE
+ * type='purchase' makes a double grant impossible under webhook retries.
+ * Returns false when the purchase is missing or already settled.
+ */
+export async function grantPurchasedCredits(
+  purchaseId: string,
+  stripe?: { paymentIntentId?: string; amountCents?: number }
+) {
+  return db.transaction(async (tx) => {
+    const [purchase] = await tx
+      .select()
+      .from(creditPurchases)
+      .where(eq(creditPurchases.id, purchaseId))
+      .for("update");
+    if (!purchase || purchase.status !== "pending_payment") return false;
+
+    await lockUser(tx, purchase.userId);
+    const [entry] = await tx
+      .insert(creditEntries)
+      .values({
+        userId: purchase.userId,
+        delta: purchase.credits,
+        type: "purchase",
+        creditPurchaseId: purchaseId,
+        memo: `Purchased ${purchase.credits} credits`,
+      })
+      .onConflictDoNothing()
+      .returning({ id: creditEntries.id });
+    if (!entry) return false;
+
+    await tx
+      .update(users)
+      .set({ creditBalance: sql`${users.creditBalance} + ${purchase.credits}` })
+      .where(eq(users.id, purchase.userId));
+    await tx
+      .update(creditPurchases)
+      .set({
+        status: "completed",
+        completedAt: new Date(),
+        stripePaymentIntentId: stripe?.paymentIntentId ?? purchase.stripePaymentIntentId,
+        amountCents: stripe?.amountCents ?? purchase.amountCents,
+      })
+      .where(eq(creditPurchases.id, purchaseId));
+    await writeAudit(tx, {
+      actorUserId: null,
+      actorType: "stripe",
+      action: "credit.purchase",
+      entityType: "credit_purchase",
+      entityId: purchaseId,
+      metadata: { userId: purchase.userId, credits: purchase.credits },
+    });
+    log.info("credit.purchase", {
+      purchaseId,
+      userId: purchase.userId,
+      credits: purchase.credits,
+    });
+    return true;
+  });
+}
+
+/**
+ * Claw back a completed purchase after a Stripe refund or chargeback. Debits
+ * the full pack; if the balance goes negative, the same recovery as star
+ * clawbacks runs (cancel scheduled highlights with refunds, truncate the
+ * active one) and any remainder stays as debt.
+ */
+export async function clawbackPurchase(purchaseId: string, reason: string) {
+  return db.transaction(async (tx) => {
+    const [purchase] = await tx
+      .select()
+      .from(creditPurchases)
+      .where(eq(creditPurchases.id, purchaseId))
+      .for("update");
+    if (!purchase || purchase.status !== "completed") return;
+
+    const user = await lockUser(tx, purchase.userId);
+    const [entry] = await tx
+      .insert(creditEntries)
+      .values({
+        userId: purchase.userId,
+        delta: -purchase.credits,
+        type: "purchase_refund",
+        creditPurchaseId: purchaseId,
+        memo: reason,
+      })
+      .onConflictDoNothing()
+      .returning({ id: creditEntries.id });
+    if (!entry) return;
+
+    await tx
+      .update(users)
+      .set({ creditBalance: sql`${users.creditBalance} - ${purchase.credits}` })
+      .where(eq(users.id, purchase.userId));
+    await tx
+      .update(creditPurchases)
+      .set({ status: "refunded" })
+      .where(eq(creditPurchases.id, purchaseId));
+
+    const balance = await recoverNegativeBalance(
+      tx,
+      purchase.userId,
+      user.creditBalance - purchase.credits
+    );
+
+    await writeAudit(tx, {
+      actorUserId: null,
+      actorType: "stripe",
+      action: "credit.purchase_refund",
+      entityType: "credit_purchase",
+      entityId: purchaseId,
+      metadata: { userId: purchase.userId, credits: purchase.credits, reason, finalBalance: balance },
+    });
+    log.info("credit.purchase_refund", {
+      purchaseId,
+      userId: purchase.userId,
+      credits: purchase.credits,
+      reason,
+      finalBalance: balance,
+    });
+  });
+}
