@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { discountCodes, sponsorPlans, users } from "@/db/schema";
+import { creditPacks, discountCodes, sponsorPlans, users } from "@/db/schema";
 import { requireAdmin } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
 import { normalizeCode, setClaimCap } from "@/lib/pricing";

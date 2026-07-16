@@ -135,6 +135,20 @@ export async function POST(request: Request) {
           ? charge.payment_intent
           : charge.payment_intent?.id;
       if (!paymentIntent) break;
+      // Refunded/disputed credit purchases claw the credits back (balance may
+      // go negative — same debt model as star clawbacks).
+      const [p] = await db
+        .select({ id: creditPurchases.id })
+        .from(creditPurchases)
+        .where(eq(creditPurchases.stripePaymentIntentId, paymentIntent))
+        .limit(1);
+      if (p) {
+        await clawbackPurchase(
+          p.id,
+          event.type === "charge.refunded" ? "Payment refunded" : "Payment disputed"
+        );
+        break;
+      }
       const [s] = await db
         .select()
         .from(sponsorships)
