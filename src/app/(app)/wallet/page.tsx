@@ -32,9 +32,14 @@ const TYPE_LABELS: Record<string, string> = {
   purchase_refund: "Purchase refunded — clawback",
 };
 
-export default async function WalletPage() {
+export default async function WalletPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ purchase?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/");
+  const { purchase } = await searchParams;
 
   const [user, entries, ownRepos, shares] = await Promise.all([
     db.query.users.findFirst({ where: eq(users.id, session.user.id) }),
@@ -58,6 +63,11 @@ export default async function WalletPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {purchase === "success" && (
+        <p className="rounded-md bg-green-50 p-3 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
+          Payment received — your credits will appear below within a few seconds.
+        </p>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Credit balance</CardTitle>
@@ -66,7 +76,11 @@ export default async function WalletPage() {
           <p className="text-4xl font-semibold">{user.creditBalance}</p>
           <p className="mt-1 text-sm text-muted-foreground">
             1 credit = 1 hour highlighting your own repo, or 15 minutes donated to
-            any repo. Earn credits by starring listed repos.
+            any repo. Earn credits by starring listed repos, or{" "}
+            <Link href="/credits" className="underline underline-offset-2">
+              buy a credit pack
+            </Link>
+            .
           </p>
           {user.creditBalance < 0 && (
             <p className="mt-2 text-sm text-destructive">
