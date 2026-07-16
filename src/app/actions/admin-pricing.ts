@@ -123,6 +123,108 @@ export async function deletePlan(fd: FormData) {
   done("Plan deleted.");
 }
 
+// ---- Credit packs ----------------------------------------------------------
+
+export async function savePack(fd: FormData) {
+  const admin = await requireAdmin();
+  const id = s(fd, "id");
+  const key = s(fd, "key").toLowerCase();
+  const label = s(fd, "label");
+  const credits = Number(s(fd, "credits"));
+  const amountCents = dollarsToCents(s(fd, "amount"));
+  const discountPercent = Number(s(fd, "discountPercent") || "0");
+  const active = fd.get("active") === "on";
+  const sortOrder = Number(s(fd, "sortOrder") || "0");
+
+  if (!key || !label) fail("Pack key and label are required.");
+  if (!Number.isInteger(credits) || credits <= 0)
+    fail("Credits must be a positive whole number.");
+  if (amountCents == null) fail("Enter a valid price.");
+  if (!Number.isInteger(discountPercent) || discountPercent < 0 || discountPercent > 100)
+    fail("Discount must be a whole percent between 0 and 100.");
+
+  if (id) {
+    await db
+      .update(creditPacks)
+      .set({
+        key,
+        label,
+        credits,
+        amountCents,
+        discountPercent,
+        active,
+        sortOrder: Number.isInteger(sortOrder) ? sortOrder : 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(creditPacks.id, id));
+    await writeAudit(db, {
+      actorUserId: admin.id,
+      actorType: "admin",
+      action: "credit_pack.update",
+      entityType: "credit_pack",
+      entityId: id,
+      metadata: { key, credits, amountCents, active },
+    });
+    done("Credit pack updated.");
+  }
+
+  try {
+    const [row] = await db
+      .insert(creditPacks)
+      .values({
+        key,
+        label,
+        credits,
+        amountCents,
+        discountPercent,
+        active,
+        sortOrder: Number.isInteger(sortOrder) ? sortOrder : 0,
+      })
+      .returning({ id: creditPacks.id });
+    await writeAudit(db, {
+      actorUserId: admin.id,
+      actorType: "admin",
+      action: "credit_pack.create",
+      entityType: "credit_pack",
+      entityId: row.id,
+      metadata: { key, credits, amountCents },
+    });
+  } catch {
+    fail(`A pack with key "${key}" already exists.`);
+  }
+  done("Credit pack created.");
+}
+
+export async function deletePack(fd: FormData) {
+  const admin = await requireAdmin();
+  const id = s(fd, "id");
+  if (!id) fail("Missing pack id.");
+  // Packs with purchases can't be deleted (credit_purchases FK) — disable
+  // instead so the purchase history stays intact.
+  try {
+    await db.delete(creditPacks).where(eq(creditPacks.id, id));
+  } catch {
+    await db.update(creditPacks).set({ active: false }).where(eq(creditPacks.id, id));
+    await writeAudit(db, {
+      actorUserId: admin.id,
+      actorType: "admin",
+      action: "credit_pack.disable",
+      entityType: "credit_pack",
+      entityId: id,
+      metadata: { reason: "delete_blocked_has_purchases" },
+    });
+    done("Pack has purchases — disabled instead of deleted.");
+  }
+  await writeAudit(db, {
+    actorUserId: admin.id,
+    actorType: "admin",
+    action: "credit_pack.delete",
+    entityType: "credit_pack",
+    entityId: id,
+  });
+  done("Credit pack deleted.");
+}
+
 // ---- Global claim caps ----------------------------------------------------
 
 export async function updateClaimCaps(fd: FormData) {
