@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { creditPurchases, repos, sponsorships, stripeEvents } from "@/db/schema";
 import { getStripe } from "@/lib/stripe";
