@@ -39,6 +39,19 @@ export async function POST(request: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
+      // Credit-pack purchases and sponsorships share this event; purchase
+      // sessions are tagged with credit_purchase_id in their metadata.
+      const purchaseId = session.metadata?.credit_purchase_id;
+      if (purchaseId) {
+        await grantPurchasedCredits(purchaseId, {
+          paymentIntentId:
+            typeof session.payment_intent === "string"
+              ? session.payment_intent
+              : session.payment_intent?.id,
+          amountCents: session.amount_total ?? undefined,
+        });
+        break;
+      }
       const sponsorshipId = session.client_reference_id;
       if (!sponsorshipId) break;
       const durationDays = Number(session.metadata?.duration_days ?? 0) || 7;
@@ -92,7 +105,18 @@ export async function POST(request: Request) {
     }
     case "checkout.session.expired": {
       const session = event.data.object;
-      if (session.client_reference_id) {
+      const purchaseId = session.metadata?.credit_purchase_id;
+      if (purchaseId) {
+        await db
+          .update(creditPurchases)
+          .set({ status: "cancelled" })
+          .where(
+            and(
+              eq(creditPurchases.id, purchaseId),
+              eq(creditPurchases.status, "pending_payment")
+            )
+          );
+      } else if (session.client_reference_id) {
         await db
           .update(sponsorships)
           .set({ status: "cancelled" })
