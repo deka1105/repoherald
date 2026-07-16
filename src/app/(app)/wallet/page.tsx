@@ -28,6 +28,8 @@ const TYPE_LABELS: Record<string, string> = {
   social_share_reward: "Social share reward",
   social_share_clawback: "Share removed — clawback",
   welcome_bonus: "Welcome bonus",
+  purchase: "Credits purchased",
+  purchase_refund: "Purchase refunded — clawback",
 };
 
 export default async function WalletPage() {
