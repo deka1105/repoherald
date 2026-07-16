@@ -44,8 +44,9 @@ export default async function AdminPricingPage({
   if (session?.user?.role !== "admin") notFound();
   const { msg, err } = await searchParams;
 
-  const [plans, caps, codes] = await Promise.all([
+  const [plans, packs, caps, codes] = await Promise.all([
     getAllPlans(),
+    getAllCreditPacks(),
     getClaimCaps(),
     db
       .select({
@@ -246,6 +247,156 @@ export default async function AdminPricingPage({
               <div className="col-span-2 sm:col-span-8">
                 <Button type="submit" size="sm" variant="secondary">
                   Add plan
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* ---- Credit packs ---- */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Credit packs</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-sm text-muted-foreground">
+              Credit bundles users can buy for cash on /credits (1 credit = 1h
+              self-highlight / 15min donation). Same dynamic pricing as plans —
+              edits take effect immediately. Packs with purchases can&apos;t be
+              deleted, only disabled.
+            </p>
+            {packs.map((p) => (
+              <form
+                key={p.id}
+                action={savePack}
+                className="grid grid-cols-2 items-end gap-3 rounded-md border p-3 sm:grid-cols-7"
+              >
+                <input type="hidden" name="id" value={p.id} />
+                <div className="space-y-1">
+                  <Label className="text-xs">Key</Label>
+                  <Input name="key" defaultValue={p.key} className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Label</Label>
+                  <Input name="label" defaultValue={p.label} className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Credits</Label>
+                  <Input
+                    name="credits"
+                    type="number"
+                    min={1}
+                    defaultValue={p.credits}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Price ($)</Label>
+                  <Input
+                    name="amount"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    defaultValue={(p.amountCents / 100).toFixed(2)}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Disc %</Label>
+                  <Input
+                    name="discountPercent"
+                    type="number"
+                    min={0}
+                    max={100}
+                    defaultValue={p.discountPercent}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Order</Label>
+                  <Input
+                    name="sortOrder"
+                    type="number"
+                    defaultValue={p.sortOrder}
+                    className="h-9"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="active"
+                    defaultChecked={p.active}
+                    className="size-4"
+                  />
+                  Active
+                </label>
+                <div className="col-span-2 flex flex-wrap items-center gap-3 sm:col-span-7">
+                  <Button type="submit" size="sm">
+                    Save
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    variant="outline"
+                    formAction={deletePack}
+                    className="text-destructive"
+                  >
+                    Delete
+                  </Button>
+                  <span className="text-sm">
+                    <span className="text-muted-foreground">Sells at </span>
+                    <PlanPrice
+                      amountCents={p.amountCents}
+                      discountPercent={p.discountPercent}
+                      currency={p.currency}
+                    />
+                  </span>
+                </div>
+              </form>
+            ))}
+
+            <form
+              action={savePack}
+              className="grid grid-cols-2 items-end gap-3 rounded-md border border-dashed p-3 sm:grid-cols-7"
+            >
+              <div className="space-y-1">
+                <Label className="text-xs">Key</Label>
+                <Input name="key" placeholder="mega" className="h-9" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Label</Label>
+                <Input name="label" placeholder="Mega" className="h-9" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Credits</Label>
+                <Input name="credits" type="number" min={1} className="h-9" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Price ($)</Label>
+                <Input name="amount" type="number" step="0.01" min={0} className="h-9" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Disc %</Label>
+                <Input
+                  name="discountPercent"
+                  type="number"
+                  min={0}
+                  max={100}
+                  defaultValue={0}
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Order</Label>
+                <Input name="sortOrder" type="number" defaultValue={0} className="h-9" />
+              </div>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="active" defaultChecked className="size-4" />
+                Active
+              </label>
+              <div className="col-span-2 sm:col-span-7">
+                <Button type="submit" size="sm" variant="secondary">
+                  Add pack
                 </Button>
               </div>
             </form>
