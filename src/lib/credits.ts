@@ -106,6 +106,7 @@ async function applyDelta(
     type: (typeof creditEntries.$inferInsert)["type"];
     starMintId?: string;
     highlightId?: string;
+    creditPurchaseId?: string;
     adminUserId?: string;
     memo?: string;
   }
@@ -353,6 +354,74 @@ export async function clawbackShareReward(shareId: string, reason: string) {
     });
     log.info("share.clawback", { shareId, userId: share.userId, reason });
   });
+}
+
+/**
+ * Recover a negative balance after a clawback debit: refund-cancel the user's
+ * scheduled (not started) highlights newest-first, then truncate their
+ * currently active highlight without refund. Any remainder stays as debt.
+ * Returns the final balance.
+ */
+async function recoverNegativeBalance(tx: Tx, userId: string, balance: number) {
+  if (balance < 0) {
+    const scheduled = await tx
+      .select()
+      .from(highlights)
+      .where(
+        and(
+          eq(highlights.purchasedByUserId, userId),
+          eq(highlights.status, "scheduled"),
+          gte(highlights.startsAt, sql`now()`)
+        )
+      )
+      .orderBy(desc(highlights.createdAt));
+    for (const h of scheduled) {
+      if (balance >= 0) break;
+      await tx
+        .update(highlights)
+        .set({
+          status: "cancelled",
+          cancelledAt: new Date(),
+          cancelReason: "revocation_clawback",
+        })
+        .where(eq(highlights.id, h.id));
+      await applyDelta(tx, userId, {
+        delta: 1,
+        type: "highlight_cancellation_refund",
+        highlightId: h.id,
+      });
+      balance += 1;
+    }
+  }
+
+  if (balance < 0) {
+    const [active] = await tx
+      .select()
+      .from(highlights)
+      .where(
+        and(
+          eq(highlights.purchasedByUserId, userId),
+          sql`${highlights.status} IN ('scheduled', 'active')`,
+          sql`${highlights.startsAt} <= now()`,
+          gt(highlights.endsAt, sql`now()`)
+        )
+      )
+      .limit(1);
+    if (active) {
+      // Truncate the running highlight; no refund for elapsed or remaining time.
+      await tx
+        .update(highlights)
+        .set({
+          status: "cancelled",
+          endsAt: new Date(),
+          cancelledAt: new Date(),
+          cancelReason: "revocation_clawback",
+        })
+        .where(eq(highlights.id, active.id));
+    }
+  }
+
+  return balance;
 }
 
 /**
