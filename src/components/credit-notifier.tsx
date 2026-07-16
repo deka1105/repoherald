@@ -15,6 +15,8 @@ const MESSAGES: Record<string, (memo: string | null) => string> = {
   social_share_clawback: () => "A shared post disappeared — its credit was removed",
   credit_expiry: (memo) => `Credits expired${memo ? `: ${memo}` : ""}`,
   welcome_bonus: () => `Welcome! ${WELCOME_BONUS_CREDITS} credits added to get you started 🎉`,
+  purchase: (memo) => `${memo ?? "Credits purchased"} — thanks for the support 💜`,
+  purchase_refund: () => "A credit purchase was refunded — its credits were removed",
 };
 
 /** Surfaces ledger changes that happened while the user wasn't looking
