@@ -56,6 +56,30 @@ export async function getPlanByKey(key: string): Promise<SponsorPlan | null> {
   return p ?? null;
 }
 
+export async function getActiveCreditPacks(): Promise<CreditPack[]> {
+  return db
+    .select()
+    .from(creditPacks)
+    .where(eq(creditPacks.active, true))
+    .orderBy(asc(creditPacks.sortOrder), asc(creditPacks.amountCents));
+}
+
+export async function getAllCreditPacks(): Promise<CreditPack[]> {
+  return db
+    .select()
+    .from(creditPacks)
+    .orderBy(asc(creditPacks.sortOrder), asc(creditPacks.amountCents));
+}
+
+export async function getCreditPackByKey(key: string): Promise<CreditPack | null> {
+  const [p] = await db
+    .select()
+    .from(creditPacks)
+    .where(eq(creditPacks.key, key))
+    .limit(1);
+  return p ?? null;
+}
+
 // Per-instance cache so the hot claim path doesn't hit app_settings every mint.
 let capsCache: { at: number; caps: { daily: number; weekly: number } } | null = null;
 const CAPS_TTL_MS = 30_000;

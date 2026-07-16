@@ -2,6 +2,7 @@ import { and, desc, eq, gt, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   creditEntries,
+  creditPurchases,
   highlights,
   repos,
   socialShares,
