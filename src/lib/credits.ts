@@ -464,65 +464,7 @@ export async function clawbackMint(starMintId: string) {
       .set({ status: "revoked", revokedAt: new Date() })
       .where(eq(starMints.id, starMintId));
 
-    let balance = user.creditBalance - 1;
-
-    if (balance < 0) {
-      const scheduled = await tx
-        .select()
-        .from(highlights)
-        .where(
-          and(
-            eq(highlights.purchasedByUserId, mint.userId),
-            eq(highlights.status, "scheduled"),
-            gte(highlights.startsAt, sql`now()`)
-          )
-        )
-        .orderBy(desc(highlights.createdAt));
-      for (const h of scheduled) {
-        if (balance >= 0) break;
-        await tx
-          .update(highlights)
-          .set({
-            status: "cancelled",
-            cancelledAt: new Date(),
-            cancelReason: "revocation_clawback",
-          })
-          .where(eq(highlights.id, h.id));
-        await applyDelta(tx, mint.userId, {
-          delta: 1,
-          type: "highlight_cancellation_refund",
-          highlightId: h.id,
-        });
-        balance += 1;
-      }
-    }
-
-    if (balance < 0) {
-      const [active] = await tx
-        .select()
-        .from(highlights)
-        .where(
-          and(
-            eq(highlights.purchasedByUserId, mint.userId),
-            sql`${highlights.status} IN ('scheduled', 'active')`,
-            sql`${highlights.startsAt} <= now()`,
-            gt(highlights.endsAt, sql`now()`)
-          )
-        )
-        .limit(1);
-      if (active) {
-        // Truncate the running highlight; no refund for elapsed or remaining time.
-        await tx
-          .update(highlights)
-          .set({
-            status: "cancelled",
-            endsAt: new Date(),
-            cancelledAt: new Date(),
-            cancelReason: "revocation_clawback",
-          })
-          .where(eq(highlights.id, active.id));
-      }
-    }
+    const balance = await recoverNegativeBalance(tx, mint.userId, user.creditBalance - 1);
 
     await writeAudit(tx, {
       actorUserId: null,
