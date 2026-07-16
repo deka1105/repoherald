@@ -187,6 +187,14 @@ export const creditEntries = pgTable(
     uniqueIndex("credit_entries_welcome_uq")
       .on(t.userId)
       .where(sql`type = 'welcome_bonus'`),
+    // One grant and at most one refund clawback per credit-pack purchase, so
+    // Stripe webhook retries can never double-credit or double-debit.
+    uniqueIndex("credit_entries_purchase_uq")
+      .on(t.creditPurchaseId)
+      .where(sql`type = 'purchase'`),
+    uniqueIndex("credit_entries_purchase_refund_uq")
+      .on(t.creditPurchaseId)
+      .where(sql`type = 'purchase_refund'`),
     index("credit_entries_user_idx").on(t.userId, t.createdAt),
   ]
 );
@@ -473,5 +481,60 @@ export const discountRedemptions = pgTable(
     uniqueIndex("discount_redemptions_sponsorship_uq")
       .on(t.sponsorshipId)
       .where(sql`sponsorship_id IS NOT NULL`),
+  ]
+);
+
+// Admin-editable credit bundles sold for cash (the "buy credits" SKU). Same
+// model as sponsor_plans: Checkout uses dynamic price_data from amountCents,
+// so admins change packs/prices live with no Stripe products and no redeploy.
+export const creditPacks = pgTable(
+  "credit_packs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull().unique(),
+    label: text("label").notNull(),
+    credits: integer("credits").notNull(),
+    amountCents: integer("amount_cents").notNull(),
+    // Pack-level sale discount (0–100%), same semantics as sponsor_plans. A
+    // pack whose sale price falls below Stripe's minimum can't be bought (no
+    // free-comp path here — that would mean unlimited free credits).
+    discountPercent: integer("discount_percent").notNull().default(0),
+    currency: text("currency").notNull().default("usd"),
+    active: boolean("active").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("credit_packs_active_sort_idx").on(t.active, t.sortOrder)]
+);
+
+// One row per checkout attempt. credits/amount are snapshotted at purchase
+// time so later pack edits never change what a buyer paid for. The ledger
+// grant itself lives in credit_entries (type 'purchase'), keyed back here.
+export const creditPurchases = pgTable(
+  "credit_purchases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    packId: uuid("pack_id")
+      .notNull()
+      .references(() => creditPacks.id),
+    credits: integer("credits").notNull(),
+    status: text("status", {
+      enum: ["pending_payment", "completed", "cancelled", "refunded"],
+    })
+      .notNull()
+      .default("pending_payment"),
+    stripeCheckoutSessionId: text("stripe_checkout_session_id").unique(),
+    stripePaymentIntentId: text("stripe_payment_intent_id"),
+    amountCents: integer("amount_cents"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("credit_purchases_user_idx").on(t.userId, t.createdAt),
+    index("credit_purchases_intent_idx").on(t.stripePaymentIntentId),
   ]
 );
