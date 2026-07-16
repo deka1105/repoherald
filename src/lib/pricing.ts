@@ -3,12 +3,14 @@ import { and, asc, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   appSettings,
+  creditPacks,
   discountCodes,
   discountRedemptions,
   sponsorPlans,
 } from "@/db/schema";
 
 export type SponsorPlan = typeof sponsorPlans.$inferSelect;
+export type CreditPack = typeof creditPacks.$inferSelect;
 export type DiscountCode = typeof discountCodes.$inferSelect;
 
 // Stripe rejects card charges below this (USD). A discount that brings the
