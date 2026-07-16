@@ -362,7 +362,12 @@ export async function clawbackShareReward(shareId: string, reason: string) {
  * currently active highlight without refund. Any remainder stays as debt.
  * Returns the final balance.
  */
-async function recoverNegativeBalance(tx: Tx, userId: string, balance: number) {
+async function recoverNegativeBalance(
+  tx: Tx,
+  userId: string,
+  balance: number,
+  cancelReason = "revocation_clawback"
+) {
   if (balance < 0) {
     const scheduled = await tx
       .select()
