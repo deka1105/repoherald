@@ -387,7 +387,7 @@ async function recoverNegativeBalance(
         .set({
           status: "cancelled",
           cancelledAt: new Date(),
-          cancelReason: "revocation_clawback",
+          cancelReason,
         })
         .where(eq(highlights.id, h.id));
       await applyDelta(tx, userId, {
@@ -420,7 +420,7 @@ async function recoverNegativeBalance(
           status: "cancelled",
           endsAt: new Date(),
           cancelledAt: new Date(),
-          cancelReason: "revocation_clawback",
+          cancelReason,
         })
         .where(eq(highlights.id, active.id));
     }
@@ -587,7 +587,8 @@ export async function clawbackPurchase(purchaseId: string, reason: string) {
     const balance = await recoverNegativeBalance(
       tx,
       purchase.userId,
-      user.creditBalance - purchase.credits
+      user.creditBalance - purchase.credits,
+      "purchase_refund"
     );
 
     await writeAudit(tx, {
