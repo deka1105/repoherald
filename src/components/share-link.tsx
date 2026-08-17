@@ -4,15 +4,12 @@ import { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/** Copy-the-share-link control. The URL is read from the browser so it is
- * always the origin the visitor is actually on (localhost, preview, prod). */
+/** Copy-the-share-link control. The origin is read from the browser so the
+ * link is always for the host the visitor is actually on (localhost, preview,
+ * prod); the server renders the path alone, and the ref fills in the rest
+ * after mount so there is nothing to hydrate-mismatch. */
 export function ShareLink({ path }: { path: string }) {
-  const [url, setUrl] = useState(path);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setUrl(`${window.location.origin}${path}`);
-  }, [path]);
 
   useEffect(() => {
     if (!copied) return;
@@ -24,8 +21,12 @@ export function ShareLink({ path }: { path: string }) {
     <div className="flex items-center gap-2">
       <input
         readOnly
-        value={url}
+        defaultValue={path}
+        ref={(el) => {
+          if (el) el.value = `${window.location.origin}${path}`;
+        }}
         onFocus={(e) => e.currentTarget.select()}
+        aria-label="Share link"
         className="min-w-0 flex-1 rounded-md border bg-muted/40 px-2 py-1 text-xs text-muted-foreground"
       />
       <Button
@@ -34,11 +35,11 @@ export function ShareLink({ path }: { path: string }) {
         size="sm"
         onClick={async () => {
           try {
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(`${window.location.origin}${path}`);
             setCopied(true);
           } catch {
             // Clipboard blocked (insecure context or denied permission) — the
-            // input above is still selectable, so there's nothing to recover.
+            // input stays selectable, so there is nothing to recover from.
           }
         }}
       >
