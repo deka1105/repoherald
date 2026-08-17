@@ -26,6 +26,7 @@ No test framework yet.
 - **Credit mutations** all go through `src/lib/credits.ts`, each a single transaction locking the user row.
 - **GitHub API:** `src/lib/github.ts` — star verification uses the starring user's own token (`GET /user/starred/{owner}/{repo}`), scopes `read:user user:email` only.
 - **Highlight status** is always derived from `starts_at`/`ends_at` timestamps in queries; the `status` column is reporting-only.
+- **Repo lists** (`repo_lists`/`repo_list_items`, queries in `src/lib/lists.ts`, mutations in `src/app/actions/lists.ts`): link-shareable curated pages. Slugs carry a random suffix so lists aren't enumerable; contributions are open to any signed-in visitor until the owner closes them. List items may only reference repos already in `repos` — accepting an arbitrary GitHub URL here would create a listing that bypassed `postRepo`'s owner/org check.
 - **Env vars:** see `.env.example`. `TOKEN_ENCRYPTION_KEY` encrypts GitHub tokens at rest (AES-256-GCM in `src/lib/crypto.ts`).
 
 ## Migration gotchas (learned the hard way)
