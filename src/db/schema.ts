@@ -508,6 +508,60 @@ export const creditPacks = pgTable(
   (t) => [index("credit_packs_active_sort_idx").on(t.active, t.sortOrder)]
 );
 
+// User-curated, link-shareable repo lists ("collections"). The slug carries a
+// random suffix so a list is only reachable by the link its owner shares.
+// Contributions are open by default: anyone signed in who has the link can add
+// repos, and the owner can remove any item or lock the list at any time.
+export const repoLists = pgTable(
+  "repo_lists",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerUserId: uuid("owner_user_id")
+      .notNull()
+      .references(() => users.id),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    description: text("description"),
+    // "open" = any signed-in visitor may add repos; "closed" = owner only.
+    contributions: text("contributions", { enum: ["open", "closed"] })
+      .notNull()
+      .default("open"),
+    // Moderation: a 'removed' list 404s for everyone except staff.
+    status: text("status", { enum: ["active", "removed"] })
+      .notNull()
+      .default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("repo_lists_owner_idx").on(t.ownerUserId, t.createdAt)]
+);
+
+// Items may only point at repos already listed on repoherald — curating an
+// arbitrary GitHub URL would create a listing whose ownership nobody verified,
+// which is exactly what postRepo's owner/org check exists to prevent.
+export const repoListItems = pgTable(
+  "repo_list_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    listId: uuid("list_id")
+      .notNull()
+      .references(() => repoLists.id, { onDelete: "cascade" }),
+    repoId: uuid("repo_id")
+      .notNull()
+      .references(() => repos.id, { onDelete: "cascade" }),
+    addedByUserId: uuid("added_by_user_id")
+      .notNull()
+      .references(() => users.id),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // A repo appears at most once per list, so concurrent adds can't duplicate.
+    uniqueIndex("repo_list_items_pair_uq").on(t.listId, t.repoId),
+    index("repo_list_items_list_idx").on(t.listId, t.createdAt),
+  ]
+);
+
 // One row per checkout attempt. credits/amount are snapshotted at purchase
 // time so later pack edits never change what a buyer paid for. The ledger
 // grant itself lives in credit_entries (type 'purchase'), keyed back here.
