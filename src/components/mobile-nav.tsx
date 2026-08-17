@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Compass,
   LifeBuoy,
+  ListChecks,
   Megaphone,
   Settings,
   ShieldCheck,
@@ -32,6 +33,13 @@ const TABS: Tab[] = [
     isActive: (p) => p === "/" || p.startsWith("/repos"),
   },
   { href: "/post", label: "Post", Icon: SquarePlus, isActive: (p) => p.startsWith("/post") },
+  {
+    href: "/lists",
+    label: "Lists",
+    Icon: ListChecks,
+    isActive: (p) => p.startsWith("/lists"),
+    requiresUser: true,
+  },
   {
     href: "/wallet",
     label: "Wallet",
