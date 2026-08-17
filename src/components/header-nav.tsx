@@ -27,6 +27,44 @@ function GitHubIcon() {
   );
 }
 
+/** A nav item that opens a menu instead of navigating. The trigger is a
+ * <button>, which `.rh-navlinks button` already styles like the sibling links;
+ * the panel itself renders in a portal, so it picks up the app's theme tokens
+ * rather than the chrome's rh-* ones. */
+function NavMenu({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="inline-flex items-center gap-1">
+        {label}
+        <ChevronDown size={13} aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-44">
+        {children}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function NavMenuLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <DropdownMenuItem asChild>
+      <Link href={href}>{children}</Link>
+    </DropdownMenuItem>
+  );
+}
+
 export function HeaderNav({ user }: { user: NavUser | null }) {
   const { theme } = useTheme();
   // Staff = moderator or admin; both work the queues behind /admin.
@@ -52,11 +90,23 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
           {user && <Link href="/lists">Lists</Link>}
           {/* Staff manage tickets at /admin/support; filing one is pointless for them. */}
           {!isStaff && <Link href="/support">Support</Link>}
-          {user && <Link href="/wallet">Wallet</Link>}
-          {user && <Link href="/account">Account</Link>}
-          {isStaff && <Link href="/admin">Admin</Link>}
-          {isAdmin && <Link href="/admin/analytics">Analytics</Link>}
-          {isAdmin && <Link href="/admin/pricing">Pricing</Link>}
+          {user && (
+            <NavMenu label="Account">
+              <NavMenuLink href="/wallet">Wallet</NavMenuLink>
+              <NavMenuLink href="/account">Account settings</NavMenuLink>
+            </NavMenu>
+          )}
+          {/* Analytics and Pricing are admin-only, so a moderator's menu would
+              hold a single item — they get the plain dashboard link instead. */}
+          {isAdmin ? (
+            <NavMenu label="Admin">
+              <NavMenuLink href="/admin">Dashboard</NavMenuLink>
+              <NavMenuLink href="/admin/analytics">Analytics</NavMenuLink>
+              <NavMenuLink href="/admin/pricing">Pricing</NavMenuLink>
+            </NavMenu>
+          ) : (
+            isStaff && <Link href="/admin">Admin</Link>
+          )}
         </div>
         <ModeToggle />
         {user ? (
