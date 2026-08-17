@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AddToList } from "@/components/add-to-list";
 import { ClaimButton } from "@/components/claim-button";
 import { DonateButton } from "@/components/donate-button";
 import { ReportButton } from "@/components/report-button";
@@ -130,6 +131,7 @@ export default async function RepoPage({
           </p>
         )}
       </div>
+      {session?.user && <AddToList repoId={repo.id} userId={session.user.id} />}
       {claimUsage && (
         <p className="text-xs text-muted-foreground">
           Star claims used: {claimUsage.day}/{DAILY_MINT_CAP} today ·{" "}
