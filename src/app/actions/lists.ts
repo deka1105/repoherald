@@ -12,7 +12,6 @@ import {
   MAX_ITEMS_PER_LIST,
   MAX_LISTS_PER_USER,
   NOTE_MAX,
-  NOTE_MAX as _NOTE_MAX,
   TITLE_MAX,
   newSlug,
   parseRepoInput,
