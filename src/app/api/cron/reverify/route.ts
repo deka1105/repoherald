@@ -3,6 +3,7 @@ import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   highlights,
+  issueReports,
   repos,
   socialShares,
   sponsorships,
@@ -13,6 +14,9 @@ import { decryptToken } from "@/lib/crypto";
 import {
   clawbackMint,
   clawbackShareReward,
+  grantIssueReportReward,
+  hasDismissiveLabel,
+  rejectIssueReport,
   REVOCATION_WINDOW_DAYS,
 } from "@/lib/credits";
 import { writeAudit } from "@/lib/audit";
@@ -21,6 +25,7 @@ import { refundSponsorshipForRepo } from "@/lib/stripe";
 import {
   GithubAuthError,
   GithubRateLimitError,
+  fetchIssue,
   fetchRepoById,
   fetchRepoLanguages,
   isStarred,
