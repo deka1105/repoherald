@@ -72,6 +72,8 @@ type ScoredRow = {
   score: number;
   sort_key: number;
   category_labels: string[] | null;
+  poster_login: string | null;
+  created_at: string | Date;
 };
 
 export async function getFeed(opts: {
@@ -162,7 +164,7 @@ async function fetchFeed(
     WITH scored AS (
       SELECT
         r.id, r.full_name, r.description, r.primary_language, r.stars_count,
-        r.avatar_url, r.is_archived,
+        r.avatar_url, r.is_archived, r.created_at, u.github_login AS poster_login,
         coalesce((
           SELECT extract(epoch FROM (h.ends_at - ${asOfIso}::timestamptz)) / 60.0
           FROM highlights h
@@ -186,6 +188,7 @@ async function fetchFeed(
           - extract(epoch FROM (${asOfIso}::timestamptz - r.created_at)) / 3600.0 / 48.0
           AS base_score
       FROM repos r
+      LEFT JOIN users u ON u.id = r.posted_by_user_id
       WHERE ${where}
     ),
     final AS (
@@ -218,6 +221,10 @@ async function fetchFeed(
     sponsored: false,
     donationCount: Number(r.donation_count),
     score: Number(r.score),
+    postedByLogin: r.poster_login,
+    // Normalised here because unstable_cache round-trips through JSON, which
+    // would turn a Date into a string on cache hits but not on misses.
+    postedAt: new Date(r.created_at).toISOString(),
   }));
 
   // The cursor pages on sort_key (score, or the donation-weighted key), so it
