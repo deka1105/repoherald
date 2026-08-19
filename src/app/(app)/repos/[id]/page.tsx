@@ -19,6 +19,8 @@ import { AddToList } from "@/components/add-to-list";
 import { ClaimButton } from "@/components/claim-button";
 import { DonateButton } from "@/components/donate-button";
 import { ReportButton } from "@/components/report-button";
+import { ShareRepo } from "@/components/share-repo";
+import { timeAgo } from "@/lib/utils";
 import { DAILY_MINT_CAP, WEEKLY_MINT_CAP, getClaimUsage } from "@/lib/credits";
 
 export default async function RepoPage({
