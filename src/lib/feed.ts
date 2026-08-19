@@ -26,6 +26,9 @@ export type FeedRepo = {
   sponsored: boolean;
   donationCount: number;
   score: number;
+  // Who put it in the feed and when — the attribution line on each card.
+  postedByLogin: string | null;
+  postedAt: string;
 };
 
 export type FeedCursor = { asOf: string; score: number; id: string };
