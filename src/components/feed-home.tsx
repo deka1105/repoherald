@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { asc, eq, sql } from "drizzle-orm";
+import { auth } from "@/auth";
 import { db } from "@/db";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { categories } from "@/db/schema";
 import { getFeed, type FeedFilters } from "@/lib/feed";
 import {
