@@ -40,7 +40,7 @@ export async function FeedHome({
   cursor?: string;
   filters: FeedFilters;
 }) {
-  const [{ items, pinned, nextCursor }, cats, langRows, cookieStore] =
+  const [{ items, pinned, nextCursor }, cats, langRows, cookieStore, session] =
     await Promise.all([
       getFeed({ cursor, filters }),
       db
@@ -53,6 +53,7 @@ export async function FeedHome({
         WHERE status = 'active' ORDER BY lang LIMIT 50
       `),
       cookies(),
+      auth(),
     ]);
   const languages = (langRows.rows as unknown as { lang: string }[]).map(
     (r) => r.lang
@@ -67,10 +68,26 @@ export async function FeedHome({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Discover repos</h1>
-        <Button asChild size="sm">
-          <Link href="/post">Post a repo</Link>
+      <h1 className="sr-only">Your feed</h1>
+      {/* Compose row: the feed opens with an invitation to post, not a page
+          title. FeedHome only renders for signed-in users, so there is always
+          someone to greet. */}
+      <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
+        <Avatar className="size-9 shrink-0">
+          <AvatarImage src={session?.user?.image ?? undefined} />
+          <AvatarFallback>
+            {(session?.user?.githubLogin ?? "?").slice(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <Link
+          href="/post"
+          className="min-w-0 flex-1 truncate rounded-full border bg-muted/40 px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          Share a repo worth starring
+          {session?.user?.githubLogin ? `, @${session.user.githubLogin}` : ""}…
+        </Link>
+        <Button asChild size="sm" className="shrink-0">
+          <Link href="/post">Post</Link>
         </Button>
       </div>
       <FilterBar
