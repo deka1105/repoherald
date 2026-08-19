@@ -17,6 +17,8 @@ const MESSAGES: Record<string, (memo: string | null) => string> = {
   welcome_bonus: () => `Welcome! ${WELCOME_BONUS_CREDITS} credits added to get you started 🎉`,
   purchase: (memo) => `${memo ?? "Credits purchased"} — thanks for the support 💜`,
   purchase_refund: () => "A credit purchase was refunded — its credits were removed",
+  issue_report_reward: (memo) =>
+    `${memo ?? "Your issue report was validated"} — credits added 🐛`,
 };
 
 /** Surfaces ledger changes that happened while the user wasn't looking
