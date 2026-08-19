@@ -239,7 +239,8 @@ async function fetchFeed(
   // one card injected into the feed body at a bucket-stable position.
   const sponsoredResult = await db.execute(sql`
     SELECT r.id, r.full_name, r.description, r.primary_language, r.stars_count,
-      r.avatar_url, r.is_archived, s.id AS sponsorship_id,
+      r.avatar_url, r.is_archived, r.created_at, u.github_login AS poster_login,
+      s.id AS sponsorship_id,
       (
         SELECT count(*) FROM highlights h
         WHERE h.repo_id = r.id AND h.source = 'donation' AND h.status != 'cancelled'
@@ -251,6 +252,7 @@ async function fetchFeed(
       ) AS category_labels
     FROM sponsorships s
     JOIN repos r ON r.id = s.repo_id
+    LEFT JOIN users u ON u.id = r.posted_by_user_id
     WHERE s.status = 'active'
       AND s.starts_at <= ${asOfIso}::timestamptz
       AND s.ends_at > ${asOfIso}::timestamptz
@@ -276,6 +278,8 @@ async function fetchFeed(
     sponsored: true,
     donationCount: Number(r.donation_count),
     score: 0,
+    postedByLogin: r.poster_login,
+    postedAt: new Date(r.created_at).toISOString(),
   });
 
   const rotated = [...sponsoredRows].sort(
