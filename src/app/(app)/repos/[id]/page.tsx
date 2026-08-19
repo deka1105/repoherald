@@ -23,6 +23,8 @@ import { LikeButton } from "@/components/like-button";
 import { ReportButton } from "@/components/report-button";
 import { ReportIssue } from "@/components/report-issue";
 import { ShareRepo } from "@/components/share-repo";
+import { ViewStats } from "@/components/view-stats";
+import { getRepoViewStats } from "@/lib/view-stats";
 import { timeAgo } from "@/lib/utils";
 import {
   DAILY_MINT_CAP,
