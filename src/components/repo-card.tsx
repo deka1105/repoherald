@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Gift, Star } from "lucide-react";
+import { Gift, Heart, MessageCircle, Star } from "lucide-react";
 import { cn, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";

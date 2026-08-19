@@ -231,6 +231,8 @@ async function fetchFeed(
     donationCount: Number(r.donation_count),
     score: Number(r.score),
     postedByLogin: r.poster_login,
+    likeCount: Number(r.like_count),
+    commentCount: Number(r.comment_count),
     // Normalised here because unstable_cache round-trips through JSON, which
     // would turn a Date into a string on cache hits but not on misses.
     postedAt: new Date(r.created_at).toISOString(),
@@ -254,6 +256,11 @@ async function fetchFeed(
         SELECT count(*) FROM highlights h
         WHERE h.repo_id = r.id AND h.source = 'donation' AND h.status != 'cancelled'
       )::int AS donation_count,
+      (SELECT count(*) FROM repo_likes l WHERE l.repo_id = r.id)::int AS like_count,
+      (
+        SELECT count(*) FROM repo_comments cm
+        WHERE cm.repo_id = r.id AND cm.status = 'visible'
+      )::int AS comment_count,
       (
         SELECT array_agg(c.label ORDER BY c.label)
         FROM repo_categories rc JOIN categories c ON c.id = rc.category_id
@@ -288,6 +295,8 @@ async function fetchFeed(
     donationCount: Number(r.donation_count),
     score: 0,
     postedByLogin: r.poster_login,
+    likeCount: Number(r.like_count),
+    commentCount: Number(r.comment_count),
     postedAt: new Date(r.created_at).toISOString(),
   });
 
