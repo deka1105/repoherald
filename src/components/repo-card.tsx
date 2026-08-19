@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Gift, Star } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, timeAgo } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ShareRepo } from "@/components/share-repo";
 
 export type RepoCardData = {
   id: string;
@@ -17,6 +18,8 @@ export type RepoCardData = {
   highlighted?: boolean;
   sponsored?: boolean;
   donationCount?: number;
+  postedByLogin?: string | null;
+  postedAt?: string;
 };
 
 export type RepoCardVariant = "banner" | "tile";
@@ -24,11 +27,34 @@ export type RepoCardVariant = "banner" | "tile";
 const featuredClass =
   "border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/10";
 
+/** "@poster · 3h" — who put this in the feed and how fresh it is. */
+function Byline({
+  repo,
+  className,
+}: {
+  repo: RepoCardData;
+  className?: string;
+}) {
+  if (!repo.postedByLogin && !repo.postedAt) return null;
+  return (
+    <p className={cn("text-muted-foreground", className)}>
+      {repo.postedByLogin && <span>@{repo.postedByLogin}</span>}
+      {repo.postedByLogin && repo.postedAt && <span aria-hidden> · </span>}
+      {repo.postedAt && <span>{timeAgo(repo.postedAt)}</span>}
+    </p>
+  );
+}
+
 /** Compact square tile used by the "tiles" and "hybrid" feed layouts. */
 function TileCard({ repo }: { repo: RepoCardData }) {
   const featured = Boolean(repo.highlighted || repo.sponsored);
   return (
-    <Card className={cn("h-full", featured && featuredClass)}>
+    <Card
+      className={cn(
+        "h-full transition-colors hover:border-foreground/20",
+        featured && featuredClass
+      )}
+    >
       <CardContent className="flex h-full flex-col gap-2 p-3">
         <div className="flex items-center gap-2">
           <Avatar className="size-7 shrink-0">
@@ -37,12 +63,15 @@ function TileCard({ repo }: { repo: RepoCardData }) {
               {repo.fullName.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <Link
-            href={`/repos/${repo.id}`}
-            className="truncate text-sm font-medium hover:underline"
-          >
-            {repo.fullName}
-          </Link>
+          <div className="min-w-0">
+            <Link
+              href={`/repos/${repo.id}`}
+              className="block truncate text-sm font-medium hover:underline"
+            >
+              {repo.fullName}
+            </Link>
+            <Byline repo={repo} className="truncate text-[11px]" />
+          </div>
         </div>
         {repo.description && (
           <p className="line-clamp-2 text-xs text-muted-foreground">
@@ -64,17 +93,27 @@ function TileCard({ repo }: { repo: RepoCardData }) {
               Highlighted
             </Badge>
           )}
+          <ShareRepo
+            repoId={repo.id}
+            fullName={repo.fullName}
+            className="ml-auto text-[11px]"
+          />
         </div>
       </CardContent>
     </Card>
   );
 }
 
-/** Full-width detail banner — the default feed card. */
+/** Full-width post-style card — the default feed card. */
 function BannerCard({ repo }: { repo: RepoCardData }) {
   const featured = Boolean(repo.highlighted || repo.sponsored);
   return (
-    <Card className={cn(featured && featuredClass)}>
+    <Card
+      className={cn(
+        "transition-colors hover:border-foreground/20",
+        featured && featuredClass
+      )}
+    >
       <CardContent className="flex items-start gap-3 p-4">
         <Avatar className="mt-0.5 size-9">
           <AvatarImage src={repo.avatarUrl ?? undefined} />
@@ -96,6 +135,7 @@ function BannerCard({ repo }: { repo: RepoCardData }) {
             )}
             {repo.isArchived && <Badge variant="outline">Archived</Badge>}
           </div>
+          <Byline repo={repo} className="mt-0.5 text-xs" />
           {repo.description && (
             <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
               {repo.description}
@@ -117,6 +157,11 @@ function BannerCard({ repo }: { repo: RepoCardData }) {
                 {label}
               </Badge>
             ))}
+            <ShareRepo
+              repoId={repo.id}
+              fullName={repo.fullName}
+              className="ml-auto"
+            />
           </div>
         </div>
       </CardContent>
