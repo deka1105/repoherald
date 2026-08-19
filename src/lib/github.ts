@@ -125,3 +125,54 @@ export async function isOrgMember(token: string, orgLogin: string): Promise<bool
   const body: { state?: string } = await res.json();
   return body.state === "active";
 }
+
+export type GithubIssue = {
+  id: number;
+  number: number;
+  htmlUrl: string;
+  authorLogin: string;
+  labels: string[];
+  state: "open" | "closed";
+  stateReason: string | null;
+  isPullRequest: boolean;
+  createdAt: Date;
+};
+
+/** Reads one issue. Returns null when it is gone (404) — deleted or the repo
+ * went private — which the validator treats as a rejection, not an error. */
+export async function fetchIssue(
+  token: string,
+  ownerLogin: string,
+  repoName: string,
+  issueNumber: number
+): Promise<GithubIssue | null> {
+  const res = await gh(`/repos/${ownerLogin}/${repoName}/issues/${issueNumber}`, {
+    token,
+  });
+  if (res.status === 404 || res.status === 410) return null;
+  checkCommonErrors(res);
+  if (!res.ok) throw new Error(`GitHub issue fetch failed: ${res.status}`);
+  const b: {
+    id: number;
+    number: number;
+    html_url: string;
+    user: { login: string } | null;
+    labels: (string | { name?: string })[];
+    state: "open" | "closed";
+    state_reason: string | null;
+    pull_request?: unknown;
+    created_at: string;
+  } = await res.json();
+  return {
+    id: b.id,
+    number: b.number,
+    htmlUrl: b.html_url,
+    authorLogin: b.user?.login ?? "",
+    labels: (b.labels ?? []).map((l) => (typeof l === "string" ? l : l.name ?? "")),
+    state: b.state,
+    stateReason: b.state_reason,
+    // The issues endpoint also returns pull requests; they are not bug reports.
+    isPullRequest: Boolean(b.pull_request),
+    createdAt: new Date(b.created_at),
+  };
+}
