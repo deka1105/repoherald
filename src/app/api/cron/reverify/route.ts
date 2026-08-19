@@ -376,6 +376,74 @@ async function syncRepos() {
   }
 }
 
+/**
+ * Settle issue reports whose 7-day window has elapsed: pay out unless the
+ * issue picked up a dismissive label (invalid/duplicate/…) or disappeared.
+ * A GitHub failure leaves the row pending for the next run — absence of proof
+ * is not proof of a bad report, the same rule star reverification follows.
+ */
+async function validateIssueReports(): Promise<{ paid: number; rejected: number }> {
+  const batch = await db
+    .select({ report: issueReports, repo: repos, user: users })
+    .from(issueReports)
+    .innerJoin(repos, eq(issueReports.repoId, repos.id))
+    .innerJoin(users, eq(issueReports.userId, users.id))
+    .where(
+      and(
+        eq(issueReports.status, "pending"),
+        lt(issueReports.eligibleAt, sql`now()`)
+      )
+    )
+    .orderBy(sql`${issueReports.eligibleAt} ASC`)
+    .limit(BATCH_LIMIT);
+
+  let paid = 0;
+  let rejected = 0;
+
+  for (const { report, repo, user } of batch) {
+    if (!user.githubAccessTokenEnc || user.tokenInvalidAt) continue;
+    let token: string;
+    try {
+      token = decryptToken(user.githubAccessTokenEnc);
+    } catch {
+      continue;
+    }
+
+    try {
+      const issue = await fetchIssue(
+        token,
+        repo.ownerLogin,
+        repo.name,
+        report.issueNumber
+      );
+      if (!issue) {
+        await rejectIssueReport(report.id, "issue_deleted");
+        rejected++;
+        continue;
+      }
+      const bad = hasDismissiveLabel(issue.labels);
+      if (bad) {
+        await rejectIssueReport(report.id, `labelled_${bad.toLowerCase()}`);
+        rejected++;
+        continue;
+      }
+      if (await grantIssueReportReward(report.id)) paid++;
+    } catch (e) {
+      if (e instanceof GithubAuthError) {
+        await db
+          .update(users)
+          .set({ tokenInvalidAt: new Date() })
+          .where(eq(users.id, user.id));
+        continue;
+      }
+      if (e instanceof GithubRateLimitError) break;
+      throw e;
+    }
+  }
+
+  return { paid, rejected };
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
