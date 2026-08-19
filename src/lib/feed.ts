@@ -29,6 +29,8 @@ export type FeedRepo = {
   // Who put it in the feed and when — the attribution line on each card.
   postedByLogin: string | null;
   postedAt: string;
+  likeCount: number;
+  commentCount: number;
 };
 
 export type FeedCursor = { asOf: string; score: number; id: string };
@@ -74,6 +76,8 @@ type ScoredRow = {
   category_labels: string[] | null;
   poster_login: string | null;
   created_at: string | Date;
+  like_count: number;
+  comment_count: number;
 };
 
 export async function getFeed(opts: {
@@ -179,6 +183,11 @@ async function fetchFeed(
           SELECT count(*) FROM highlights h
           WHERE h.repo_id = r.id AND h.source = 'donation' AND h.status != 'cancelled'
         )::int AS donation_count,
+        (SELECT count(*) FROM repo_likes l WHERE l.repo_id = r.id)::int AS like_count,
+        (
+          SELECT count(*) FROM repo_comments cm
+          WHERE cm.repo_id = r.id AND cm.status = 'visible'
+        )::int AS comment_count,
         (
           SELECT array_agg(c.label ORDER BY c.label)
           FROM repo_categories rc JOIN categories c ON c.id = rc.category_id
