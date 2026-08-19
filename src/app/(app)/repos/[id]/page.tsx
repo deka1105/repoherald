@@ -88,7 +88,11 @@ export default async function RepoPage({
               <Star className="size-3.5" /> {repo.starsCount.toLocaleString()}
             </span>
             {repo.primaryLanguage && <span>{repo.primaryLanguage}</span>}
-            {poster && <span>posted by {poster.githubLogin}</span>}
+            {poster && (
+              <span>
+                posted by @{poster.githubLogin} · {timeAgo(repo.createdAt)}
+              </span>
+            )}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -126,6 +130,11 @@ export default async function RepoPage({
           <ClaimButton repoId={repo.id} alreadyClaimed={Boolean(claim)} />
         )}
         {session?.user && <DonateButton repoId={repo.id} />}
+        <ShareRepo
+          repoId={repo.id}
+          fullName={repo.fullName}
+          className="h-9 rounded-md border px-3 text-sm"
+        />
         {session?.user && <ReportButton repoId={repo.id} />}
         {!session && (
           <p className="text-sm text-muted-foreground">
