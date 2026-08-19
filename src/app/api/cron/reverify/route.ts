@@ -457,8 +457,9 @@ export async function GET(request: Request) {
     await expireCredits();
     await syncRepos();
     await checkSocialShares();
-    log.info("cron.reverify", { checked, revoked });
-    return NextResponse.json({ ok: true, checked, revoked });
+    const issues = await validateIssueReports();
+    log.info("cron.reverify", { checked, revoked, issues });
+    return NextResponse.json({ ok: true, checked, revoked, issues });
   } catch (e) {
     log.error("cron.reverify.failed", e);
     return NextResponse.json({ ok: false }, { status: 500 });
