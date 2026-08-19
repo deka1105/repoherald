@@ -136,6 +136,13 @@ export default async function RepoPage({
           <ClaimButton repoId={repo.id} alreadyClaimed={Boolean(claim)} />
         )}
         {session?.user && <DonateButton repoId={repo.id} />}
+        <LikeButton
+          repoId={repo.id}
+          liked={likes.liked}
+          count={likes.count}
+          signedIn={Boolean(session?.user)}
+          className="h-9 rounded-md border px-3 text-sm"
+        />
         <ShareRepo
           repoId={repo.id}
           fullName={repo.fullName}
@@ -160,6 +167,21 @@ export default async function RepoPage({
         earns 1 credit (1 hour of self-highlight, or donate 15 minutes to any repo).
         Unstarring within 100 days revokes the benefit.
       </p>
+      <Comments
+        repoId={repo.id}
+        comments={comments}
+        viewer={
+          session?.user
+            ? {
+                id: session.user.id,
+                isStaff:
+                  session.user.role === "admin" ||
+                  session.user.role === "moderator",
+              }
+            : null
+        }
+      />
+
       <Link href="/" className="inline-block text-sm text-muted-foreground hover:underline">
         ← Back to feed
       </Link>
