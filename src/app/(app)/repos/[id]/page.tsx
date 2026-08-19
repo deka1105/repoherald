@@ -50,7 +50,8 @@ export default async function RepoPage({
     (repo.postedByUserId === session.user.id ||
       repo.ownerLogin.toLowerCase() === session.user.githubLogin?.toLowerCase());
 
-  const [poster, cats, [highlightStats], claimUsage] = await Promise.all([
+  const [poster, cats, [highlightStats], claimUsage, likes, comments] =
+    await Promise.all([
     db.query.users.findFirst({ where: eq(users.id, repo.postedByUserId) }),
     db
       .select({ label: categories.label, kind: categories.kind })
@@ -64,8 +65,10 @@ export default async function RepoPage({
       })
       .from(highlights)
       .where(eq(highlights.repoId, repo.id)),
-    session?.user ? getClaimUsage(session.user.id) : null,
-  ]);
+      session?.user ? getClaimUsage(session.user.id) : null,
+      getLikeState(repo.id, session?.user?.id),
+      getComments(repo.id),
+    ]);
   const fmtDuration = (mins: number) =>
     mins >= 60
       ? `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ""}`
