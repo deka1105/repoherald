@@ -27,6 +27,9 @@ export type RepoCardData = {
 /** Engagement counts. These are read-only on cards — liking and commenting
  * both happen on the repo page, so a card never needs a session. */
 function Engagement({ repo, size }: { repo: RepoCardData; size: "sm" | "xs" }) {
+  // Callers that don't count (list pages) omit both, and showing them a hard
+  // "0 likes" would be a lie rather than a blank.
+  if (repo.likeCount === undefined && repo.commentCount === undefined) return null;
   const icon = size === "xs" ? "size-3" : "size-3.5";
   return (
     <Link
