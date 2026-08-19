@@ -59,7 +59,7 @@ export default async function RepoPage({
     (repo.postedByUserId === session.user.id ||
       repo.ownerLogin.toLowerCase() === session.user.githubLogin?.toLowerCase());
 
-  const [poster, cats, [highlightStats], claimUsage, likes, comments] =
+  const [poster, cats, [highlightStats], claimUsage, likes, comments, views] =
     await Promise.all([
     db.query.users.findFirst({ where: eq(users.id, repo.postedByUserId) }),
     db
@@ -77,6 +77,7 @@ export default async function RepoPage({
       session?.user ? getClaimUsage(session.user.id) : null,
       getLikeState(repo.id, session?.user?.id),
       getComments(repo.id),
+      getRepoViewStats(repo.id),
     ]);
   const fmtDuration = (mins: number) =>
     mins >= 60
@@ -108,6 +109,7 @@ export default async function RepoPage({
                 posted by @{poster.githubLogin} · {timeAgo(repo.createdAt)}
               </span>
             )}
+            <ViewStats stats={views} />
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="inline-flex items-center gap-1">

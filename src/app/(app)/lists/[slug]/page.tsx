@@ -5,6 +5,8 @@ import { auth } from "@/auth";
 import { deleteList, removeListItem, updateList } from "@/app/actions/lists";
 import { RepoCard } from "@/components/repo-card";
 import { ShareLink } from "@/components/share-link";
+import { ViewStats } from "@/components/view-stats";
+import { getListViewStats } from "@/lib/view-stats";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
