@@ -508,6 +508,55 @@ export const creditPacks = pgTable(
   (t) => [index("credit_packs_active_sort_idx").on(t.active, t.sortOrder)]
 );
 
+// Lightweight engagement signal, separate from star_mints: a like costs
+// nothing, mints no credit, and can be taken back (the row is deleted), so it
+// carries none of the anti-gaming machinery stars do.
+export const repoLikes = pgTable(
+  "repo_likes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repoId: uuid("repo_id")
+      .notNull()
+      .references(() => repos.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // One like per person per repo; a double-click can't double-count.
+    uniqueIndex("repo_likes_repo_user_uq").on(t.repoId, t.userId),
+    index("repo_likes_repo_idx").on(t.repoId),
+  ]
+);
+
+// Flat (unthreaded) public comments. Soft-deleted rather than removed outright
+// so moderation stays auditable and counts stay stable; only 'visible' rows are
+// ever rendered or counted.
+export const repoComments = pgTable(
+  "repo_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repoId: uuid("repo_id")
+      .notNull()
+      .references(() => repos.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    body: text("body").notNull(),
+    status: text("status", { enum: ["visible", "removed"] })
+      .notNull()
+      .default("visible"),
+    removedByUserId: uuid("removed_by_user_id").references(() => users.id),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("repo_comments_repo_created_idx").on(t.repoId, t.createdAt),
+    index("repo_comments_status_created_idx").on(t.status, t.createdAt),
+  ]
+);
+
 // User-curated, link-shareable repo lists ("collections"). The slug carries a
 // random suffix so a list is only reachable by the link its owner shares.
 // Contributions are open by default: anyone signed in who has the link can add
