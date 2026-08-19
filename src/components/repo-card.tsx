@@ -182,6 +182,7 @@ function BannerCard({ repo }: { repo: RepoCardData }) {
                 {label}
               </Badge>
             ))}
+            <Engagement repo={repo} size="sm" />
             <ShareRepo
               repoId={repo.id}
               fullName={repo.fullName}
