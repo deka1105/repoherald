@@ -56,7 +56,10 @@ export default async function ListPage({
 
   const isOwner = session?.user?.id === list.ownerUserId;
   const canAdd = Boolean(session?.user) && (list.contributions === "open" || isOwner);
-  const items = await getListItems(list.id);
+  const [items, views] = await Promise.all([
+    getListItems(list.id),
+    getListViewStats(list.slug),
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -73,9 +76,12 @@ export default async function ListPage({
         {list.description && (
           <p className="mt-1 text-muted-foreground">{list.description}</p>
         )}
-        <p className="mt-2 text-sm text-muted-foreground">
-          Curated by {ownerLogin} · {items.length}{" "}
-          {items.length === 1 ? "repo" : "repos"}
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+          <span>
+            Curated by {ownerLogin} · {items.length}{" "}
+            {items.length === 1 ? "repo" : "repos"}
+          </span>
+          <ViewStats stats={views} />
         </p>
       </div>
 
