@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { creditEntries, issueReports, repos, socialShares, users } from "@/db/schema";
@@ -61,6 +61,23 @@ export default async function WalletPage({
       .from(socialShares)
       .where(eq(socialShares.userId, session.user.id))
       .orderBy(desc(socialShares.createdAt)),
+    db
+      .select({
+        id: issueReports.id,
+        issueUrl: issueReports.issueUrl,
+        issueNumber: issueReports.issueNumber,
+        eligibleAt: issueReports.eligibleAt,
+        repoName: repos.fullName,
+      })
+      .from(issueReports)
+      .innerJoin(repos, eq(issueReports.repoId, repos.id))
+      .where(
+        and(
+          eq(issueReports.userId, session.user.id),
+          eq(issueReports.status, "pending")
+        )
+      )
+      .orderBy(desc(issueReports.createdAt)),
   ]);
   if (!user) redirect("/");
 
@@ -93,6 +110,44 @@ export default async function WalletPage({
           )}
         </CardContent>
       </Card>
+
+      {pendingIssues.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              Pending —{" "}
+              {(pendingIssues.length * ISSUE_REPORT_CREDITS).toLocaleString()}{" "}
+              credits awaiting validation
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Each validated issue report pays {ISSUE_REPORT_CREDITS} credits.
+              They land {ISSUE_VALIDATION_DAYS} days after you submit, unless the
+              issue gets labelled invalid, duplicate, or similar. Pending credits
+              aren&apos;t spendable yet and aren&apos;t counted in the balance above.
+            </p>
+            {pendingIssues.map((p) => (
+              <div
+                key={p.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2 text-sm"
+              >
+                <a
+                  href={p.issueUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:underline"
+                >
+                  {p.repoName} #{p.issueNumber}
+                </a>
+                <span className="text-xs text-muted-foreground">
+                  clears {p.eligibleAt.toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {ownRepos.length > 0 && (
         <Card>
