@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { creditEntries, repos, socialShares, users } from "@/db/schema";
+import { creditEntries, issueReports, repos, socialShares, users } from "@/db/schema";
+import { ISSUE_REPORT_CREDITS, ISSUE_VALIDATION_DAYS } from "@/lib/credits";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -31,6 +32,7 @@ const TYPE_LABELS: Record<string, string> = {
   welcome_bonus: "Welcome bonus",
   purchase: "Credits purchased",
   purchase_refund: "Purchase refunded — clawback",
+  issue_report_reward: "Issue report validated",
 };
 
 export default async function WalletPage({
@@ -42,7 +44,7 @@ export default async function WalletPage({
   if (!session?.user) redirect("/");
   const { purchase } = await searchParams;
 
-  const [user, entries, ownRepos, shares] = await Promise.all([
+  const [user, entries, ownRepos, shares, pendingIssues] = await Promise.all([
     db.query.users.findFirst({ where: eq(users.id, session.user.id) }),
     db
       .select()
