@@ -26,6 +26,125 @@ export const MAX_QUEUED_MINUTES_PER_REPO = 24 * 60;
 export const REVOCATION_WINDOW_DAYS = 100;
 export const WELCOME_BONUS_CREDITS = 10;
 
+// Issue-report rewards. 12 credits = 12h self-highlight (or 3h donated at the
+// standard 15min/credit rate). Submission caps mirror the star caps but are
+// counted separately, so a day's 6 stars and 6 issue reports don't compete.
+export const ISSUE_REPORT_CREDITS = 12;
+export const ISSUE_REPORT_DAILY_CAP = 6;
+export const ISSUE_REPORT_WEEKLY_CAP = 20;
+/** Credits stay pending this long before the cron can validate and pay out. */
+export const ISSUE_VALIDATION_DAYS = 7;
+/** A label from this set at validation time means no payout. Lowercased and
+ * matched loosely, so "status: duplicate" and "Duplicate" both count. */
+export const DISMISSIVE_ISSUE_LABELS = [
+  "invalid",
+  "duplicate",
+  "spam",
+  "wontfix",
+  "won't fix",
+  "not planned",
+];
+
+export function hasDismissiveLabel(labels: string[]): string | null {
+  for (const raw of labels) {
+    const l = raw.toLowerCase();
+    const hit = DISMISSIVE_ISSUE_LABELS.find((bad) => l.includes(bad));
+    if (hit) return raw;
+  }
+  return null;
+}
+
+/** Submissions in the current day/week — the issue-report rate limit. Counts
+ * every submission regardless of outcome: it throttles filing, not earning. */
+export async function getIssueReportUsage(
+  userId: string,
+  tx: Tx | typeof db = db
+) {
+  const [row] = await tx
+    .select({
+      day: sql<number>`count(*) FILTER (WHERE ${issueReports.createdAt} >= date_trunc('day', now()))::int`,
+      week: sql<number>`count(*)::int`,
+    })
+    .from(issueReports)
+    .where(
+      and(
+        eq(issueReports.userId, userId),
+        gte(issueReports.createdAt, sql`date_trunc('week', now())`)
+      )
+    );
+  return { day: row.day, week: row.week };
+}
+
+/**
+ * Pay out a validated issue report. Idempotent: the partial unique index on
+ * (issue_report_id) WHERE type='issue_report_reward' means a repeated cron run
+ * inserts nothing and leaves the balance alone.
+ */
+export async function grantIssueReportReward(reportId: string): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [report] = await tx
+      .select()
+      .from(issueReports)
+      .where(eq(issueReports.id, reportId))
+      .for("update");
+    if (!report || report.status !== "pending") return false;
+
+    const user = await lockUser(tx, report.userId);
+
+    const [entry] = await tx
+      .insert(creditEntries)
+      .values({
+        userId: report.userId,
+        delta: ISSUE_REPORT_CREDITS,
+        type: "issue_report_reward",
+        issueReportId: report.id,
+        memo: `Issue report #${report.issueNumber} validated`,
+      })
+      .onConflictDoNothing()
+      .returning({ id: creditEntries.id });
+
+    if (entry) {
+      await tx
+        .update(users)
+        .set({ creditBalance: user.creditBalance + ISSUE_REPORT_CREDITS })
+        .where(eq(users.id, report.userId));
+    }
+
+    await tx
+      .update(issueReports)
+      .set({ status: "approved", validatedAt: new Date(), lastCheckedAt: new Date() })
+      .where(eq(issueReports.id, report.id));
+
+    await writeAudit(tx, {
+      actorType: "system",
+      action: "issue_report.approve",
+      entityType: "issue_report",
+      entityId: report.id,
+      metadata: { credits: ISSUE_REPORT_CREDITS, userId: report.userId },
+    });
+    log.info("issue_report.approved", {
+      reportId: report.id,
+      userId: report.userId,
+    });
+    return Boolean(entry);
+  });
+}
+
+/** Close out a report that failed validation. No ledger entry is ever written,
+ * so nothing has to be clawed back. */
+export async function rejectIssueReport(reportId: string, reason: string) {
+  await db
+    .update(issueReports)
+    .set({
+      status: "rejected",
+      rejectedReason: reason,
+      validatedAt: new Date(),
+      lastCheckedAt: new Date(),
+    })
+    .where(and(eq(issueReports.id, reportId), eq(issueReports.status, "pending")));
+  log.info("issue_report.rejected", { reportId, reason });
+}
+
 export class CreditError extends Error {}
 
 /**
