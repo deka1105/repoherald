@@ -20,7 +20,31 @@ export type RepoCardData = {
   donationCount?: number;
   postedByLogin?: string | null;
   postedAt?: string;
+  likeCount?: number;
+  commentCount?: number;
 };
+
+/** Engagement counts. These are read-only on cards — liking and commenting
+ * both happen on the repo page, so a card never needs a session. */
+function Engagement({ repo, size }: { repo: RepoCardData; size: "sm" | "xs" }) {
+  const icon = size === "xs" ? "size-3" : "size-3.5";
+  return (
+    <Link
+      href={`/repos/${repo.id}`}
+      className="inline-flex items-center gap-2 hover:text-foreground"
+    >
+      <span className="inline-flex items-center gap-1">
+        <Heart className={icon} aria-hidden /> {(repo.likeCount ?? 0).toLocaleString()}
+        <span className="sr-only">likes</span>
+      </span>
+      <span className="inline-flex items-center gap-1">
+        <MessageCircle className={icon} aria-hidden />{" "}
+        {(repo.commentCount ?? 0).toLocaleString()}
+        <span className="sr-only">comments</span>
+      </span>
+    </Link>
+  );
+}
 
 export type RepoCardVariant = "banner" | "tile";
 
@@ -93,6 +117,7 @@ function TileCard({ repo }: { repo: RepoCardData }) {
               Highlighted
             </Badge>
           )}
+          <Engagement repo={repo} size="xs" />
           <ShareRepo
             repoId={repo.id}
             fullName={repo.fullName}
