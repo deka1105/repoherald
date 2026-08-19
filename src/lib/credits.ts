@@ -4,6 +4,7 @@ import {
   creditEntries,
   creditPurchases,
   highlights,
+  issueReports,
   repos,
   socialShares,
   starMints,
