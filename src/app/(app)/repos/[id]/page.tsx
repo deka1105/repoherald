@@ -17,11 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AddToList } from "@/components/add-to-list";
 import { ClaimButton } from "@/components/claim-button";
+import { Comments } from "@/components/comments";
 import { DonateButton } from "@/components/donate-button";
+import { LikeButton } from "@/components/like-button";
 import { ReportButton } from "@/components/report-button";
 import { ShareRepo } from "@/components/share-repo";
 import { timeAgo } from "@/lib/utils";
 import { DAILY_MINT_CAP, WEEKLY_MINT_CAP, getClaimUsage } from "@/lib/credits";
+import { getComments, getLikeState } from "@/lib/social";
 
 export default async function RepoPage({
   params,
