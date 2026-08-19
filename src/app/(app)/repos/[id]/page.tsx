@@ -21,9 +21,16 @@ import { Comments } from "@/components/comments";
 import { DonateButton } from "@/components/donate-button";
 import { LikeButton } from "@/components/like-button";
 import { ReportButton } from "@/components/report-button";
+import { ReportIssue } from "@/components/report-issue";
 import { ShareRepo } from "@/components/share-repo";
 import { timeAgo } from "@/lib/utils";
-import { DAILY_MINT_CAP, WEEKLY_MINT_CAP, getClaimUsage } from "@/lib/credits";
+import {
+  DAILY_MINT_CAP,
+  ISSUE_REPORT_CREDITS,
+  ISSUE_VALIDATION_DAYS,
+  WEEKLY_MINT_CAP,
+  getClaimUsage,
+} from "@/lib/credits";
 import { getComments, getLikeState } from "@/lib/social";
 
 export default async function RepoPage({
@@ -155,6 +162,14 @@ export default async function RepoPage({
           </p>
         )}
       </div>
+      {session?.user && !isOwn && (
+        <ReportIssue
+          repoId={repo.id}
+          fullName={repo.fullName}
+          credits={ISSUE_REPORT_CREDITS}
+          validationDays={ISSUE_VALIDATION_DAYS}
+        />
+      )}
       {session?.user && <AddToList repoId={repo.id} userId={session.user.id} />}
       {claimUsage && (
         <p className="text-xs text-muted-foreground">
