@@ -402,6 +402,8 @@ export const analyticsEvents = pgTable(
     index("analytics_events_type_created_idx").on(t.type, t.createdAt),
     index("analytics_events_repo_type_idx").on(t.repoId, t.type),
     index("analytics_events_created_idx").on(t.createdAt),
+    // Per-page view counts (list pages) look up by path.
+    index("analytics_events_path_idx").on(t.path),
   ]
 );
 
