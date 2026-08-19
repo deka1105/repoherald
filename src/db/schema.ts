@@ -197,6 +197,10 @@ export const creditEntries = pgTable(
     uniqueIndex("credit_entries_purchase_refund_uq")
       .on(t.creditPurchaseId)
       .where(sql`type = 'purchase_refund'`),
+    // One reward per validated issue report, so a cron retry can't pay twice.
+    uniqueIndex("credit_entries_issue_reward_uq")
+      .on(t.issueReportId)
+      .where(sql`type = 'issue_report_reward'`),
     index("credit_entries_user_idx").on(t.userId, t.createdAt),
   ]
 );
@@ -508,6 +512,41 @@ export const creditPacks = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("credit_packs_active_sort_idx").on(t.active, t.sortOrder)]
+);
+
+// Bug-report rewards: a user files a GitHub issue on a listed repo and submits
+// its URL here. Credits are NOT granted on submission — the row sits 'pending'
+// until eligible_at (7 days later), when the cron re-reads the issue and pays
+// out only if it hasn't been labelled invalid/duplicate/etc. in the meantime.
+export const issueReports = pgTable(
+  "issue_reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    repoId: uuid("repo_id")
+      .notNull()
+      .references(() => repos.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    // GitHub's own issue id: unique, so one issue can never be rewarded twice
+    // (nor claimed by a second account).
+    githubIssueId: bigint("github_issue_id", { mode: "number" }).notNull().unique(),
+    issueNumber: integer("issue_number").notNull(),
+    issueUrl: text("issue_url").notNull(),
+    status: text("status", { enum: ["pending", "approved", "rejected"] })
+      .notNull()
+      .default("pending"),
+    // Settling window: the cron ignores this row until now() >= eligible_at.
+    eligibleAt: timestamp("eligible_at", { withTimezone: true }).notNull(),
+    validatedAt: timestamp("validated_at", { withTimezone: true }),
+    rejectedReason: text("rejected_reason"),
+    lastCheckedAt: timestamp("last_checked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("issue_reports_status_eligible_idx").on(t.status, t.eligibleAt),
+    index("issue_reports_user_created_idx").on(t.userId, t.createdAt),
+  ]
 );
 
 // Lightweight engagement signal, separate from star_mints: a like costs
