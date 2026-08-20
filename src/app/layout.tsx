@@ -27,12 +27,28 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://repoherald.com";
+
+const DESCRIPTION =
+  "Post your repos, earn highlight time for the repos you star, and discover what's worth starring.";
+
 export const metadata: Metadata = {
+  // Canonical origin for link previews: without it, Open Graph image URLs stay
+  // relative and X/Slack/Discord can't resolve them.
+  metadataBase: new URL(SITE_URL),
   title: "repoherald",
-  description:
-    "Post your repos, earn highlight time for the repos you star, and discover what's worth starring.",
+  description: DESCRIPTION,
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "repoherald", statusBarStyle: "default" },
+  openGraph: {
+    type: "website",
+    siteName: "repoherald",
+    title: "repoherald",
+    description: DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: { card: "summary_large_image", title: "repoherald", description: DESCRIPTION },
 };
 
 export const viewport: Viewport = {
