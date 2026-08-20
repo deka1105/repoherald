@@ -17,7 +17,7 @@ const SAMPLE: SponsorAlertData = {
   primaryLanguage: "TypeScript",
   starsCount: 1284,
   avatarUrl: "https://avatars.githubusercontent.com/u/6154722?s=200&v=4",
-  repoUrl: "https://repoherald.vercel.app/repos/sample",
+  repoUrl: "https://repoherald.com/repos/sample",
 };
 
 export const metadata = { title: "Alert email preview · repoherald" };
