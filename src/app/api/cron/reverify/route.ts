@@ -14,18 +14,15 @@ import { decryptToken } from "@/lib/crypto";
 import {
   clawbackMint,
   clawbackShareReward,
-  grantIssueReportReward,
-  hasDismissiveLabel,
-  rejectIssueReport,
   REVOCATION_WINDOW_DAYS,
 } from "@/lib/credits";
+import { validateOneIssueReport } from "@/lib/issue-validation";
 import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/log";
 import { refundSponsorshipForRepo } from "@/lib/stripe";
 import {
   GithubAuthError,
   GithubRateLimitError,
-  fetchIssue,
   fetchRepoById,
   fetchRepoLanguages,
   isStarred,
