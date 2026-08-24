@@ -32,6 +32,11 @@ export const WELCOME_BONUS_CREDITS = 10;
 export const ISSUE_REPORT_CREDITS = 12;
 export const ISSUE_REPORT_DAILY_CAP = 6;
 export const ISSUE_REPORT_WEEKLY_CAP = 20;
+/** Rewards per person per repo. Without this, the daily cap alone allows 6
+ * reports × 12 credits against repos whose maintainers never triage labels.
+ * A rejected report doesn't consume the slot — that would punish a good-faith
+ * report someone else duplicated. */
+export const ISSUE_REPORTS_PER_REPO = 1;
 /** Credits stay pending this long before the cron can validate and pay out. */
 export const ISSUE_VALIDATION_DAYS = 7;
 /** A label from this set at validation time means no payout. Lowercased and

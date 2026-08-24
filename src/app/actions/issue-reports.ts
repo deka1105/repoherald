@@ -65,6 +65,22 @@ export async function submitIssueReport(
     return { error: "You can't earn credits for reporting issues on your own repo." };
   }
 
+  const [{ onThisRepo }] = await db
+    .select({ onThisRepo: sql<number>`count(*)::int` })
+    .from(issueReports)
+    .where(
+      and(
+        eq(issueReports.userId, user.id),
+        eq(issueReports.repoId, repo.id),
+        ne(issueReports.status, "rejected")
+      )
+    );
+  if (onThisRepo >= ISSUE_REPORTS_PER_REPO) {
+    return {
+      error: `You've already claimed an issue report on ${repo.fullName} — one per repo.`,
+    };
+  }
+
   const usage = await getIssueReportUsage(user.id);
   if (usage.day >= ISSUE_REPORT_DAILY_CAP) {
     return {
