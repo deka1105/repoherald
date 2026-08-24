@@ -36,7 +36,7 @@ export function ReportIssue({
         <p className="text-xs text-muted-foreground">
           Open the issue on GitHub first, then paste its link here. The credits
           stay pending for {validationDays} days and land only if the issue
-          isn&apos;t labelled invalid, duplicate, or similar.
+          isn&apos;t labelled invalid, duplicate, or similar. One reward per repo.
         </p>
         <Button asChild variant="outline" size="sm">
           <a
