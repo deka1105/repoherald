@@ -1,19 +1,27 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { issueReports, repos, users } from "@/db/schema";
 import { requireUser } from "@/lib/authz";
+import { writeAudit } from "@/lib/audit";
 import { decryptToken } from "@/lib/crypto";
 import {
   ISSUE_REPORT_CREDITS,
   ISSUE_REPORT_DAILY_CAP,
+  ISSUE_REPORTS_PER_REPO,
   ISSUE_REPORT_WEEKLY_CAP,
   ISSUE_VALIDATION_DAYS,
   getIssueReportUsage,
+  rejectIssueReport,
 } from "@/lib/credits";
-import { GithubAuthError, fetchIssue } from "@/lib/github";
+import {
+  GithubAuthError,
+  GithubRateLimitError,
+  fetchIssue,
+} from "@/lib/github";
+import { validateOneIssueReport } from "@/lib/issue-validation";
 
 export type IssueReportState = { error?: string; success?: string };
 
@@ -147,4 +155,66 @@ export async function submitIssueReport(
   return {
     success: `Submitted — ${ISSUE_REPORT_CREDITS} credits are pending. They land in ${ISSUE_VALIDATION_DAYS} days if the issue isn't labelled invalid or duplicate.`,
   };
+}
+
+/** Staff-only: run the same validation the cron would, without waiting for the
+ * 7-day window. Built to make the reward path testable, and useful afterwards
+ * for settling disputes. */
+export async function validateIssueReportNow(reportId: string) {
+  const staff = await requireUser();
+  if (staff.role !== "admin" && staff.role !== "moderator") {
+    throw new Error("Not authorized");
+  }
+
+  const [row] = await db
+    .select({ report: issueReports, repo: repos, user: users })
+    .from(issueReports)
+    .innerJoin(repos, eq(issueReports.repoId, repos.id))
+    .innerJoin(users, eq(issueReports.userId, users.id))
+    .where(eq(issueReports.id, reportId))
+    .limit(1);
+  if (!row) throw new Error("Report not found");
+
+  try {
+    const outcome = await validateOneIssueReport(row);
+    await writeAudit(db, {
+      actorUserId: staff.id,
+      actorType: staff.role === "admin" ? "admin" : "moderator",
+      action: "issue_report.validate_now",
+      entityType: "issue_report",
+      entityId: reportId,
+      metadata: { outcome },
+    });
+  } catch (e) {
+    // GitHub was unreachable — leave the row pending rather than punishing the
+    // reporter for our failed lookup.
+    if (e instanceof GithubAuthError || e instanceof GithubRateLimitError) {
+      revalidatePath("/admin/issue-reports");
+      return;
+    }
+    throw e;
+  }
+
+  revalidatePath("/admin/issue-reports");
+  revalidatePath("/wallet");
+}
+
+/** Staff override: reject a pending report outright (spam the labels missed). */
+export async function rejectIssueReportAsStaff(formData: FormData) {
+  const staff = await requireUser();
+  if (staff.role !== "admin" && staff.role !== "moderator") {
+    throw new Error("Not authorized");
+  }
+  const id = String(formData.get("reportId") ?? "");
+  if (!id) throw new Error("Missing report id");
+
+  await rejectIssueReport(id, "rejected_by_staff");
+  await writeAudit(db, {
+    actorUserId: staff.id,
+    actorType: staff.role === "admin" ? "admin" : "moderator",
+    action: "issue_report.reject",
+    entityType: "issue_report",
+    entityId: id,
+  });
+  revalidatePath("/admin/issue-reports");
 }
