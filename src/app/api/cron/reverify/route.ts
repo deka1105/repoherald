@@ -401,33 +401,12 @@ async function validateIssueReports(): Promise<{ paid: number; rejected: number 
   let rejected = 0;
 
   for (const { report, repo, user } of batch) {
-    if (!user.githubAccessTokenEnc || user.tokenInvalidAt) continue;
-    let token: string;
     try {
-      token = decryptToken(user.githubAccessTokenEnc);
-    } catch {
-      continue;
-    }
-
-    try {
-      const issue = await fetchIssue(
-        token,
-        repo.ownerLogin,
-        repo.name,
-        report.issueNumber
-      );
-      if (!issue) {
-        await rejectIssueReport(report.id, "issue_deleted");
-        rejected++;
-        continue;
-      }
-      const bad = hasDismissiveLabel(issue.labels);
-      if (bad) {
-        await rejectIssueReport(report.id, `labelled_${bad.toLowerCase()}`);
-        rejected++;
-        continue;
-      }
-      if (await grantIssueReportReward(report.id)) paid++;
+      // Token handling and the reject/pay rules live in validateOneIssueReport,
+      // shared with the staff "validate now" button so they can't drift.
+      const outcome = await validateOneIssueReport({ report, repo, user });
+      if (outcome === "paid") paid++;
+      if (outcome === "rejected") rejected++;
     } catch (e) {
       if (e instanceof GithubAuthError) {
         await db
