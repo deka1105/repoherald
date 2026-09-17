@@ -17,6 +17,7 @@ import {
   REVOCATION_WINDOW_DAYS,
 } from "@/lib/credits";
 import { validateOneIssueReport } from "@/lib/issue-validation";
+import { isCronAuthorized } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/log";
 import { refundSponsorshipForRepo } from "@/lib/stripe";
@@ -421,8 +422,7 @@ async function validateIssueReports(): Promise<{ paid: number; rejected: number 
 }
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

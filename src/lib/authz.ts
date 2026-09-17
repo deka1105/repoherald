@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
@@ -27,4 +28,24 @@ export async function requireModerator() {
     throw new Error("Not authorized");
   }
   return user;
+}
+
+/**
+ * Vercel Cron authorization. Fails closed when CRON_SECRET is unset: comparing
+ * against `Bearer ${process.env.CRON_SECRET}` with the var missing makes the
+ * expected header the literal string "Bearer undefined", which anyone can send.
+ * That matters because CRON_SECRET is set on Production only while DATABASE_URL
+ * is set on Preview too — and the reverify job claws back credits and issues
+ * Stripe refunds. Preview deployments are behind Vercel Authentication today,
+ * but this must not depend on a dashboard toggle staying on.
+ */
+export function isCronAuthorized(request: Request): boolean {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  const header = request.headers.get("authorization");
+  if (!header) return false;
+  const expected = Buffer.from(`Bearer ${secret}`, "utf8");
+  const got = Buffer.from(header, "utf8");
+  // Length check first: timingSafeEqual throws on a mismatch.
+  return expected.length === got.length && timingSafeEqual(expected, got);
 }
