@@ -1,0 +1,11 @@
+import { neon } from '@neondatabase/serverless';
+import { readFileSync } from 'node:fs';
+const url = readFileSync('.env.local','utf8').match(/^DATABASE_URL=(.*)$/m)[1].replace(/^["']|["']$/g,'').trim();
+const sql = neon(url);
+const repos = await sql`SELECT full_name, last_synced_at FROM repos ORDER BY last_synced_at DESC NULLS LAST`;
+console.log('REPO SYNC (cron syncRepos touches these daily):');
+for (const r of repos) console.log('  ', r.full_name, '->', r.last_synced_at);
+const mints = await sql`SELECT status, last_verified_at FROM star_mints`;
+console.log('\nSTAR MINT RE-VERIFY (cron reverifyStars):');
+for (const m of mints) console.log('  ', m.status, '->', m.last_verified_at);
+console.log('\nnow:', new Date().toISOString());
