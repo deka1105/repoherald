@@ -14,16 +14,6 @@ export function getStripe(): Stripe {
   return stripeClient;
 }
 
-// Each plan ends at the day limit OR when the repo gains this many stars,
-// whichever comes first.
-export const SPONSOR_PRICES: Record<
-  string,
-  { priceEnv: string; days: number; starsCap: number; label: string }
-> = {
-  "7d": { priceEnv: "STRIPE_PRICE_7D", days: 7, starsCap: 75, label: "7 days or 75 stars" },
-  "15d": { priceEnv: "STRIPE_PRICE_15D", days: 15, starsCap: 160, label: "15 days or 160 stars" },
-  "30d": { priceEnv: "STRIPE_PRICE_30D", days: 30, starsCap: 350, label: "30 days or 350 stars" },
-};
 
 /**
  * Pro-rated refund when a sponsored repo is removed mid-run: refund the
