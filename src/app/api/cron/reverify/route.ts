@@ -324,7 +324,11 @@ async function syncRepos() {
         eq(repos.status, "active"),
         or(
           isNull(repos.lastSyncedAt),
-          lt(repos.lastSyncedAt, sql`now() - interval '24 hours'`)
+          // 20h, not 24h: the job runs daily, so a row synced moments into
+          // yesterday's run is a second or two short of 24h old when today's
+          // run checks it and gets skipped — syncing every OTHER day. The
+          // threshold has to sit below the cron period to absorb that drift.
+          lt(repos.lastSyncedAt, sql`now() - interval '20 hours'`)
         ),
         isNull(users.tokenInvalidAt)
       )
