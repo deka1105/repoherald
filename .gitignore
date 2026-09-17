@@ -51,3 +51,6 @@ venv/
 dist/
 .venv/
 .pytest_cache/
+
+# Throwaway inspection scripts (the auto-push watcher commits fast — keep them out)
+_scratch*
