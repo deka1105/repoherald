@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { issueReports, repos, users } from "@/db/schema";
-import { requireUser } from "@/lib/authz";
+import { actorTypeOf, requireModerator, requireUser } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
 import { decryptToken } from "@/lib/crypto";
 import {
@@ -161,10 +161,7 @@ export async function submitIssueReport(
  * 7-day window. Built to make the reward path testable, and useful afterwards
  * for settling disputes. */
 export async function validateIssueReportNow(reportId: string) {
-  const staff = await requireUser();
-  if (staff.role !== "admin" && staff.role !== "moderator") {
-    throw new Error("Not authorized");
-  }
+  const staff = await requireModerator();
 
   const [row] = await db
     .select({ report: issueReports, repo: repos, user: users })
@@ -179,7 +176,7 @@ export async function validateIssueReportNow(reportId: string) {
     const outcome = await validateOneIssueReport(row);
     await writeAudit(db, {
       actorUserId: staff.id,
-      actorType: staff.role === "admin" ? "admin" : "moderator",
+      actorType: actorTypeOf(staff),
       action: "issue_report.validate_now",
       entityType: "issue_report",
       entityId: reportId,
@@ -201,17 +198,14 @@ export async function validateIssueReportNow(reportId: string) {
 
 /** Staff override: reject a pending report outright (spam the labels missed). */
 export async function rejectIssueReportAsStaff(formData: FormData) {
-  const staff = await requireUser();
-  if (staff.role !== "admin" && staff.role !== "moderator") {
-    throw new Error("Not authorized");
-  }
+  const staff = await requireModerator();
   const id = String(formData.get("reportId") ?? "");
   if (!id) throw new Error("Missing report id");
 
   await rejectIssueReport(id, "rejected_by_staff");
   await writeAudit(db, {
     actorUserId: staff.id,
-    actorType: staff.role === "admin" ? "admin" : "moderator",
+    actorType: actorTypeOf(staff),
     action: "issue_report.reject",
     entityType: "issue_report",
     entityId: id,

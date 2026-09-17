@@ -20,8 +20,14 @@ export async function requireAdmin() {
   return user;
 }
 
-/** Moderator-or-above: content/community tools. Money, credits, roles, and
- * pricing must keep using requireAdmin. */
+/** Moderator-or-above: content/community tools.
+ *
+ * Roles, pricing, sponsorships and discretionary credit adjustments stay on
+ * requireAdmin. The one deliberate exception is approveShare, which mints a
+ * single credit for a share a user already submitted: bounded amount, only
+ * from `pending`, idempotent, and audited with actorType "moderator". Treat
+ * that shape — fixed, idempotent, audited — as the bar before any other
+ * credit-touching action is opened to moderators. */
 export async function requireModerator() {
   const user = await requireUser();
   if (user.role !== "admin" && user.role !== "moderator") {
@@ -48,4 +54,9 @@ export function isCronAuthorized(request: Request): boolean {
   const got = Buffer.from(header, "utf8");
   // Length check first: timingSafeEqual throws on a mismatch.
   return expected.length === got.length && timingSafeEqual(expected, got);
+}
+
+/** Which actor type to stamp on an audit row for a staff member. */
+export function actorTypeOf(actor: { role: string }): "admin" | "moderator" {
+  return actor.role === "admin" ? "admin" : "moderator";
 }

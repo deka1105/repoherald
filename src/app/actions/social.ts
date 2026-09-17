@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { repoComments, repoLikes, repos } from "@/db/schema";
-import { requireUser } from "@/lib/authz";
+import { actorTypeOf, requireUser } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
 import { COMMENT_MAX, COMMENTS_PER_DAY } from "@/lib/social";
 
@@ -93,7 +93,7 @@ export async function removeComment(formData: FormData) {
   if (isStaff && comment.userId !== user.id) {
     await writeAudit(db, {
       actorUserId: user.id,
-      actorType: user.role === "admin" ? "admin" : "moderator",
+      actorType: actorTypeOf(user),
       action: "comment.remove",
       entityType: "repo_comment",
       entityId: id,
@@ -122,7 +122,7 @@ export async function restoreComment(commentId: string) {
     .where(eq(repoComments.id, commentId));
   await writeAudit(db, {
     actorUserId: user.id,
-    actorType: user.role === "admin" ? "admin" : "moderator",
+    actorType: actorTypeOf(user),
     action: "comment.restore",
     entityType: "repo_comment",
     entityId: commentId,

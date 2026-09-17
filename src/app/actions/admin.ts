@@ -14,17 +14,13 @@ import {
   supportTickets,
   users,
 } from "@/db/schema";
-import { requireAdmin, requireModerator } from "@/lib/authz";
+import { requireAdmin, requireModerator, actorTypeOf } from "@/lib/authz";
 import { grantShareReward } from "@/lib/credits";
 import { writeAudit } from "@/lib/audit";
 import { refundSponsorshipForRepo } from "@/lib/stripe";
 
 function ok(): { error?: string } {
   return {};
-}
-
-function actorTypeOf(actor: { role: string }): "admin" | "moderator" {
-  return actor.role === "admin" ? "admin" : "moderator";
 }
 
 export async function setRepoStatus(

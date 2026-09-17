@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { repoListItems, repoLists, repos } from "@/db/schema";
-import { requireUser } from "@/lib/authz";
+import { actorTypeOf, requireUser } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
 import {
   DESCRIPTION_MAX,
@@ -250,7 +250,7 @@ export async function setListStatus(listId: string, status: "active" | "removed"
     .where(eq(repoLists.id, listId));
   await writeAudit(db, {
     actorUserId: user.id,
-    actorType: user.role === "admin" ? "admin" : "moderator",
+    actorType: actorTypeOf(user),
     action: status === "removed" ? "list.remove" : "list.restore",
     entityType: "repo_list",
     entityId: listId,
