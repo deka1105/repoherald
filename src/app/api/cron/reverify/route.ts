@@ -74,7 +74,10 @@ async function reverifyStars(): Promise<{ checked: number; revoked: number }> {
         ),
         or(
           isNull(starMints.lastVerifiedAt),
-          lt(starMints.lastVerifiedAt, sql`now() - interval '24 hours'`)
+          // 20h for the same reason as the share and repo-sync windows: a
+          // daily job plus a 24h threshold skips rows that are seconds short
+          // of the cutoff, so a mint would only re-verify every other day.
+          lt(starMints.lastVerifiedAt, sql`now() - interval '20 hours'`)
         ),
         isNull(users.tokenInvalidAt)
       )
