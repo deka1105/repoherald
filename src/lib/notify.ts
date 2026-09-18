@@ -57,6 +57,7 @@ export async function notifySponsorshipActivated(sponsorshipId: string): Promise
     let sent = 0;
     for (const recipient of recipients) {
       const unsubscribe = unsubscribeUrl(recipient.id);
+      if (!unsubscribe) log.warn("notify.sponsor.no_unsubscribe_link", { reason: "AUTH_SECRET unset" });
       const { subject, html, text } = renderSponsorAlert({
         fullName: row.fullName,
         description: row.description,
@@ -64,7 +65,7 @@ export async function notifySponsorshipActivated(sponsorshipId: string): Promise
         starsCount: row.starsCount,
         avatarUrl: row.avatarUrl,
         repoUrl: appUrl(`/repos/${row.repoId}`),
-        unsubscribeUrl: unsubscribe,
+        unsubscribeUrl: unsubscribe ?? undefined,
       });
       const ok = await sendEmail({
         to: recipient.email,
@@ -73,10 +74,12 @@ export async function notifySponsorshipActivated(sponsorshipId: string): Promise
         text,
         // RFC 8058: lets Gmail/Outlook show their own one-click unsubscribe,
         // which many people use instead of scrolling to the footer link.
-        headers: {
-          "List-Unsubscribe": `<${unsubscribe}>`,
-          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-        },
+        headers: unsubscribe
+          ? {
+              "List-Unsubscribe": `<${unsubscribe}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            }
+          : undefined,
       });
       if (ok) sent += 1;
     }

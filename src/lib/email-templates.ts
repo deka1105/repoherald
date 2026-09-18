@@ -33,7 +33,7 @@ function esc(s: string): string {
 }
 
 const FOOTER =
-  "You're receiving this because you turned on sponsored-repo alerts in your repoherald wallet.";
+  "You're receiving this because you turned on sponsored-repo alerts in your repoherald wallet, where you can turn them off any time.";
 
 /** Footer HTML including a one-click unsubscribe link when we have one. */
 function footerHtml(d: SponsorAlertData): string {
