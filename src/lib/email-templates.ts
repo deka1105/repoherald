@@ -10,6 +10,9 @@ export type SponsorAlertData = {
   starsCount: number;
   avatarUrl: string | null;
   repoUrl: string;
+  /** Per-recipient signed unsubscribe link. Optional so the admin preview can
+   *  render without minting a real token; every sent email supplies it. */
+  unsubscribeUrl?: string;
 };
 
 export type RenderedEmail = { subject: string; html: string; text: string };
@@ -30,7 +33,19 @@ function esc(s: string): string {
 }
 
 const FOOTER =
-  "You're receiving this because you turned on sponsored-repo alerts in your repoherald wallet. You can turn them off there any time.";
+  "You're receiving this because you turned on sponsored-repo alerts in your repoherald wallet.";
+
+/** Footer HTML including a one-click unsubscribe link when we have one. */
+function footerHtml(d: SponsorAlertData): string {
+  if (!d.unsubscribeUrl) return esc(FOOTER);
+  return `${esc(FOOTER)} <a href="${esc(d.unsubscribeUrl)}" style="color:inherit;">Unsubscribe</a>.`;
+}
+
+function footerText(d: SponsorAlertData): string {
+  return d.unsubscribeUrl
+    ? `${FOOTER}\nUnsubscribe: ${d.unsubscribeUrl}`
+    : FOOTER;
+}
 
 function stars(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
@@ -39,7 +54,7 @@ function stars(n: number): string {
 function textBody(d: SponsorAlertData, lead: string): string {
   return `${lead}\n\n${d.fullName}${
     d.description ? `\n${d.description}` : ""
-  }\n\nView & star it: ${d.repoUrl}\n\n—\n${FOOTER}`;
+  }\n\nView & star it: ${d.repoUrl}\n\n—\n${footerText(d)}`;
 }
 
 /** 1) Minimal — plain, lots of whitespace, single link-style CTA. */
@@ -62,7 +77,7 @@ const minimal: SponsorAlertTemplate = {
       <a href="${d.repoUrl}" style="color:#2563eb;font-weight:600;text-decoration:none;">View &amp; star it &rarr;</a>
     </p>
     <hr style="border:none;border-top:1px solid #eee;margin:0 0 16px;" />
-    <p style="font-size:12px;color:#aaa;margin:0;">${FOOTER}</p>
+    <p style="font-size:12px;color:#aaa;margin:0;">${footerHtml(d)}</p>
   </div>
 </div>`,
     text: textBody(d, "A new sponsored repo just went live on repoherald."),
@@ -96,7 +111,7 @@ const card: SponsorAlertTemplate = {
       ${d.description ? `<p style="margin:16px 0 0;color:#374151;font-size:14px;">${esc(d.description)}</p>` : ""}
       <a href="${d.repoUrl}" style="display:inline-block;margin-top:20px;background:#111;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:10px 18px;border-radius:8px;">Star this repo</a>
     </div>
-    <p style="font-size:12px;color:#9aa0a6;margin:16px 0 0;text-align:center;">${FOOTER}</p>
+    <p style="font-size:12px;color:#9aa0a6;margin:16px 0 0;text-align:center;">${footerHtml(d)}</p>
   </div>
 </div>`,
     text: textBody(d, `${d.fullName} is now sponsored on repoherald.`),
@@ -126,7 +141,7 @@ const announcement: SponsorAlertTemplate = {
       ${d.description ? `<p style="margin:0 0 24px;color:#c3c9dc;">${esc(d.description)}</p>` : ""}
       <a href="${d.repoUrl}" style="display:inline-block;background:#8b5cf6;color:#fff;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:999px;">Check it out &rarr;</a>
     </div>
-    <p style="font-size:12px;color:#6b7280;margin:0;padding:16px 24px 28px;text-align:center;">${FOOTER}</p>
+    <p style="font-size:12px;color:#6b7280;margin:0;padding:16px 24px 28px;text-align:center;">${footerHtml(d)}</p>
   </div>
 </div>`,
     text: textBody(d, `New sponsored repo on repoherald — ${d.fullName}.`),
