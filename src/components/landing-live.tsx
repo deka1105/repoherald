@@ -242,8 +242,11 @@ export function Landing({
           repoherald
         </span>
         <div className="rh-foot-links">
-          <a href="#">Terms</a>
-          <a href="#">Privacy</a>
+          <Link href="/terms">Terms</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/cookies">Cookies</Link>
+          <Link href="/refunds">Refunds</Link>
+          <Link href="/support">Support</Link>
           <a href="https://github.com" target="_blank" rel="noreferrer">
             GitHub
           </a>
