@@ -139,6 +139,14 @@ export function Landing({
             Browse repos
           </a>
         </div>
+        {/* Clickwrap: the terms are named and linked at the point of agreeing,
+            not buried in a footer. */}
+        <p className="rh-consent">
+          By signing in you agree to our{" "}
+          <Link href="/terms">Terms of Service</Link> and{" "}
+          <Link href="/privacy">Privacy Policy</Link>. We request read-only GitHub
+          access and never post on your behalf.
+        </p>
         <div className="rh-stats">
           <span>
             <span className="rh-glyph">◈</span> {fmt(stats.repoCount)} repos

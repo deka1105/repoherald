@@ -704,3 +704,23 @@
     animation: none !important;
   }
 }
+
+/* Sign-in clickwrap notice under the hero CTA. Muted but not whispered —
+   it must stay legible, so it inherits the body colour at reduced opacity
+   rather than dropping to a low-contrast grey. */
+.rh-consent {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 46ch;
+  opacity: 0.75;
+}
+.rh-consent a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rh-consent a:hover,
+.rh-consent a:focus-visible {
+  opacity: 1;
+}
