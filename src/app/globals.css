@@ -38,7 +38,10 @@
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
+  /* 0.708 gave only 3.05:1 on --background and 2.98:1 on --muted — below
+     WCAG AA (4.5) and under even the 3.0 large-text floor. 0.8 measures
+     5.48 and 5.35 while staying clearly muted against --foreground. */
+  --muted-foreground: oklch(0.8 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -95,7 +98,8 @@
   --secondary: oklch(0.3 0.04 245);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.3 0.03 245);
-  --muted-foreground: oklch(0.72 0.03 240);
+  /* Was 3.33:1 on --background. See the dark-theme note above. */
+  --muted-foreground: oklch(0.8 0.03 240);
   --accent: oklch(0.33 0.055 240);
   --accent-foreground: oklch(0.98 0 0);
   --border: oklch(1 0 0 / 12%);
@@ -115,7 +119,8 @@
   --secondary: oklch(0.3 0.04 300);
   --secondary-foreground: oklch(0.98 0 0);
   --muted: oklch(0.3 0.03 300);
-  --muted-foreground: oklch(0.73 0.03 300);
+  /* Was 3.44:1 on --background. See the dark-theme note above. */
+  --muted-foreground: oklch(0.8 0.03 300);
   --accent: oklch(0.34 0.06 300);
   --accent-foreground: oklch(0.98 0 0);
   --border: oklch(1 0 0 / 12%);
