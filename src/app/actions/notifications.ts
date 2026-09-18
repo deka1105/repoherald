@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { verifyUnsubscribeToken } from "@/lib/unsubscribe";
 
 export async function markCreditsSeen() {
   const session = await auth();

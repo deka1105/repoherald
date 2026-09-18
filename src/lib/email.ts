@@ -6,6 +6,8 @@ export type SendEmailInput = {
   html: string;
   text?: string;
   replyTo?: string;
+  /** Extra RFC headers, e.g. List-Unsubscribe for one-click in Gmail/Outlook. */
+  headers?: Record<string, string>;
 };
 
 /**
@@ -41,6 +43,7 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
         html: input.html,
         text: input.text,
         reply_to: input.replyTo,
+        headers: input.headers,
       }),
     });
     if (!res.ok) {

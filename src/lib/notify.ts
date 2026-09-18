@@ -4,6 +4,7 @@ import { repos, sponsorships, users } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { renderSponsorAlert } from "@/lib/email-templates";
 import { log } from "@/lib/log";
+import { unsubscribeUrl } from "@/lib/unsubscribe";
 
 function appUrl(path: string): string {
   const base =
@@ -39,31 +40,45 @@ export async function notifySponsorshipActivated(sponsorshipId: string): Promise
     }
 
     const subscribers = await db
-      .select({ email: users.email })
+      .select({ id: users.id, email: users.email })
       .from(users)
       .where(and(eq(users.sponsorAlertsOptIn, true), isNotNull(users.email)));
 
-    const recipients = subscribers
-      .map((s) => s.email)
-      .filter((e): e is string => Boolean(e));
+    const recipients = subscribers.filter(
+      (s): s is { id: string; email: string } => Boolean(s.email)
+    );
     if (recipients.length === 0) {
       log.info("notify.sponsor.no_subscribers", { sponsorshipId });
       return;
     }
 
-    const { subject, html, text } = renderSponsorAlert({
-      fullName: row.fullName,
-      description: row.description,
-      primaryLanguage: row.primaryLanguage,
-      starsCount: row.starsCount,
-      avatarUrl: row.avatarUrl,
-      repoUrl: appUrl(`/repos/${row.repoId}`),
-    });
-
-    // Send individually so one recipient can't see the others (BCC-free).
+    // Send individually so one recipient can't see the others (BCC-free), and
+    // so each gets an unsubscribe link signed for their own account.
     let sent = 0;
-    for (const to of recipients) {
-      if (await sendEmail({ to, subject, html, text })) sent += 1;
+    for (const recipient of recipients) {
+      const unsubscribe = unsubscribeUrl(recipient.id);
+      const { subject, html, text } = renderSponsorAlert({
+        fullName: row.fullName,
+        description: row.description,
+        primaryLanguage: row.primaryLanguage,
+        starsCount: row.starsCount,
+        avatarUrl: row.avatarUrl,
+        repoUrl: appUrl(`/repos/${row.repoId}`),
+        unsubscribeUrl: unsubscribe,
+      });
+      const ok = await sendEmail({
+        to: recipient.email,
+        subject,
+        html,
+        text,
+        // RFC 8058: lets Gmail/Outlook show their own one-click unsubscribe,
+        // which many people use instead of scrolling to the footer link.
+        headers: {
+          "List-Unsubscribe": `<${unsubscribe}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
+      });
+      if (ok) sent += 1;
     }
     log.info("notify.sponsor.done", { sponsorshipId, recipients: recipients.length, sent });
   } catch (e) {
