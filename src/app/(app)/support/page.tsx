@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SupportForm } from "./support-form";
+import Link from "next/link";
 
 const FAQ = [
   {
@@ -58,6 +59,31 @@ export default async function SupportPage() {
               <p className="mt-1 text-sm text-muted-foreground">{item.a}</p>
             </div>
           ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Your data</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p className="m-0">
+            You can delete your account yourself at any time from{" "}
+            <Link href="/wallet" className="underline underline-offset-4">
+              your wallet
+            </Link>
+            . It removes your GitHub token and personal details straight away and hides
+            your listings.
+          </p>
+          <p className="m-0">
+            If you can&apos;t sign in, or you want a copy of your data instead, send the
+            request using the form below and write &ldquo;data request&rdquo; in the
+            subject. We reply within 30 days. See our{" "}
+            <Link href="/privacy" className="underline underline-offset-4">
+              privacy policy
+            </Link>{" "}
+            for what we hold.
+          </p>
         </CardContent>
       </Card>
 
