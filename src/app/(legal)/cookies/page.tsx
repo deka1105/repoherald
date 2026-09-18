@@ -12,9 +12,9 @@ export default function CookiesPage() {
     <>
       <h1>Cookies &amp; local storage</h1>
       <p>
-        This is the complete list. {LEGAL.serviceName} sets <strong>one cookie</strong>, and it
-        exists only to keep you signed in. We run no advertising cookies, no third-party analytics
-        cookies, and nothing that follows you to other sites.
+        This is the complete list. {LEGAL.serviceName} sets <strong>two cookies</strong> — one to
+        keep you signed in, one to remember a layout choice you made. We run no advertising
+        cookies, no third-party analytics cookies, and nothing that follows you to other sites.
       </p>
 
       <h2>Cookies</h2>
@@ -39,12 +39,21 @@ export default function CookiesPage() {
             </td>
             <td>Until you sign out or it expires</td>
           </tr>
+          <tr>
+            <td><code>rh_feed_layout</code></td>
+            <td>
+              Remembers whether you chose the banner, tile, or hybrid feed layout. It is a cookie
+              rather than local storage so the server can render your chosen layout immediately,
+              instead of flashing the default first.
+            </td>
+            <td>1 year</td>
+          </tr>
         </tbody>
       </table>
       <p>
-        This is a strictly necessary cookie: it is set only once you choose to sign in, and the
-        service cannot work without it. Under the ePrivacy rules that kind of cookie does not
-        require consent, which is why signing in does not trigger a permission prompt.
+        Both are exempt from consent prompts: the session cookie is strictly necessary, and the
+        layout cookie stores only a preference you set yourself, at the moment you set it. Neither
+        is used to identify or track you, and neither is set before you act.
       </p>
 
       <h2>Local storage</h2>
@@ -61,7 +70,7 @@ export default function CookiesPage() {
         </thead>
         <tbody>
           <tr>
-            <td><code>rh-theme</code></td>
+            <td><code>rh_theme</code></td>
             <td>Your light or dark theme choice</td>
           </tr>
           <tr>
@@ -71,6 +80,10 @@ export default function CookiesPage() {
           <tr>
             <td><code>rh_welcome_seen</code></td>
             <td>Remembers you have seen the welcome guide</td>
+          </tr>
+          <tr>
+            <td><code>rh_promo_seen</code></td>
+            <td>Remembers which discount codes you have already been shown</td>
           </tr>
           <tr>
             <td><code>rh_analytics_opt_out</code></td>
