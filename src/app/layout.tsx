@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { StorageNotice } from "@/components/storage-notice";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageTracker } from "@/components/page-tracker";
 import { GithubClickTracker } from "@/components/github-click-tracker";
@@ -84,6 +85,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <Toaster />
+          <StorageNotice />
         </ThemeProvider>
         <PageTracker />
         <GithubClickTracker />
