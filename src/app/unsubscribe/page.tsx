@@ -32,7 +32,7 @@ export default async function UnsubscribePage({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-lg flex-1 px-4 py-12">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-lg flex-1 px-4 py-12">
         {userId ? (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">You’re unsubscribed</h1>

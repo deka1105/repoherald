@@ -82,6 +82,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
       </head>
       <body className="min-h-full flex flex-col">
+        {/* First focusable element on every page. */}
+        <a href="#main" className="skip-link">
+          Skip to main content
+        </a>
         <ThemeProvider>
           {children}
           <Toaster />

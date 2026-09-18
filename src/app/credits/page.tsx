@@ -22,7 +22,7 @@ export default async function CreditsPage({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-4 py-6 pb-24 md:pb-14">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-4 py-6 pb-24 md:pb-14">
         <h1 className="text-xl font-semibold">Buy credits</h1>
         <p className="text-sm text-muted-foreground">
           1 credit = 1 hour highlighting your own repo, or 15 minutes donated to

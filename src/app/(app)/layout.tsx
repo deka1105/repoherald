@@ -11,7 +11,7 @@ export default function AppLayout({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-24 md:pb-14">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 pb-24 md:pb-14">
         {children}
       </main>
       <SiteFooter />

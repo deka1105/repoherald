@@ -31,7 +31,7 @@ export default async function PromotePage({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-xl flex-1 space-y-4 px-4 py-6 pb-24 md:pb-14">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-xl flex-1 space-y-4 px-4 py-6 pb-24 md:pb-14">
         <h1 className="text-xl font-semibold">Sponsor a listing</h1>
         <p className="text-sm text-muted-foreground">
           Sponsored repos are pinned to the top of the feed (or featured within it)

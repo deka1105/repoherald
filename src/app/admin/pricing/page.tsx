@@ -71,7 +71,7 @@ export default async function AdminPricingPage({
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-6 pb-24 md:pb-14">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-6 pb-24 md:pb-14">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-xl font-semibold">Pricing &amp; discounts</h1>
           <Link href="/admin" className="text-sm text-muted-foreground hover:underline">

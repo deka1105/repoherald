@@ -13,7 +13,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 pb-24 md:pb-14">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 pb-24 md:pb-14">
         {/* Sibling documents, so a reader who lands on one can reach the rest. */}
         <nav aria-label="Legal documents" className="mb-8 flex flex-wrap gap-x-4 gap-y-2 text-sm">
           {DOCS.map((d) => (

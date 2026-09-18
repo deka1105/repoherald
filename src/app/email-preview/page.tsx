@@ -27,7 +27,7 @@ export default async function EmailPreviewPage() {
   if (session?.user?.role !== "admin") notFound();
 
   return (
-    <main
+    <main id="main" tabIndex={-1}
       style={{
         maxWidth: 720,
         margin: "0 auto",
