@@ -48,7 +48,9 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* 0.556 measured 1.49:1 against --background — a focus ring nobody could
+     see. WCAG 1.4.11 wants 3:1 for focus indicators; 0.75 measures 3.96:1. */
+  --ring: oklch(0.75 0 0);
 }
 
 /* Selectable design themes (see src/lib/themes.ts). Each class overrides only
@@ -158,9 +160,36 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  /* Focus indicator: solid (not 50% alpha, which quietly halves its contrast),
+     2px, and offset so it reads against the element it belongs to. */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
   }
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Skip link: the first thing a keyboard user reaches, so they can jump the nav
+   instead of tabbing through it on every page. Off-screen until focused. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+}
+.skip-link:focus-visible {
+  left: 0.5rem;
+  top: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--background);
+  color: var(--foreground);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
