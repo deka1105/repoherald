@@ -35,3 +35,13 @@ No test framework yet.
 - Never hand-write a future `when` timestamp in `drizzle/meta/_journal.json`: drizzle only applies entries whose `when` is greater than the last applied migration's `created_at`, so a future-dated entry makes every later migration get silently skipped (`drizzle-kit migrate` prints success even when it applies nothing).
 - Code ships to prod on push to main; apply schema migrations to Neon before/with the push, never after.
 - Pricing is DB-driven (`sponsor_plans` via `src/lib/pricing.ts`); never hardcode plan prices in UI — render them with `src/components/plan-price.tsx`.
+
+## Legal & compliance
+
+- Policy pages live in the `src/app/(legal)/` route group: `/privacy`, `/terms`, `/cookies`, `/refunds`. Every factual claim in them is derived from the code — **if you change what is collected, stored, charged, or refunded, update the matching page in the same commit.**
+- Business identity comes from `src/lib/legal.ts`, which reads `LEGAL_ENTITY_NAME` / `LEGAL_ENTITY_ADDRESS` / `LEGAL_JURISDICTION` / `LEGAL_CONTACT_EMAIL`. Unset values make the pages **omit** the operator block — never hardcode a company name or address, and never invent one.
+- View counting is first-party and cookieless (`src/lib/analytics.ts`: daily-rotating salted hash of IP+UA, IP never stored). `src/lib/analytics-consent.ts` gates it — `trackEvent` checks the opt-out at send time and honours Global Privacy Control automatically. Storage that fails to read counts as opted OUT.
+- `StorageNotice` is a notice, not a consent wall: only two cookies exist (auth session, feed layout) and both are consent-exempt. Do not turn it into an "Accept all" modal — both buttons are deliberately the same visual weight.
+- Marketing email must carry a working unsubscribe. `src/lib/unsubscribe.ts` signs a per-recipient token (HMAC over the user id, no expiry) and `notify.ts` sets `List-Unsubscribe` + `List-Unsubscribe-Post`. `unsubscribeUrl()` returns **null** rather than throwing when `AUTH_SECRET` is unset, so a misconfigured env degrades to an email without one-click rather than sending nothing.
+- Accessibility floors that are already met — do not regress them: `--muted-foreground` clears 4.5:1 on both `--background` and `--muted` in all three dark themes, `--ring` clears 3:1, focus outlines are solid (not alpha-reduced), every `<main>` has `id="main"` for the skip link, and decorative logos beside their own text keep `alt=""` on purpose.
+- Asset licences are recorded in `ATTRIBUTION.md`. Fonts are self-hosted by `next/font/google` at build time, so no request reaches Google at runtime — the cookie policy says so, keep it true.
