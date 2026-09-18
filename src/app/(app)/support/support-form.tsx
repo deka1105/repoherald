@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import Link from "next/link";
 
 export function SupportForm({ email }: { email: string | null }) {
   const [state, action, pending] = useActionState<SupportState, FormData>(
@@ -44,6 +45,16 @@ export function SupportForm({ email }: { email: string | null }) {
         />
       </div>
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {/* Says what happens to the data at the point it is handed over, rather
+          than only in the privacy policy. */}
+      <p className="text-sm text-muted-foreground">
+        We store your message and email address only to answer you. We don&apos;t add
+        you to any mailing list. See our{" "}
+        <Link href="/privacy" className="underline underline-offset-4">
+          privacy policy
+        </Link>
+        .
+      </p>
       <Button type="submit" disabled={pending}>
         {pending ? "Sending…" : "Send message"}
       </Button>
