@@ -4,7 +4,7 @@
 // uneditable): identical markup/CSS, but the sponsorship plans are passed in
 // from the DB instead of hardcoded, and the CTA points at /promote.
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { signInWithGitHub } from "@/app/actions/auth";
 import { PlanPrice } from "@/components/plan-price";
