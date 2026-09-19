@@ -12,8 +12,8 @@ export default function CookiesPage() {
     <>
       <h1>Cookies &amp; local storage</h1>
       <p>
-        This is the complete list. {LEGAL.serviceName} sets <strong>two cookies</strong> — one to
-        keep you signed in, one to remember a layout choice you made. We run no advertising
+        This is the complete list. {LEGAL.serviceName} sets <strong>three cookies</strong> — one to
+        keep you signed in, and two that remember display choices you made. We run no advertising
         cookies, no third-party analytics cookies, and nothing that follows you to other sites.
       </p>
 
@@ -40,6 +40,15 @@ export default function CookiesPage() {
             <td>Until you sign out or it expires</td>
           </tr>
           <tr>
+            <td><code>rh_theme</code></td>
+            <td>
+              Your light, dark, or coloured theme choice. A cookie rather than local storage so
+              the server can render your theme in the very first byte of the page, instead of
+              flashing the default and repainting.
+            </td>
+            <td>1 year</td>
+          </tr>
+          <tr>
             <td><code>rh_feed_layout</code></td>
             <td>
               Remembers whether you chose the banner, tile, or hybrid feed layout. It is a cookie
@@ -51,9 +60,9 @@ export default function CookiesPage() {
         </tbody>
       </table>
       <p>
-        Both are exempt from consent prompts: the session cookie is strictly necessary, and the
-        layout cookie stores only a preference you set yourself, at the moment you set it. Neither
-        is used to identify or track you, and neither is set before you act.
+        All three are exempt from consent prompts: the session cookie is strictly necessary, and
+        the theme and layout cookies store only preferences you set yourself, at the moment you
+        set them. None is used to identify or track you, and none is set before you act.
       </p>
 
       <h2>Local storage</h2>
@@ -70,10 +79,6 @@ export default function CookiesPage() {
         </thead>
         <tbody>
           <tr>
-            <td><code>rh_theme</code></td>
-            <td>Your light or dark theme choice</td>
-          </tr>
-          <tr>
             <td><code>rh_sponsor_dismissed</code></td>
             <td>Remembers you closed the sponsorship panel, so it stays closed</td>
           </tr>
@@ -88,6 +93,10 @@ export default function CookiesPage() {
           <tr>
             <td><code>rh_analytics_opt_out</code></td>
             <td>Set only if you opt out of view counting below</td>
+          </tr>
+          <tr>
+            <td><code>rh_theme_sync</code></td>
+            <td>Signals a theme change to your other open tabs so they update too</td>
           </tr>
         </tbody>
       </table>
