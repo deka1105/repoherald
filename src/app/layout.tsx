@@ -5,7 +5,8 @@ import { StorageNotice } from "@/components/storage-notice";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PageTracker } from "@/components/page-tracker";
 import { GithubClickTracker } from "@/components/github-click-tracker";
-import { themeInitScript } from "@/lib/themes";
+import { cookies } from "next/headers";
+import { htmlThemeAttrs, parseThemeId, THEME_COOKIE } from "@/lib/themes";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -64,29 +65,30 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Theme comes from the cookie so the first byte is already correct.
+  const themeId = parseThemeId((await cookies()).get(THEME_COOKIE)?.value);
+  const { className: themeClass, dataTheme } = htmlThemeAttrs(themeId);
+
   return (
-    // suppressHydrationWarning: the themeInitScript mutates <html> classes and
-    // data-theme before hydration, so its attributes intentionally differ from
-    // the server-rendered default.
+    // No suppressHydrationWarning and no blocking theme script: the class and
+    // data-theme below are rendered from the cookie, so the server's markup is
+    // already the final theme and the client has nothing to correct.
     <html
       lang="en"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      data-theme={dataTheme}
+      className={`${themeClass} ${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
-      </head>
       <body className="min-h-full flex flex-col">
         {/* First focusable element on every page. */}
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
-        <ThemeProvider>
+        <ThemeProvider initialThemeId={themeId}>
           {children}
           <Toaster />
           <StorageNotice />
