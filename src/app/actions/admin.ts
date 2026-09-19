@@ -141,10 +141,9 @@ export async function setUserRole(
   if (admin.id === userId && role !== "admin") {
     return { error: "You can't remove your own admin access." };
   }
-  // is_admin kept in sync while the deprecated column still exists.
   await db
     .update(users)
-    .set({ role, isAdmin: role === "admin" })
+    .set({ role })
     .where(eq(users.id, userId));
   await writeAudit(db, {
     actorUserId: admin.id,

@@ -6,7 +6,6 @@ import {
   boolean,
   integer,
   timestamp,
-  date,
   jsonb,
   uniqueIndex,
   index,

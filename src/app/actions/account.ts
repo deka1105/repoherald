@@ -31,7 +31,6 @@ export async function deleteAccount() {
         githubPublicRepos: null,
         githubFollowers: null,
         mintEligible: false,
-        isAdmin: false,
         role: "user",
       })
       .where(eq(users.id, user.id));
