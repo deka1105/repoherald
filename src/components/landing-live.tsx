@@ -8,6 +8,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { signInWithGitHub } from "@/app/actions/auth";
 import { PlanPrice } from "@/components/plan-price";
+import { useTheme } from "@/components/theme-provider";
 import "./landing/landing.css";
 
 const DISMISS_KEY = "rh_sponsor_dismissed";
@@ -81,7 +82,11 @@ export function Landing({
   cards: LandingCard[];
   plans: LandingPlan[];
 }) {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  // Was local useState, which meant the landing's toggle persisted nothing and
+  // reset to light on every load while the rest of the app remembered its own
+  // theme. Now it drives the same cookie-backed provider as the app chrome.
+  const { theme: activeTheme, setThemeId } = useTheme();
+  const theme = activeTheme.mode;
   // localStorage is the source of truth; SSR renders the panel closed and it
   // slides in after hydration unless previously dismissed.
   const panelOpen = !useSyncExternalStore(
@@ -125,7 +130,7 @@ export function Landing({
           type="button"
           className="rh-themebtn"
           aria-label="Toggle dark mode"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => setThemeId(theme === "dark" ? "light" : "dark")}
         >
           {theme === "dark" ? "☀" : "☾"}
         </button>
