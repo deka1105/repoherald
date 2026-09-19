@@ -5,14 +5,16 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useSyncExternalStore,
+  useState,
 } from "react";
 import {
   DEFAULT_THEME_ID,
   getTheme,
+  htmlThemeAttrs,
   isThemeId,
-  THEME_STORAGE_KEY,
   THEMES,
+  THEME_STORAGE_KEY,
+  writeThemeCookie,
   type Theme,
 } from "@/lib/themes";
 
@@ -27,56 +29,89 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 /** Apply a theme to <html>: swap the theme-* class, toggle the base .dark
  * variant, and set data-theme (which the nav chrome's rh-* tokens read). */
 function applyTheme(id: string) {
-  const theme = getTheme(id);
+  const { className, dataTheme } = htmlThemeAttrs(id);
   const root = document.documentElement;
   for (const t of THEMES) root.classList.remove(`theme-${t.id}`);
-  root.classList.add(`theme-${theme.id}`);
-  root.classList.toggle("dark", theme.mode === "dark");
-  root.setAttribute("data-theme", theme.mode);
+  root.classList.remove("dark");
+  for (const c of className.split(" ")) root.classList.add(c);
+  root.setAttribute("data-theme", dataTheme);
 }
 
-// localStorage is the source of truth (same pattern as the landing/welcome-guide
-// panels). Same-tab writes notify via a local listener set; cross-tab writes via
-// the native `storage` event.
-const listeners = new Set<() => void>();
-
-function subscribe(onChange: () => void) {
-  listeners.add(onChange);
-  window.addEventListener("storage", onChange);
-  return () => {
-    listeners.delete(onChange);
-    window.removeEventListener("storage", onChange);
-  };
-}
-
-function getSnapshot(): string {
-  const id = localStorage.getItem(THEME_STORAGE_KEY);
-  return isThemeId(id) ? (id as string) : DEFAULT_THEME_ID;
-}
-
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Server render (and hydration's first pass) uses the default; the inline
-  // head script has already painted the stored theme, and this re-renders to it.
-  const themeId = useSyncExternalStore(subscribe, getSnapshot, () => DEFAULT_THEME_ID);
-
-  // Keep <html> in sync with the current value (covers cross-tab changes too).
-  useEffect(() => {
-    applyTheme(themeId);
-  }, [themeId]);
+/**
+ * The theme arrives from the server, read from the cookie in the root layout,
+ * so the markup is already correct on first paint — no flash, and no
+ * server/client disagreement to suppress.
+ */
+export function ThemeProvider({
+  children,
+  initialThemeId,
+}: {
+  children: React.ReactNode;
+  initialThemeId: string;
+}) {
+  const [themeId, setThemeIdState] = useState(initialThemeId);
 
   const setThemeId = useCallback((id: string) => {
     if (!isThemeId(id)) return;
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, id);
-    } catch {
-      // storage unavailable (private mode) — apply for the session anyway
-    }
+    setThemeIdState(id);
     applyTheme(id);
-    for (const l of listeners) l();
+    writeThemeCookie(id);
   }, []);
 
+  // One-time migration for visitors who chose a theme back when it lived in
+  // localStorage: adopt it, write the cookie, then clear the old key so this
+  // runs once. Without it, everyone who had picked a theme would silently be
+  // reset to light on the deploy that moved storage.
+  useEffect(() => {
+    let legacy: string | null = null;
+    try {
+      legacy = localStorage.getItem(THEME_STORAGE_KEY);
+    } catch {
+      return; // storage blocked — nothing to migrate
+    }
+    if (!legacy) return;
+    try {
+      localStorage.removeItem(THEME_STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
+    // Only adopt it if the server had no cookie to go on; an explicit cookie
+    // is newer and must win.
+    if (isThemeId(legacy) && !document.cookie.includes(`${THEME_STORAGE_KEY}=`)) {
+      setThemeId(legacy);
+    }
+  }, [setThemeId]);
+
+  // Keep other tabs in step. The cookie is shared, but a tab that is already
+  // open will not notice it changed, so mirror the change through a storage
+  // ping the way the old implementation did.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "rh_theme_sync" && e.newValue && isThemeId(e.newValue)) {
+        setThemeIdState(e.newValue);
+        applyTheme(e.newValue);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const setAndBroadcast = useCallback(
+    (id: string) => {
+      setThemeId(id);
+      try {
+        localStorage.setItem("rh_theme_sync", id);
+      } catch {
+        /* cross-tab sync is a nicety, not a requirement */
+      }
+    },
+    [setThemeId]
+  );
+
   return (
-    <ThemeContext.Provider value={{ theme: getTheme(themeId), themeId, setThemeId }}>
+    <ThemeContext.Provider
+      value={{ theme: getTheme(themeId), themeId, setThemeId: setAndBroadcast }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -87,3 +122,5 @@ export function useTheme() {
   if (!ctx) throw new Error("useTheme must be used within a ThemeProvider");
   return ctx;
 }
+
+export { DEFAULT_THEME_ID };
