@@ -30,13 +30,6 @@ export const users = pgTable("users", {
   eligibilityOverride: text("eligibility_override", {
     enum: ["allowed", "blocked"],
   }),
-  // Deprecated: claim limits are now counted from credit_entries mints
-  // (see getClaimUsage in src/lib/credits.ts). Kept to avoid a drop migration.
-  dailyMintCount: integer("daily_mint_count").notNull().default(0),
-  dailyMintDate: date("daily_mint_date"),
-  // Deprecated: superseded by `role` (backfilled in migration). Kept to avoid
-  // breaking the running deploy during the migration window; drop later.
-  isAdmin: boolean("is_admin").notNull().default(false),
   // Moderators get content/community tools (listings, reports, shares, support,
   // categories); money, credits, roles, and pricing stay admin-only.
   role: text("role", { enum: ["user", "moderator", "admin"] })
