@@ -18,11 +18,15 @@ export const LEGAL = {
   entityAddress: process.env.LEGAL_ENTITY_ADDRESS?.trim() || null,
   /** Governing law, e.g. "the State of Delaware, USA". */
   jurisdiction: process.env.LEGAL_JURISDICTION?.trim() || null,
-  /** Where privacy/legal mail goes. Falls back to the sending address. */
-  contactEmail:
-    process.env.LEGAL_CONTACT_EMAIL?.trim() ||
-    process.env.EMAIL_FROM?.replace(/.*<|>.*/g, "").trim() ||
-    null,
+  /**
+   * Where privacy/legal mail goes. NO fallback to EMAIL_FROM: that is the
+   * *sending* identity, which in practice is a no-reply or a provider sandbox
+   * address (it resolved to onboarding@resend.dev in production and shipped
+   * that onto the live policy pages). Publishing an unmonitored inbox as the
+   * channel for data requests is worse than publishing none — unset, the pages
+   * point at the support form instead, which is monitored.
+   */
+  contactEmail: process.env.LEGAL_CONTACT_EMAIL?.trim() || null,
   /** Product + site identity. */
   serviceName: "repoherald",
   siteUrl:
