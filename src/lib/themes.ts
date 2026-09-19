@@ -22,7 +22,20 @@ export const THEMES: Theme[] = [
 ];
 
 export const DEFAULT_THEME_ID = "light";
+
+/**
+ * The theme lives in a COOKIE, not localStorage, so the server can render the
+ * right theme on the first byte. With localStorage the server had no idea what
+ * the visitor picked, so every page shipped the default and a blocking <head>
+ * script repainted it before paint — workable, but it meant the markup and the
+ * real theme disagreed, which is why <html> needed suppressHydrationWarning.
+ * Same reasoning as rh_feed_layout.
+ */
+export const THEME_COOKIE = "rh_theme";
+/** Legacy localStorage key, read once to migrate existing visitors. */
 export const THEME_STORAGE_KEY = "rh_theme";
+/** A year; it is a preference, not a session. */
+export const THEME_COOKIE_MAX_AGE = 31_536_000;
 
 export function getTheme(id: string | null | undefined): Theme {
   return THEMES.find((t) => t.id === id) ?? THEMES[0];
@@ -32,23 +45,31 @@ export function isThemeId(id: string | null | undefined): boolean {
   return THEMES.some((t) => t.id === id);
 }
 
-/** Blocking <head> script that applies the persisted theme before first paint,
- * so there's no flash of the default theme on load. Kept dependency-free and
- * generated from THEMES so it can't drift from the registry. Lives here (not in
- * the client provider) so the server layout can call it. */
-export function themeInitScript(): string {
-  const ids = THEMES.map((t) => t.id);
-  const modes = Object.fromEntries(THEMES.map((t) => [t.id, t.mode]));
-  return (
-    `(function(){try{` +
-    `var ids=${JSON.stringify(ids)},modes=${JSON.stringify(modes)};` +
-    `var id=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});` +
-    `if(!id||ids.indexOf(id)===-1)id=${JSON.stringify(DEFAULT_THEME_ID)};` +
-    `var r=document.documentElement;` +
-    `ids.forEach(function(t){r.classList.remove('theme-'+t)});` +
-    `r.classList.add('theme-'+id);` +
-    `r.classList.toggle('dark',modes[id]==='dark');` +
-    `r.setAttribute('data-theme',modes[id]);` +
-    `}catch(e){}})();`
-  );
+/** Cookie value -> a theme id we trust. Anything unknown falls back. */
+export function parseThemeId(value: string | null | undefined): string {
+  return isThemeId(value) ? (value as string) : DEFAULT_THEME_ID;
 }
+
+/**
+ * The <html> attributes for a theme. One definition used by the server render
+ * and by the client when applying a change, so the two cannot drift.
+ */
+export function htmlThemeAttrs(id: string): { className: string; dataTheme: ThemeMode } {
+  const theme = getTheme(id);
+  return {
+    className: `theme-${theme.id}${theme.mode === "dark" ? " dark" : ""}`,
+    dataTheme: theme.mode,
+  };
+}
+
+/** Write the theme cookie from the client. Lax is right: a theme arriving on a
+ *  cross-site navigation should still apply. Not HttpOnly — the client sets it. */
+export function writeThemeCookie(id: string) {
+  document.cookie = `${THEME_COOKIE}=${id}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; samesite=lax`;
+}
+
+/**
+ * Retired. The server now renders the correct theme classes on <html> from the
+ * cookie, so there is nothing to repaint before first paint. Kept out rather
+ * than left dead — see ThemeProvider for the one-time localStorage migration.
+ */
