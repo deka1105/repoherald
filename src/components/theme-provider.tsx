@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -13,6 +14,7 @@ import {
   htmlThemeAttrs,
   isThemeId,
   THEMES,
+  THEME_COOKIE,
   THEME_STORAGE_KEY,
   writeThemeCookie,
   type Theme,
@@ -38,6 +40,37 @@ function applyTheme(id: string) {
 }
 
 /**
+ * One-time migration for visitors who picked a theme while it lived in
+ * localStorage. Runs at module scope — i.e. on the client before React renders
+ * — rather than in an effect, so it corrects the DOM immediately and never
+ * calls setState during an effect. Without it, everyone who had chosen a theme
+ * would silently snap back to light on the deploy that moved the storage.
+ */
+let pendingMigration = false;
+
+function migrateLegacyTheme() {
+  let legacy: string | null = null;
+  try {
+    legacy = localStorage.getItem(THEME_STORAGE_KEY);
+  } catch {
+    return; // storage blocked — nothing to migrate
+  }
+  if (!legacy) return;
+  try {
+    localStorage.removeItem(THEME_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+  // An existing cookie is the newer, explicit choice and must win.
+  if (!isThemeId(legacy) || document.cookie.includes(`${THEME_COOKIE}=`)) return;
+  writeThemeCookie(legacy);
+  applyTheme(legacy);
+  pendingMigration = true;
+}
+
+if (typeof document !== "undefined") migrateLegacyTheme();
+
+/**
  * The theme arrives from the server, read from the cookie in the root layout,
  * so the markup is already correct on first paint — no flash, and no
  * server/client disagreement to suppress.
@@ -58,29 +91,15 @@ export function ThemeProvider({
     writeThemeCookie(id);
   }, []);
 
-  // One-time migration for visitors who chose a theme back when it lived in
-  // localStorage: adopt it, write the cookie, then clear the old key so this
-  // runs once. Without it, everyone who had picked a theme would silently be
-  // reset to light on the deploy that moved storage.
+  // If the module-scope migration adopted a legacy theme, the server render we
+  // hydrated from predates the cookie. Refresh so the server becomes the source
+  // of truth again. Guarded, so this cannot loop.
+  const router = useRouter();
   useEffect(() => {
-    let legacy: string | null = null;
-    try {
-      legacy = localStorage.getItem(THEME_STORAGE_KEY);
-    } catch {
-      return; // storage blocked — nothing to migrate
-    }
-    if (!legacy) return;
-    try {
-      localStorage.removeItem(THEME_STORAGE_KEY);
-    } catch {
-      /* ignore */
-    }
-    // Only adopt it if the server had no cookie to go on; an explicit cookie
-    // is newer and must win.
-    if (isThemeId(legacy) && !document.cookie.includes(`${THEME_STORAGE_KEY}=`)) {
-      setThemeId(legacy);
-    }
-  }, [setThemeId]);
+    if (!pendingMigration) return;
+    pendingMigration = false;
+    router.refresh();
+  }, [router]);
 
   // Keep other tabs in step. The cookie is shared, but a tab that is already
   // open will not notice it changed, so mirror the change through a storage
