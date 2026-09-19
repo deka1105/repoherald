@@ -544,6 +544,16 @@
   transform: translateY(140%);
   opacity: 0;
   pointer-events: none;
+  /* pointer-events blocks the mouse but NOT keyboard focus — without this a
+     dismissed panel keeps its close button and CTA in the tab order, so a
+     keyboard user tabs into an invisible panel and loses the focus ring
+     off-screen. visibility removes it from the tab order and the a11y tree;
+     the 0.4s delay lets the slide-out animation finish first. */
+  visibility: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.35s ease,
+    visibility 0s linear 0.4s;
 }
 .rh-panel-head {
   display: flex;

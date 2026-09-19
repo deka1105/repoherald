@@ -4,7 +4,7 @@
 // uneditable): identical markup/CSS, but the sponsorship plans are passed in
 // from the DB instead of hardcoded, and the CTA points at /promote.
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { signInWithGitHub } from "@/app/actions/auth";
 import { PlanPrice } from "@/components/plan-price";
@@ -91,6 +91,16 @@ export function Landing({
   );
   const openPanel = () => setDismissed(false);
   const dismissPanel = () => setDismissed(true);
+
+  // Escape closes it, which anything with role="dialog" is expected to honour.
+  useEffect(() => {
+    if (!panelOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDismissed(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [panelOpen]);
 
   const shield = theme === "dark" ? "/brand/shield-white.png" : "/brand/shield-black.png";
   const fmt = (n: number) => n.toLocaleString("en-US");
