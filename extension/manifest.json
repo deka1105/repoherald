@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "repoherald for GitHub",
+  "version": "1.0.0",
+  "description": "See whether a GitHub repo is listed on repoherald, and post your own without leaving the page.",
+  "icons": {
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": ["storage", "alarms"],
+  "host_permissions": ["https://repoherald.com/*"],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "repoherald",
+    "default_popup": "popup.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "repoherald@repoherald.com",
+      "strict_min_version": "121.0"
+    }
+  }
+}
