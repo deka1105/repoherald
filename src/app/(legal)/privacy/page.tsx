@@ -66,6 +66,21 @@ export default function PrivacyPage() {
         what you paid for and to handle refunds.
       </p>
 
+      <h3>The browser extension</h3>
+      <p>
+        Our Chrome and Firefox extension shows whether the GitHub repository you are looking at is
+        listed here. <strong>Browsing GitHub sends us nothing.</strong> The extension periodically
+        downloads the public list of listed repositories and checks it on your own machine, so we
+        never learn which repositories you visit.
+      </p>
+      <p>
+        It contacts us in only two cases: to refresh that public list every few hours, and to fetch
+        the public details of a repository that is <em>already listed here</em> — information
+        anyone can see on our feed. Those requests carry no cookies and no account identifier, and
+        we do not record them as page views. The extension stores your dismissals and the cached
+        list in your browser; nothing about it is sent to us.
+      </p>
+
       <h2>What we do not collect</h2>
       <ul>
         <li>No passwords — authentication is delegated to GitHub.</li>
