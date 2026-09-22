@@ -45,9 +45,12 @@ function CategoryGroup({
 export function PostRepoForm({
   useCases,
   sectors,
+  prefillUrl,
 }: {
   useCases: Category[];
   sectors: Category[];
+  /** Seeded from ?url= — the browser extension links here from a repo page. */
+  prefillUrl?: string;
 }) {
   const [state, action, pending] = useActionState<PostRepoState, FormData>(
     postRepo,
