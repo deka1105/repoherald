@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Browser-extension sources: plain JS with extension globals, linted by
+    // the store review tooling rather than the Next config.
+    "extension/**",
   ]),
 ]);
 
