@@ -22,6 +22,18 @@ Browsing GitHub therefore produces **no traffic to repoherald at all**. Requests
 are sent with `credentials: "omit"`, so no cookie or account identifier rides
 along, and the server does not record them as page views.
 
+## ⚠️ Blocked until repoherald.com resolves
+
+The extension talks to `https://repoherald.com` (the `ORIGIN` constant in
+`background.js` and `content.js`, plus `host_permissions` in the manifest).
+That domain is registered and attached to Vercel but its **DNS still points at
+registrar parking**, so every request from the extension will fail until the A
+records are set.
+
+To test before then, change `ORIGIN` in both scripts and `host_permissions` in
+the manifest to `https://repoherald.vercel.app`. Change it back before
+submitting to either store — store listings should point at the real domain.
+
 ## Install (development)
 
 **Chrome** — `chrome://extensions` → enable Developer mode → *Load unpacked* →
