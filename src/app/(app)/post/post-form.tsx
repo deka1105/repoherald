@@ -62,6 +62,7 @@ export function PostRepoForm({
           id="url"
           name="url"
           placeholder="https://github.com/owner/name"
+          defaultValue={prefillUrl}
           required
         />
       </div>

@@ -5,9 +5,21 @@ import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { PostRepoForm } from "./post-form";
 
-export default async function PostPage() {
+/** Only accept a github.com repo URL, so a crafted link can't prefill the form
+ *  with arbitrary text. Mirrors the pattern postRepo validates against. */
+const PREFILL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/i;
+
+export default async function PostPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ url?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/");
+
+  // The browser extension links here with the repo already filled in.
+  const { url } = await searchParams;
+  const prefillUrl = url && PREFILL_RE.test(url) ? url : undefined;
 
   const cats = await db
     .select()
@@ -25,6 +37,7 @@ export default async function PostPage() {
       <PostRepoForm
         useCases={cats.filter((c) => c.kind === "use_case")}
         sectors={cats.filter((c) => c.kind === "sector")}
+        prefillUrl={prefillUrl}
       />
     </div>
   );
