@@ -1,0 +1,6 @@
+/* Intentionally empty.
+
+   All of the card's styling lives inside its shadow root (see CARD_CSS in
+   content.js), so nothing here can leak onto GitHub's pages. The file exists
+   because the manifest declares it, and declaring it keeps a place to put any
+   future style that genuinely must apply to the host page. */

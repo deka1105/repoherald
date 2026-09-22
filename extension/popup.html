@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>repoherald</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        width: 268px;
+        font: 13px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: #ffffff;
+        color: #1f2328;
+      }
+      @media (prefers-color-scheme: dark) {
+        body { background: #151b23; color: #f0f6fc; }
+      }
+      h1 { margin: 0 0 8px; font-size: 14px; }
+      p { margin: 0 0 10px; opacity: .85; }
+      a { color: inherit; }
+      .btn {
+        display: block; text-align: center; padding: 7px 10px; border-radius: 6px;
+        background: #1f883d; color: #fff; text-decoration: none; font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .btn:hover { background: #1a7f37; }
+      button {
+        width: 100%; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+        border: 1px solid currentColor; background: transparent; color: inherit;
+        font: inherit;
+      }
+      .note { font-size: 11px; opacity: .7; margin-top: 10px; }
+      .status { font-size: 11px; opacity: .7; min-height: 1.4em; }
+    </style>
+  </head>
+  <body>
+    <h1>repoherald</h1>
+    <p>
+      On a GitHub repository page you'll see whether it's listed, and can post it
+      if it isn't.
+    </p>
+    <a class="btn" href="https://repoherald.com" target="_blank" rel="noopener noreferrer">Open repoherald</a>
+    <button id="reset">Show dismissed cards again</button>
+    <p class="status" id="status"></p>
+    <p class="note">
+      Browsing GitHub sends us nothing. The list of posted repos is downloaded
+      and checked on your machine.
+      <a href="https://repoherald.com/privacy" target="_blank" rel="noopener noreferrer">Privacy</a>
+    </p>
+    <script src="popup.js"></script>
+  </body>
+</html>
