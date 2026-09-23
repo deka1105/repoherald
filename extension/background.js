@@ -11,7 +11,7 @@ const api = globalThis.browser ?? globalThis.chrome;
 // Derived from the manifest so the origin lives in exactly one place. Changing
 // deployment target means editing host_permissions and nothing else — the
 // previous version hardcoded it here too, which is three places to forget.
-export const ORIGIN = originFromManifest();
+const ORIGIN = originFromManifest();
 const CATALOG_URL = `${ORIGIN}/api/extension/catalog`;
 
 function originFromManifest() {
