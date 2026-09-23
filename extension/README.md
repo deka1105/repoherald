@@ -22,17 +22,23 @@ Browsing GitHub therefore produces **no traffic to repoherald at all**. Requests
 are sent with `credentials: "omit"`, so no cookie or account identifier rides
 along, and the server does not record them as page views.
 
-## ⚠️ Blocked until repoherald.com resolves
+## Pointing it at a different origin
 
-The extension talks to `https://repoherald.com` (the `ORIGIN` constant in
-`background.js` and `content.js`, plus `host_permissions` in the manifest).
-That domain is registered and attached to Vercel but its **DNS still points at
-registrar parking**, so every request from the extension will fail until the A
-records are set.
+**Currently set to `https://repoherald.vercel.app`**, because `repoherald.com`
+is registered and attached to Vercel but its DNS still points at registrar
+parking — requests to it would fail.
 
-To test before then, change `ORIGIN` in both scripts and `host_permissions` in
-the manifest to `https://repoherald.vercel.app`. Change it back before
-submitting to either store — store listings should point at the real domain.
+The origin is defined in **exactly one place**: `host_permissions` in
+`manifest.json`. `background.js`, `content.js`, and `popup.js` all derive it at
+runtime from `runtime.getManifest()`, so switching to the real domain once DNS
+is live means editing that single line:
+
+```json
+"host_permissions": ["https://repoherald.com/*"]
+```
+
+Do that before submitting to either store — listings should point at the real
+domain, not the deployment URL.
 
 ## Install (development)
 
@@ -73,6 +79,6 @@ reads `background.scripts`, and each ignores the other's key.
 ## Before publishing to the stores
 
 - Replace `icons/` — these are resized from the site shield and are placeholders.
-- Both stores require a privacy policy URL: use https://repoherald.com/privacy,
+- Both stores require a privacy policy URL: use `<origin>/privacy`,
   which documents the extension's data flow.
 - Bump `version` in `manifest.json` for each store submission.
