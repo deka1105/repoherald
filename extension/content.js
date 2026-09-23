@@ -9,7 +9,8 @@
 
 const api = globalThis.browser ?? globalThis.chrome;
 
-const ORIGIN = "https://repoherald.com";
+// Single source of truth is the manifest's host_permissions — see background.js.
+const ORIGIN = (api.runtime.getManifest().host_permissions?.[0] ?? "").replace(/\/\*$/, "");
 const STORE_KEY = "catalog";
 const DISMISS_PREFIX = "dismissed:";
 const STALE_MS = 6 * 60 * 60 * 1000;

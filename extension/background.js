@@ -8,8 +8,16 @@
 
 const api = globalThis.browser ?? globalThis.chrome;
 
-const ORIGIN = "https://repoherald.com";
+// Derived from the manifest so the origin lives in exactly one place. Changing
+// deployment target means editing host_permissions and nothing else — the
+// previous version hardcoded it here too, which is three places to forget.
+export const ORIGIN = originFromManifest();
 const CATALOG_URL = `${ORIGIN}/api/extension/catalog`;
+
+function originFromManifest() {
+  const pattern = api.runtime.getManifest().host_permissions?.[0] ?? "";
+  return pattern.replace(/\/\*$/, "");
+}
 const STORE_KEY = "catalog";
 const ALARM = "refresh-catalog";
 const REFRESH_MINUTES = 180;
