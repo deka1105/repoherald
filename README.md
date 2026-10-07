@@ -66,6 +66,49 @@ infinite credit machine.
 status column and a cron job is a way to have highlights that quietly never
 expire.
 
+## Repo lists
+
+Link-shareable curated pages (`repo_lists` / `repo_list_items`). Slugs carry a
+random suffix so lists aren't enumerable, and contributions stay open to any
+signed-in visitor until the owner closes them.
+
+**List items may only reference repos already in `repos`.** Accepting an
+arbitrary GitHub URL here would create a listing that bypassed `postRepo`'s
+owner/org check — the whole point of which is that you can only post what you
+actually control.
+
+## Secrets and compliance
+
+**GitHub tokens are encrypted at rest** — AES-256-GCM via `src/lib/crypto.ts`,
+keyed by `TOKEN_ENCRYPTION_KEY`. See `.env.example` for the full set.
+
+**View counting is first-party and cookieless.** A daily-rotating salted hash of
+IP + user agent; the IP is never stored. Consent is checked at send time and
+Global Privacy Control is honoured automatically. Storage that fails to read
+counts as opted *out*, not opted in.
+
+**The policy pages are derived from the code.** `/privacy`, `/terms`,
+`/cookies` and `/refunds` live in `src/app/(legal)/`, and every factual claim in
+them comes from actual behaviour. If you change what is collected, stored,
+charged or refunded, update the matching page **in the same commit**.
+
+Business identity is read from environment variables and the operator block is
+*omitted* when they're unset — never hardcode or invent a company name.
+
+## Migrations
+
+Two failure modes worth knowing, both learned the hard way:
+
+- **Never edit an applied migration.** Drizzle records it in the journal and
+  won't re-run it. Add a new one.
+- **Never hand-write a future `when` timestamp** in `drizzle/meta/_journal.json`.
+  Drizzle only applies entries newer than the last applied migration, so a
+  future-dated entry makes every later migration silently skip — and
+  `drizzle-kit migrate` still prints success while applying nothing.
+
+Code ships on push to main, so apply schema migrations to Neon *before or with*
+the push, never after.
+
 ## Running it
 
 ```bash
