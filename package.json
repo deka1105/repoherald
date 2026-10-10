@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:mobile-auth": "tsx tests/mobile-auth.test.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
