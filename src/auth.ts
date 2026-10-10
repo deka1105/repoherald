@@ -1,8 +1,5 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
-import { sql } from "drizzle-orm";
-import { db } from "@/db";
-import { users } from "@/db/schema";
 import { upsertGithubUser, type GithubProfile } from "@/lib/github-user";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
