@@ -1,0 +1,22 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "build": {
+    "development": { "developmentClient": true, "distribution": "internal" },
+    "preview": { "distribution": "internal" },
+    "production": { "autoIncrement": true }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascApiKeyPath": "./AuthKey_UJ39YTD9H2.p8",
+        "ascApiKeyId": "UJ39YTD9H2",
+        "ascApiKeyIssuerId": "b3fa0d09-6ec8-47b0-a8ca-3329bcf4e4a3",
+        "appleTeamId": "4LX3D498MB"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./play-service-account.json",
+        "track": "internal"
+      }
+    }
+  }
+}
