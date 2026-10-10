@@ -3,7 +3,8 @@ import { mintMobileToken, verifyMobileToken } from "@/lib/mobile-auth";
 const UID = "11111111-2222-3333-4444-555555555555";
 let pass = 0, fail = 0;
 const ok = (name: string, cond: boolean) => {
-  cond ? pass++ : fail++;
+  if (cond) pass++;
+  else fail++;
   console.log(`  ${cond ? "PASS" : "FAIL"}  ${name}`);
 };
 

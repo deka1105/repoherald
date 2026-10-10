@@ -62,8 +62,8 @@ function Feed() {
 
   const load = useCallback(async (reset: boolean) => {
     try {
-      setError(null);
       const res = await getFeed(reset ? undefined : cursor ?? undefined);
+      setError(null);
       const incoming = [...res.pinned, ...res.items];
       setItems((prev) => (reset ? incoming : [...prev, ...res.items]));
       setCursor(res.nextCursor);

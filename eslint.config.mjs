@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
     // Browser-extension sources: plain JS with extension globals, linted by
     // the store review tooling rather than the Next config.
     "extension/**",
+    // React Native app: the Next config's DOM and a11y rules (alt-text on an
+    // <Image> that isn't an <img>) are wrong for it. Linted by its own config.
+    "mobile/**",
   ]),
 ]);
 
