@@ -100,7 +100,10 @@ include:
   - template: Jobs/SAST.gitlab-ci.yml
   - template: Jobs/Secret-Detection.gitlab-ci.yml
   - template: Jobs/Dependency-Scanning.gitlab-ci.yml
-  - template: Jobs/License-Scanning.gitlab-ci.yml
+  # License-Scanning.gitlab-ci.yml was retired — licence data now comes from
+  # Dependency Scanning's CycloneDX SBOM. The `licenses` job below covers the
+  # govern stage directly.
+
 
 audit:
   stage: secure
