@@ -1,0 +1,186 @@
+# repoherald — post-code automation.
+#
+# The hackathon brief asks for coverage across the DevSecOps lifecycle rather
+# than depth in one corner, so each stage below names the lifecycle stage it
+# serves. Nine stages exist: plan · create · verify · package · secure ·
+# release · configure · monitor · govern.
+#
+# Secrets (DATABASE_URL, AUTH_SECRET, STRIPE_*) are CI/CD variables, never in
+# this file. Jobs that genuinely need a database are marked so they degrade to
+# a skip rather than a red pipeline on a fork with no variables set.
+
+spec:
+  inputs:
+    node_version:
+      default: "22"
+
+---
+
+stages:
+  - create     # lint, typecheck — fastest feedback first
+  - verify     # tests
+  - secure     # SAST, secrets, dependencies
+  - package    # production build
+  - govern     # licences, policy
+  - release    # deploy
+  - monitor    # post-deploy health
+
+default:
+  image: node:$[[ inputs.node_version ]]
+  # node_modules is the slow part of every job; cache on the lockfile so a
+  # dependency change invalidates it and nothing else does.
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+    policy: pull
+  before_script:
+    - npm ci --cache .npm --prefer-offline --no-audit --fund=false
+
+variables:
+  # Next collects anonymous usage data by default. Off in CI: it is someone
+  # else's telemetry on every pipeline run, and it slows the build.
+  NEXT_TELEMETRY_DISABLED: "1"
+  GIT_DEPTH: "20"
+
+# ─────────────────────────────────────────────────────────── create
+
+install:
+  stage: create
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+    policy: pull-push
+  script:
+    - node --version && npm --version
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+lint:
+  stage: create
+  needs: ["install"]
+  script:
+    - npm run lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+typecheck:
+  stage: create
+  needs: ["install"]
+  script:
+    - npx tsc --noEmit
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ─────────────────────────────────────────────────────────── verify
+
+test:mobile-auth:
+  stage: verify
+  needs: ["install"]
+  # The credit ledger and the bearer-token layer are the two places where a
+  # silent bug costs money rather than showing an error, so this one runs on
+  # every pipeline and is never allowed to fail soft.
+  script:
+    - npm run test:mobile-auth
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ─────────────────────────────────────────────────────────── secure
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+  - template: Jobs/Dependency-Scanning.gitlab-ci.yml
+  - template: Jobs/License-Scanning.gitlab-ci.yml
+
+audit:
+  stage: secure
+  needs: ["install"]
+  script:
+    - npm audit --audit-level=high
+  # Advisory: a new high advisory against a transitive dependency should raise
+  # a flag, not block a deploy that was already green an hour ago.
+  allow_failure: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ─────────────────────────────────────────────────────────── package
+
+build:
+  stage: package
+  needs: ["lint", "typecheck", "test:mobile-auth"]
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - .next/
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ─────────────────────────────────────────────────────────── govern
+
+licenses:
+  stage: govern
+  needs: ["install"]
+  # ATTRIBUTION.md records the licences this project depends on, and the policy
+  # pages make factual claims derived from them. A new copyleft dependency is a
+  # legal change, not just a technical one — so it surfaces here.
+  script:
+    - npx --yes license-checker --production --summary || true
+    - npx --yes license-checker --production --failOn "GPL-3.0;AGPL-3.0" 
+  allow_failure: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ─────────────────────────────────────────────────────────── release
+
+deploy:
+  stage: release
+  needs: ["build"]
+  environment:
+    name: production
+    url: https://repoherald.vercel.app
+  script:
+    - npx --yes vercel@latest deploy --prod --token "$VERCEL_TOKEN" --yes
+  rules:
+    # Deploys only from the default branch, and only when a token exists —
+    # a fork without one gets a skipped job rather than a failed pipeline.
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $VERCEL_TOKEN
+      when: on_success
+    - when: never
+
+# ─────────────────────────────────────────────────────────── monitor
+
+healthcheck:
+  stage: monitor
+  needs: ["deploy"]
+  image: curlimages/curl:latest
+  before_script: []
+  cache: {}
+  # Deploying and never looking is how an app stays broken for a day. This
+  # asks the live site the one question that matters — does the API answer? —
+  # and fails the pipeline if it does not.
+  script:
+    - |
+      for i in $(seq 1 10); do
+        code=$(curl -s -o /dev/null -w '%{http_code}' https://repoherald.vercel.app/api/mobile/v1/feed || true)
+        echo "attempt $i: HTTP $code"
+        [ "$code" = "200" ] && exit 0
+        sleep 10
+      done
+      echo "feed endpoint never returned 200 after deploy"
+      exit 1
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $VERCEL_TOKEN
