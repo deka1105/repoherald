@@ -1,0 +1,115 @@
+# Duo MR review instructions for repoherald.
+#
+# These encode the invariants that a human reviewer of this project would
+# check and a generic reviewer would not know to. They come from the hard-won
+# list in CLAUDE.md — each one is a rule that has already cost someone
+# something, or would silently cost money if broken.
+---
+- name: Credit ledger integrity
+  fileFilters:
+    - "src/lib/credits.ts"
+    - "src/db/schema.ts"
+    - "src/app/actions/**"
+  instructions: |
+    `credit_entries` is an append-only ledger and the source of truth for
+    `users.credit_balance`, which is only a cache and may legitimately go
+    negative. Flag any change that UPDATEs or DELETEs a credit entry, or that
+    writes `credit_balance` as if it were authoritative.
+
+    Every credit mutation must go through `src/lib/credits.ts` and must be a
+    single transaction that locks the user row. Flag any new credit mutation
+    added elsewhere, or any that omits the row lock — concurrent spends against
+    one balance are the obvious way to mint free credits.
+
+    `star_mints` rows are permanent, including after revocation, and
+    `UNIQUE (user_id, repo_id)` is what stops star → mint → unstar → re-star
+    being an infinite credit machine. Flag anything that deletes mint rows or
+    weakens that constraint.
+
+- name: Database driver choice
+  fileFilters:
+    - "src/db/**"
+    - "drizzle.config.ts"
+  instructions: |
+    This project uses `drizzle-orm/neon-serverless` (WebSocket) rather than
+    `neon-http` specifically because the credit ledger needs interactive
+    transactions with `SELECT ... FOR UPDATE`, which the HTTP driver cannot do.
+    Flag any switch to the HTTP driver — it will typecheck and then silently
+    break transaction isolation.
+
+- name: Migration safety
+  fileFilters:
+    - "drizzle/**"
+  instructions: |
+    Never edit an already-applied migration: drizzle records it in the journal
+    and will not re-run it. A change must be a new migration.
+
+    Never hand-write a future `when` timestamp in `drizzle/meta/_journal.json`.
+    Drizzle only applies entries newer than the last applied migration, so a
+    future-dated entry makes every later migration silently skip while
+    `drizzle-kit migrate` still reports success.
+
+- name: Derived state, not cached state
+  fileFilters:
+    - "src/lib/**"
+    - "src/app/**"
+  instructions: |
+    Highlight status is always derived from `starts_at`/`ends_at` in queries.
+    The `status` column is reporting-only. Flag any query that filters or
+    gates on `status` — a cached status column plus a cron job is how
+    highlights quietly never expire.
+
+    Pricing is database-driven via `src/lib/pricing.ts`. Flag any hardcoded
+    plan price in UI code.
+
+- name: Listing and scope boundaries
+  fileFilters:
+    - "src/lib/lists.ts"
+    - "src/app/actions/lists.ts"
+  instructions: |
+    List items may only reference repos already present in `repos`. Accepting
+    an arbitrary GitHub URL here would create a listing that bypassed
+    `postRepo`'s owner/org check, which is the only thing ensuring you can
+    post only what you control.
+
+- name: Privacy and compliance claims
+  fileFilters:
+    - "src/app/(legal)/**"
+    - "src/lib/analytics.ts"
+    - "src/lib/analytics-consent.ts"
+    - "src/lib/legal.ts"
+  instructions: |
+    The policy pages state facts derived from the code. If a change alters
+    what is collected, stored, charged or refunded, the matching page under
+    `src/app/(legal)/` must change in the same commit — flag it if not.
+
+    View counting is first-party and cookieless: a daily-rotating salted hash
+    of IP + user agent, with the IP never stored. Flag anything that persists
+    an IP, adds a third-party analytics script, or ignores the opt-out.
+    Storage that fails to read must count as opted OUT, never opted in.
+
+    Business identity comes from environment variables and the operator block
+    is omitted when unset. Flag any hardcoded or invented company name,
+    address or jurisdiction.
+
+- name: Secrets and tokens
+  fileFilters:
+    - "**/*"
+  instructions: |
+    GitHub access tokens are encrypted at rest with AES-256-GCM via
+    `src/lib/crypto.ts`. Flag any code path that stores or logs a raw token.
+
+    Flag any credential committed to the repository — `.p8` keys, service
+    account JSON, `.env` files with real values. Star verification uses the
+    starring user's own token with scopes `read:user user:email` only; flag
+    any request for broader scopes.
+
+- name: Accessibility floors
+  fileFilters:
+    - "src/app/**"
+    - "src/components/**"
+  instructions: |
+    These are already met and must not regress: `--muted-foreground` clears
+    4.5:1 on both `--background` and `--muted` in all three dark themes,
+    `--ring` clears 3:1, focus outlines stay solid rather than alpha-reduced,
+    and every `<main>` keeps `id="main"` for the skip link.
