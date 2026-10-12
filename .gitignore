@@ -54,3 +54,6 @@ dist/
 
 # Throwaway inspection scripts (the auto-push watcher commits fast — keep them out)
 _scratch*
+
+# CI artifact from the plan stage — regenerated per pipeline run
+plan-impact.json
