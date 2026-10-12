@@ -17,11 +17,14 @@ spec:
 ---
 
 stages:
+  - plan       # what can this change break?
   - create     # lint, typecheck — fastest feedback first
   - verify     # tests
+  - test       # GitLab's security templates hardcode this stage name
   - secure     # SAST, secrets, dependencies
   - package    # production build
   - govern     # licences, policy
+  - configure  # deployment contract vs what the code reads
   - release    # deploy
   - monitor    # post-deploy health
 
@@ -44,6 +47,29 @@ variables:
   # else's telemetry on every pipeline run, and it slows the build.
   NEXT_TELEMETRY_DISABLED: "1"
   GIT_DEPTH: "20"
+
+# ─────────────────────────────────────────────────────────── plan
+
+plan:impact:
+  stage: plan
+  needs: []
+  # No install: this reads a YAML file and a git diff. Paying for npm ci here
+  # would make the cheapest job in the pipeline one of the slowest.
+  before_script: []
+  cache: {}
+  variables:
+    # Deep enough to diff against a merge request's base commit; the global
+    # depth of 20 is tuned for jobs that only need the tip.
+    GIT_DEPTH: "50"
+  script:
+    - node scripts/ci/impact.mjs
+  artifacts:
+    paths:
+      - plan-impact.json
+    expire_in: 1 week
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # ─────────────────────────────────────────────────────────── create
 
@@ -145,6 +171,22 @@ licenses:
     - npx --yes license-checker --production --failOn "GPL-3.0;AGPL-3.0" 
   allow_failure: true
   rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ─────────────────────────────────────────────────────────── configure
+
+config:drift:
+  stage: configure
+  needs: []
+  before_script: []
+  cache: {}
+  # This one fails the pipeline rather than warning. A variable the code reads
+  # and the example file omits is a production outage waiting for the next
+  # person who deploys this, and it costs nothing to catch here.
+  script:
+    - node scripts/ci/config-drift.mjs
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # ─────────────────────────────────────────────────────────── release
