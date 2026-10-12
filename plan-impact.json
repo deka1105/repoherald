@@ -1,13 +1,14 @@
 {
-  "generatedAt": "2026-10-12T04:39:41.259Z",
+  "generatedAt": "2026-10-12T04:40:43.445Z",
   "commit": null,
   "mergeRequest": null,
-  "changedFiles": 1,
+  "changedFiles": 2,
   "invariantsAtRisk": [
     {
       "invariant": "Secrets and tokens",
       "files": [
-        "scripts/ci/config-drift.mjs"
+        ".gitlab-ci.yml",
+        "plan-impact.json"
       ]
     }
   ]
