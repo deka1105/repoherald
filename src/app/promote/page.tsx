@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { repos } from "@/db/schema";
 import { getActivePlans } from "@/lib/pricing";
+import { getFlag } from "@/lib/settings";
 import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromoteForm } from "./promote-form";
@@ -18,6 +19,9 @@ export default async function PromotePage({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/");
+  // Hiding the links is not enough — this URL is bookmarkable and is the page
+  // that takes money, so it has to refuse on its own.
+  if (!(await getFlag("sponsorshipsEnabled"))) redirect("/");
   const { status } = await searchParams;
 
   const [ownRepos, plans] = await Promise.all([

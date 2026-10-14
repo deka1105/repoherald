@@ -248,6 +248,10 @@ async function fetchFeed(
 
   // Sponsored placement is global (unfiltered): up to 2 pinned on top, plus
   // one card injected into the feed body at a bucket-stable position.
+  // Withdrawn, the feed is purely organic: no pinned rows, no injection.
+  if (!(await getFlag("sponsorshipsEnabled"))) {
+    return { items, pinned: [], nextCursor, asOf: asOfIso };
+  }
   const sponsoredResult = await db.execute(sql`
     SELECT r.id, r.full_name, r.description, r.primary_language, r.stars_count,
       r.avatar_url, r.is_archived, r.created_at, u.github_login AS poster_login,
