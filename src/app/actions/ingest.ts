@@ -8,22 +8,19 @@ import { actorTypeOf, requireModerator } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
 
 /**
- * Mark a candidate reviewed. Approving says "a human looked at this and it is
- * worth listing"; it does not list it. Promotion is the separate, deliberate
- * act below, because that is the one that puts a stranger's repo on the feed
- * under somebody's name.
+ * Reject a candidate: a human looked and said no. Nothing is deleted — the
+ * sighting rows stay, so the same repo arriving again is visibly a repeat
+ * rather than a fresh discovery.
  */
-async function setStatus(
-  id: string,
-  status: "approved" | "rejected",
-  note: string | null
-) {
+export async function rejectCandidate(formData: FormData) {
   const actor = await requireModerator();
+  const id = String(formData.get("id") ?? "");
+  const note = String(formData.get("note") ?? "").trim() || null;
 
   const [row] = await db
     .update(ingestRepoCandidates)
     .set({
-      status,
+      status: "rejected",
       reviewedByUserId: actor.id,
       reviewedAt: new Date(),
       reviewNote: note,
@@ -36,7 +33,7 @@ async function setStatus(
   await writeAudit(db, {
     actorUserId: actor.id,
     actorType: actorTypeOf(actor),
-    action: `ingest.${status}`,
+    action: "ingest.rejected",
     entityType: "ingest_repo_candidate",
     entityId: id,
     metadata: { fullName: row.fullName, note },
@@ -45,20 +42,14 @@ async function setStatus(
   revalidatePath("/admin/ingest");
 }
 
-export async function approveCandidate(formData: FormData) {
-  const id = String(formData.get("id") ?? "");
-  const note = String(formData.get("note") ?? "").trim() || null;
-  return setStatus(id, "approved", note);
-}
-
-export async function rejectCandidate(formData: FormData) {
-  const id = String(formData.get("id") ?? "");
-  const note = String(formData.get("note") ?? "").trim() || null;
-  return setStatus(id, "rejected", note);
-}
-
 /**
- * Promote a candidate into the live feed.
+ * Approve a candidate, which posts it to the live feed.
+ *
+ * Approving and posting used to be two buttons: 'approved' meant "a human
+ * looked", and a second press put it on the feed. In practice that produced a
+ * queue of approved repos that nobody had published and no one could tell were
+ * unpublished. One button, one meaning. Candidates still sitting at 'approved'
+ * from the two-step era are offered this button again so they can be posted.
  *
  * `repos.postedByUserId` is NOT NULL, and the project's rule is that you may
  * only post a repo you own or are an org member of. Nobody owns a repo a
@@ -68,9 +59,9 @@ export async function rejectCandidate(formData: FormData) {
  * presses the button. The audit row records who.
  *
  * One transaction: a repo inserted without its candidate being marked promoted
- * would be promotable again, which is how the same listing appears twice.
+ * would be approvable again, which is how the same listing appears twice.
  */
-export async function promoteCandidate(formData: FormData) {
+export async function approveCandidate(formData: FormData) {
   const actor = await requireModerator();
   const id = String(formData.get("id") ?? "");
 
@@ -78,7 +69,7 @@ export async function promoteCandidate(formData: FormData) {
     where: eq(ingestRepoCandidates.id, id),
   });
   if (!candidate) throw new Error("That candidate no longer exists.");
-  if (candidate.promotedRepoId) throw new Error("Already promoted.");
+  if (candidate.promotedRepoId) throw new Error("Already posted.");
 
   // githubRepoId is nullable on a candidate — a link can be recorded before
   // anything confirms the repo exists — but it is NOT NULL on `repos` and is
@@ -118,6 +109,10 @@ export async function promoteCandidate(formData: FormData) {
         })
         .where(eq(ingestRepoCandidates.id, id));
 
+      // Kept as `ingest.promote` rather than renamed to match the button: the
+      // log already holds `ingest.approved` rows that meant "reviewed, not
+      // listed", and reusing that name for "is now on the feed" would make the
+      // two indistinguishable after the fact.
       await writeAudit(tx, {
         actorUserId: actor.id,
         actorType: actorTypeOf(actor),
