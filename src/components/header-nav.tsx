@@ -65,7 +65,15 @@ function NavMenuLink({
   );
 }
 
-export function HeaderNav({ user }: { user: NavUser | null }) {
+export function HeaderNav({
+  user,
+  sponsorships,
+}: {
+  user: NavUser | null;
+  /** False when sponsorship is withdrawn — the link is hidden, and
+      /promote redirects, so there is no way in from the chrome. */
+  sponsorships: boolean;
+}) {
   const { theme } = useTheme();
   // Staff = moderator or admin; both work the queues behind /admin.
   const isStaff = user?.role === "admin" || user?.role === "moderator";
@@ -86,7 +94,7 @@ export function HeaderNav({ user }: { user: NavUser | null }) {
         <div className="rh-navlinks">
           <Link href="/">Explore</Link>
           <Link href="/post">Post a repo</Link>
-          <Link href="/promote">Sponsor</Link>
+          {sponsorships && <Link href="/promote">Sponsor</Link>}
           {user && <Link href="/lists">Lists</Link>}
           {/* Staff manage tickets at /admin/support; filing one is pointless for them. */}
           {!isStaff && <Link href="/support">Support</Link>}

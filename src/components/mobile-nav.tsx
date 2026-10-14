@@ -78,14 +78,21 @@ const TABS: Tab[] = [
 
 // Bottom tab bar — the app's primary navigation on phones, where the top nav
 // links are hidden. Hidden at md+ where the top nav takes over.
-export function MobileNav({ user }: { user: NavUser | null }) {
+export function MobileNav({
+  user,
+  sponsorships,
+}: {
+  user: NavUser | null;
+  sponsorships: boolean;
+}) {
   const pathname = usePathname();
   const isStaff = user?.role === "admin" || user?.role === "moderator";
   const tabs = TABS.filter(
     (t) =>
       (!t.requiresUser || user) &&
       (!t.adminOnly || isStaff) &&
-      (!t.hideForAdmin || !isStaff)
+      (!t.hideForAdmin || !isStaff) &&
+      (sponsorships || t.href !== "/promote")
   );
 
   return (
