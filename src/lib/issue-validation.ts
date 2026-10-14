@@ -1,5 +1,6 @@
 import "server-only";
 import { fetchIssue } from "@/lib/github";
+import { getGithubToken } from "@/lib/github-token";
 import {
   grantIssueReportReward,
   hasDismissiveLabel,
