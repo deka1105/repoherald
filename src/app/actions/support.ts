@@ -6,6 +6,7 @@ import { supportTickets, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/log";
+import { notifySupportTicket } from "@/lib/notify";
 
 export type SupportState = { error?: string; success?: string };
 
@@ -57,6 +58,17 @@ export async function submitSupportTicket(
     entityId: inserted.id,
   });
   log.info("support.submitted", { ticketId: inserted.id, userId });
+
+  // Awaited, not fired and forgotten: on serverless the function can be frozen
+  // the moment this action returns, and a dangling promise is simply dropped.
+  // notifySupportTicket swallows its own failures, so this cannot fail the
+  // submission the person has already been told succeeded.
+  await notifySupportTicket({
+    ticketId: inserted.id,
+    fromEmail: email,
+    subject: subject || null,
+    message,
+  });
 
   return {
     success: "Thanks — your message is in. We'll reply by email.",
