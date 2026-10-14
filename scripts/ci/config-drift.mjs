@@ -25,7 +25,13 @@ const EXAMPLE = ".env.example";
  * appear as `process.env.X` and would otherwise look dead. Auth.js reads its
  * provider credentials by naming convention.
  */
-const IMPLICIT = new Set(["AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET"]);
+// Read by a framework rather than by our code. Clerk picks these up itself
+// from the environment; nothing in src/ references them, so without this they
+// would look declared-but-unused and be deleted by someone tidying up.
+const IMPLICIT = new Set([
+  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "CLERK_SECRET_KEY",
+]);
 
 function walk(dir) {
   const out = [];
