@@ -1,9 +1,22 @@
 import "server-only";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { auditLog, ingestRepoCandidates, repos, users } from "@/db/schema";
+import {
+  auditLog,
+  ingestRepoCandidates,
+  ingestSightings,
+  repoListItems,
+  repos,
+  users,
+} from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
 import { getFlag } from "@/lib/settings";
+import {
+  ensurePlatformList,
+  HANDLE_COLUMN,
+  normaliseHandle,
+  type Platform,
+} from "@/lib/platform-lists";
 
 /** Audit action written when an admin turns ingest auto-posting on. */
 export const AUTO_POST_ENABLED_ACTION = "settings.ingest_auto_post.on";
@@ -11,18 +24,71 @@ export const AUTO_POST_ENABLED_ACTION = "settings.ingest_auto_post.on";
 type Candidate = typeof ingestRepoCandidates.$inferSelect;
 
 export type PostOutcome =
-  | { ok: true; repoId: string }
+  | { ok: true; repoId: string; listId: string }
   | { ok: false; reason: string };
 
+/** Only these platforms have a handle column and therefore an owner. */
+function asPlatform(p: string): Platform | null {
+  return p === "instagram" || p === "tiktok" ? p : null;
+}
+
 /**
- * Put one candidate on the feed, as `actorUserId`.
+ * Who a candidate belongs to: the account that has claimed the handle which
+ * sent it. Returns the senders seen so that the admin queue can say *why*
+ * there is no owner rather than just greying a button out.
+ */
+export async function candidateOwner(candidate: Candidate): Promise<{
+  userId: string | null;
+  platform: Platform | null;
+  senders: string[];
+}> {
+  const platform = asPlatform(candidate.platform);
+  const rows = await db
+    .select({ sender: ingestSightings.senderUsername })
+    .from(ingestSightings)
+    .where(eq(ingestSightings.candidateId, candidate.id))
+    .orderBy(asc(ingestSightings.createdAt));
+
+  const senders = [
+    ...new Set(
+      rows
+        .map((r) => (r.sender ? normaliseHandle(r.sender) : null))
+        .filter((s): s is string => Boolean(s))
+    ),
+  ];
+  if (!platform || senders.length === 0) {
+    return { userId: null, platform, senders };
+  }
+
+  // First sender wins when several people sent the same repo: it files into the
+  // list of whoever brought it in first, rather than duplicating it into all of
+  // them or silently picking an arbitrary one.
+  const owners = await db
+    .select({ id: users.id, handle: HANDLE_COLUMN[platform] })
+    .from(users)
+    .where(inArray(HANDLE_COLUMN[platform], senders));
+
+  const byHandle = new Map(owners.map((o) => [o.handle, o.id]));
+  for (const sender of senders) {
+    const id = byHandle.get(sender);
+    if (id) return { userId: id, platform, senders };
+  }
+  return { userId: null, platform, senders };
+}
+
+/**
+ * File one candidate into its sender's private platform list.
  *
- * Returns a result rather than throwing, because the sweep below posts a batch
- * and one unlistable row must not abort the rest. The server action wraps this
- * and throws, so a moderator pressing the button still sees why it failed.
+ * This no longer puts anything on the public feed. A repo somebody sent from
+ * their own DMs is theirs to keep, not a listing — and listing it would have
+ * required a poster who does not own it.
  *
- * One transaction: a repo inserted without its candidate being marked promoted
- * would be postable again, which is how the same listing appears twice.
+ * The repo row is still written, because repo_list_items.repo_id is a foreign
+ * key and AGENTS.md makes "list items may only reference repos already in
+ * repos" an invariant. It is written `status: 'hidden'`, which the feed filters
+ * out, so the repo exists to be referenced without being published. The owner
+ * is recorded as postedByUserId for the same reason the column is NOT NULL:
+ * somebody is answerable for every row.
  */
 export async function postCandidate(
   candidate: Candidate,
@@ -30,91 +96,121 @@ export async function postCandidate(
   actorType: "admin" | "moderator",
   auditAction: "ingest.promote" | "ingest.autopost"
 ): Promise<PostOutcome> {
-  if (candidate.promotedRepoId) return { ok: false, reason: "Already posted." };
+  if (candidate.promotedRepoId) return { ok: false, reason: "Already filed." };
 
-  // githubRepoId is nullable on a candidate — a link can be recorded before
-  // anything confirms the repo exists — but it is NOT NULL on `repos` and is
-  // what keeps the feed free of duplicates. Refuse rather than invent one.
   if (candidate.githubRepoId == null) {
     return {
       ok: false,
       reason:
-        "No GitHub repo id on this candidate, so it cannot be listed yet. " +
+        "No GitHub repo id on this candidate, so it cannot be filed yet. " +
         "Re-run resolution in repoHeraldIG to confirm the repo exists.",
     };
   }
 
+  const { userId, platform, senders } = await candidateOwner(candidate);
+  if (!platform) {
+    return { ok: false, reason: `No private lists exist for ${candidate.platform}.` };
+  }
+  if (!userId) {
+    return {
+      ok: false,
+      reason: senders.length
+        ? `No account has claimed @${senders[0]} on ${platform}, so there is nobody to file this for.`
+        : "This sighting has no known sender, so it has no owner.",
+    };
+  }
+
+  const list = await ensurePlatformList(userId, platform);
+
   try {
     let repoId = "";
     await db.transaction(async (tx) => {
-      const [repo] = await tx
-        .insert(repos)
-        .values({
-          githubRepoId: candidate.githubRepoId!,
-          fullName: candidate.fullName,
-          ownerLogin: candidate.ownerLogin,
-          name: candidate.name,
-          description: candidate.description,
-          primaryLanguage: candidate.primaryLanguage,
-          starsCount: candidate.starsCount,
-          avatarUrl: candidate.avatarUrl,
-          isArchived: candidate.isArchived,
-          postedByUserId: actorUserId,
-        })
-        .returning({ id: repos.id });
+      // The repo may already exist — somebody listed it the ordinary way, or
+      // another member was sent the same thing. Reuse it rather than colliding
+      // with the unique github_repo_id.
+      const [existing] = await tx
+        .select({ id: repos.id })
+        .from(repos)
+        .where(eq(repos.githubRepoId, candidate.githubRepoId!))
+        .limit(1);
+
+      if (existing) {
+        repoId = existing.id;
+      } else {
+        const [created] = await tx
+          .insert(repos)
+          .values({
+            githubRepoId: candidate.githubRepoId!,
+            fullName: candidate.fullName,
+            ownerLogin: candidate.ownerLogin,
+            name: candidate.name,
+            description: candidate.description,
+            primaryLanguage: candidate.primaryLanguage,
+            starsCount: candidate.starsCount,
+            avatarUrl: candidate.avatarUrl,
+            isArchived: candidate.isArchived,
+            postedByUserId: userId,
+            // Hidden, not active: this is a private find, not a listing.
+            status: "hidden",
+          })
+          .returning({ id: repos.id });
+        repoId = created.id;
+      }
+
+      await tx
+        .insert(repoListItems)
+        .values({ listId: list.id, repoId, addedByUserId: userId })
+        // The (list_id, repo_id) unique index means a repeat is a no-op.
+        .onConflictDoNothing();
 
       await tx
         .update(ingestRepoCandidates)
         .set({
           status: "promoted",
-          promotedRepoId: repo.id,
+          promotedRepoId: repoId,
           reviewedByUserId: actorUserId,
           reviewedAt: new Date(),
         })
         .where(eq(ingestRepoCandidates.id, candidate.id));
 
-      // `ingest.autopost` is deliberately NOT `ingest.promote`: the log has to
-      // keep saying which listings a human actually looked at.
       await writeAudit(tx, {
         actorUserId,
         actorType,
         action: auditAction,
-        entityType: "repo",
-        entityId: repo.id,
+        entityType: "repo_list_item",
+        entityId: repoId,
         metadata: {
           fullName: candidate.fullName,
           candidateId: candidate.id,
-          platform: candidate.platform,
+          platform,
+          listId: list.id,
+          filedForUserId: userId,
           automatic: auditAction === "ingest.autopost",
         },
       });
-      repoId = repo.id;
     });
-    return { ok: true, repoId };
+    return { ok: true, repoId, listId: list.id };
   } catch (e) {
-    // The likeliest failure is the unique constraint on githubRepoId: someone
-    // already listed this repo the ordinary way.
     const message = e instanceof Error ? e.message : String(e);
-    if (message.includes("unique") || message.includes("duplicate")) {
-      return { ok: false, reason: `${candidate.fullName} is already listed on the feed.` };
-    }
     return { ok: false, reason: message };
   }
 }
 
 /**
- * Who auto-posted repos are listed as.
+ * Who auto-filed repos are recorded as having been actioned by.
  *
  * `app_settings.value` is an integer, so the enabling admin cannot be stored
  * beside the flag. The audit log already records who flipped it and when, so
- * that is the source of truth: the most recent admin to turn auto-posting ON
- * is the one whose name goes on what it posts.
+ * that is the source of truth. Note this is the *actor*, not the owner — the
+ * repo is filed for whoever sent it, never for this account.
  *
- * Returns null when nobody can be identified, or when that account is no
- * longer an admin. The sweep then does nothing — an unattended job must not
- * publish under a guessed or stale identity.
+ * Returns null when nobody can be identified, or when that account is no longer
+ * an admin, and the sweep then does nothing.
  */
-export async function autoPostActor(): Promise<{ id: string; login: string } | null> {
+export async function autoPostActor(): Promise<{
+  id: string;
+  login: string | null;
+} | null> {
   const [row] = await db
     .select({ actorUserId: auditLog.actorUserId })
     .from(auditLog)
@@ -137,17 +233,17 @@ export async function autoPostActor(): Promise<{ id: string; login: string } | n
 export type SweepResult = {
   posted: number;
   skipped: { fullName: string; reason: string }[];
-  /** Why nothing was attempted, when that is the case. */
   haltedBecause?: string;
 };
 
 /**
- * Post every candidate still waiting, oldest first. Safe to call repeatedly:
- * anything already posted carries `promotedRepoId` and is not selected.
+ * File every candidate still waiting, oldest first. Safe to call repeatedly:
+ * anything already filed carries `promotedRepoId` and is not selected, and a
+ * candidate whose sender nobody has claimed is skipped and stays in the queue.
  */
 export async function autoPostPendingCandidates(limit = 50): Promise<SweepResult> {
   if (!(await getFlag("ingestAutoPost"))) {
-    return { posted: 0, skipped: [], haltedBecause: "Auto-posting is off." };
+    return { posted: 0, skipped: [], haltedBecause: "Auto-filing is off." };
   }
 
   const actor = await autoPostActor();
@@ -156,8 +252,8 @@ export async function autoPostPendingCandidates(limit = 50): Promise<SweepResult
       posted: 0,
       skipped: [],
       haltedBecause:
-        "No admin is on record as having enabled auto-posting, so there is " +
-        "nobody to list these under. Toggle it off and on again to claim it.",
+        "No admin is on record as having enabled auto-filing. Toggle it off " +
+        "and on again to claim it.",
     };
   }
 
@@ -165,7 +261,7 @@ export async function autoPostPendingCandidates(limit = 50): Promise<SweepResult
     .select()
     .from(ingestRepoCandidates)
     // 'approved' is included deliberately: those are rows reviewed under the
-    // old two-step flow that were never listed.
+    // old two-step flow that were never filed.
     .where(inArray(ingestRepoCandidates.status, ["pending", "approved"]))
     .orderBy(asc(ingestRepoCandidates.discoveredAt))
     .limit(limit);
