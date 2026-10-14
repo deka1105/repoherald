@@ -1,11 +1,7 @@
 import { desc, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { ingestRepoCandidates, ingestSightings } from "@/db/schema";
-import {
-  approveCandidate,
-  promoteCandidate,
-  rejectCandidate,
-} from "@/app/actions/ingest";
+import { approveCandidate, rejectCandidate } from "@/app/actions/ingest";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { timeAgo } from "@/lib/utils";
@@ -13,10 +9,10 @@ import { timeAgo } from "@/lib/utils";
 // Repos that arrived from somewhere other than their owner — currently
 // Instagram DMs, mined by repoHeraldIG.
 //
-// Nothing here is on the feed. `repos.postedByUserId` is NOT NULL and the rule
-// is that you may only post a repo you own, so a repo a stranger sent us has
-// no legitimate poster until a moderator takes it on. "Promote" is that act,
-// and it writes the moderator as the posting user.
+// Nothing here is on the feed until someone approves it. `repos.postedByUserId`
+// is NOT NULL and the rule is that you may only post a repo you own, so a repo
+// a stranger sent us has no legitimate poster until a moderator takes it on.
+// Approving is that act, and it writes the moderator as the posting user.
 //
 // Sender and poster usernames are shown HERE and nowhere else. They are how a
 // reviewer sees that one account is pushing the same repo five times; they are
@@ -48,14 +44,19 @@ export default async function AdminIngestPage() {
     byCandidate.set(s.candidateId, list);
   }
 
-  const pending = candidates.filter((c) => c.status === "pending").length;
+  // 'approved' is a leftover state from when approving and posting were two
+  // buttons. Those rows are still waiting to go on the feed, so they count as
+  // awaiting review rather than done.
+  const waiting = candidates.filter(
+    (c) => c.status !== "promoted" && c.status !== "rejected"
+  ).length;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {pending} awaiting review. Approving records that a human looked; it does not list
-        anything. <strong>Promote</strong> puts the repo on the feed under your name — you
-        become its poster, and the audit log records that.
+        {waiting} awaiting review. <strong>Approve</strong> posts the repo to the feed
+        under your name — you become its poster, and the audit log records that. There is
+        no undo: to pull one back afterwards, hide it from Listings.
       </p>
 
       {candidates.length === 0 ? (
@@ -107,22 +108,14 @@ export default async function AdminIngestPage() {
                           : "secondary"
                     }
                   >
-                    {c.status}
+                    {c.status === "promoted" ? "posted" : c.status}
                   </Badge>
                   {c.status !== "promoted" && c.status !== "rejected" && (
                     <>
-                      {c.status === "pending" && (
-                        <form action={approveCandidate}>
-                          <input type="hidden" name="id" value={c.id} />
-                          <Button type="submit" size="sm" variant="secondary">
-                            Approve
-                          </Button>
-                        </form>
-                      )}
-                      <form action={promoteCandidate}>
+                      <form action={approveCandidate}>
                         <input type="hidden" name="id" value={c.id} />
                         <Button type="submit" size="sm" disabled={c.githubRepoId == null}>
-                          Promote
+                          Approve &amp; post
                         </Button>
                       </form>
                       <form action={rejectCandidate}>
