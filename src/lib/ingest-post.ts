@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { auditLog, ingestRepoCandidates, repos, users } from "@/db/schema";
 import { writeAudit } from "@/lib/audit";
@@ -164,12 +164,9 @@ export async function autoPostPendingCandidates(limit = 50): Promise<SweepResult
   const waiting = await db
     .select()
     .from(ingestRepoCandidates)
-    .where(
-      and(
-        inArray(ingestRepoCandidates.status, ["pending", "approved"]),
-        ne(ingestRepoCandidates.status, "rejected")
-      )
-    )
+    // 'approved' is included deliberately: those are rows reviewed under the
+    // old two-step flow that were never listed.
+    .where(inArray(ingestRepoCandidates.status, ["pending", "approved"]))
     .orderBy(asc(ingestRepoCandidates.discoveredAt))
     .limit(limit);
 
