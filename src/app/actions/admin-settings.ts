@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/db";
 import { requireAdmin } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
@@ -59,6 +59,10 @@ export async function setSponsorshipsEnabled(formData: FormData) {
   );
   // The flag changes the chrome on every page, so the whole site is stale.
   revalidatePath("/", "layout");
+  // getFeed reads the flag from INSIDE unstable_cache, whose key does not
+  // include it — without this the feed keeps its sponsored rows for up to the
+  // 5-minute bucket after sponsorship is withdrawn.
+  revalidateTag("feed");
 }
 
 /** Post what is waiting now, rather than at the next nightly run. */
