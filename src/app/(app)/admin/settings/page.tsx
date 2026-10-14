@@ -1,4 +1,4 @@
-import { and, count, inArray } from "drizzle-orm";
+import { and, count, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { ingestRepoCandidates, sponsorships } from "@/db/schema";
 import {
@@ -39,10 +39,15 @@ export default async function AdminSettingsPage() {
     .where(inArray(ingestRepoCandidates.status, ["pending", "approved"]));
   const waiting = waitingRow?.n ?? 0;
 
+  // "Live" means paid for AND still inside its window — an 'active' row whose
+  // ends_at has passed is just one the expiry job has not swept yet, and
+  // warning about it would cry wolf.
   const [liveRow] = await db
     .select({ n: count() })
     .from(sponsorships)
-    .where(and(inArray(sponsorships.status, ["active", "scheduled"])));
+    .where(
+      and(eq(sponsorships.status, "active"), gt(sponsorships.endsAt, sql`now()`))
+    );
   const liveSponsorships = liveRow?.n ?? 0;
 
   const actor = flags.ingestAutoPost ? await autoPostActor() : null;
