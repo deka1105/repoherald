@@ -81,6 +81,27 @@ export default function PrivacyPage() {
         list in your browser; nothing about it is sent to us.
       </p>
 
+      <h3>Repositories people send us on Instagram</h3>
+      <p>
+        We run a tool that reads the direct messages sent to our own Instagram account and picks
+        out links to public GitHub repositories. Where it finds one, we record the repository, the
+        link to the post it appeared in, and the Instagram usernames of the person who sent it and
+        of the account that originally posted it.
+      </p>
+      <p>
+        Those usernames belong to people who never signed up here, so we keep them narrowly.{" "}
+        <strong>They are never published.</strong> They exist so that a moderator reviewing a
+        suggestion can see where it came from, and whether one account is pushing the same
+        repository repeatedly. A repository found this way does not reach the feed on its own: a
+        moderator has to approve it and post it under their own name, exactly as if they had found
+        it themselves.
+      </p>
+      <p>
+        Where we cannot tell who sent something — a group thread, say — we record that it is
+        unknown rather than guess. If you sent us a repository and would rather we did not keep
+        that record, ask and we will delete it; the post link and both usernames go with it.
+      </p>
+
       <h2>What we do not collect</h2>
       <ul>
         <li>No passwords — authentication is delegated to GitHub.</li>
@@ -146,6 +167,11 @@ export default function PrivacyPage() {
           being connected to you.
         </li>
         <li>Usage measurements: aggregated counts only; the daily hash is meaningless after its day.</li>
+        <li>
+          Instagram-sourced suggestions: kept while a repository is awaiting review and after it
+          is promoted, so the trail from suggestion to listing stays auditable. Deleting a
+          suggestion deletes the usernames and the post link with it.
+        </li>
       </ul>
 
       <h2>Your rights</h2>
