@@ -79,11 +79,12 @@ export default async function AdminSettingsPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1 basis-64">
             <h2 className="text-sm font-medium">
-              Auto-approve and post repos from repoHeraldIG
+              Auto-approve repos from repoHeraldIG
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              On, repos found in Instagram DMs skip the review queue and go straight to
-              the feed under your name. Nobody reads them first — including you.
+              On, repos found in Instagram and TikTok messages skip the review queue and
+              are filed straight into the private list of whoever sent them. Nobody
+              reads them first. Nothing reaches the public feed either way.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -93,7 +94,7 @@ export default async function AdminSettingsPage() {
             <Toggle
               on={flags.ingestAutoPost}
               action={setIngestAutoPost}
-              label={waiting > 0 ? `Turn on & post ${waiting}` : "Turn on"}
+              label={waiting > 0 ? `Turn on & file ${waiting}` : "Turn on"}
             />
           </div>
         </div>
@@ -102,21 +103,23 @@ export default async function AdminSettingsPage() {
           {flags.ingestAutoPost ? (
             <>
               <p>
-                Listed as{" "}
+                Actioned by{" "}
                 {actor ? (
-                  <strong>@{actor.login}</strong>
+                  <strong>{actor.login ? `@${actor.login}` : "an admin"}</strong>
                 ) : (
                   <strong className="text-destructive">
-                    nobody — posting is halted
+                    nobody — filing is halted
                   </strong>
                 )}
-                . `app_settings` stores integers, so the owner is read back from the
-                audit entry for the last time this was switched on. If that admin is
-                gone or demoted, the sweep stops rather than guessing.
+                . <code>app_settings</code> stores integers, so the acting admin is read
+                back from the audit entry for the last time this was switched on. If
+                that account is gone or demoted, the sweep stops rather than guessing.
+                Each repo is still filed for its <em>sender</em>, never for this account.
               </p>
               <p className="mt-1">
-                New arrivals are posted by the nightly job at 03:00 UTC. {waiting} waiting
-                now.
+                New arrivals are filed by the nightly job at 03:00 UTC. {waiting} waiting
+                now. Anything whose sender nobody has claimed is skipped and stays
+                queued.
               </p>
             </>
           ) : (
@@ -130,7 +133,7 @@ export default async function AdminSettingsPage() {
         {flags.ingestAutoPost && waiting > 0 && (
           <form action={runIngestSweep}>
             <Button type="submit" size="sm" variant="secondary">
-              Post {waiting} waiting now
+              File {waiting} waiting now
             </Button>
           </form>
         )}
