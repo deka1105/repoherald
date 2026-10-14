@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { repoComments, repoLikes, users } from "@/db/schema";
+import { displayNameSql } from "@/lib/display-name";
 
 export const COMMENT_MAX = 1000;
 export const COMMENTS_PER_DAY = 30;
@@ -11,7 +12,9 @@ export type RepoComment = {
   body: string;
   createdAt: Date;
   authorId: string;
-  authorLogin: string;
+  /** NULL when the account has no GitHub connected — render authorName then. */
+  authorLogin: string | null;
+  authorName: string;
   authorAvatarUrl: string | null;
 };
 
@@ -37,6 +40,7 @@ export async function getComments(repoId: string): Promise<RepoComment[]> {
       createdAt: repoComments.createdAt,
       authorId: repoComments.userId,
       authorLogin: users.githubLogin,
+      authorName: displayNameSql(),
       authorAvatarUrl: users.avatarUrl,
     })
     .from(repoComments)

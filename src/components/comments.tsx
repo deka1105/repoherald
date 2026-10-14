@@ -4,6 +4,7 @@ import { CommentForm } from "@/components/comment-form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { RepoComment } from "@/lib/social";
+import { formatHandle } from "@/lib/display-name";
 import { timeAgo } from "@/lib/utils";
 
 export function Comments({
@@ -43,12 +44,14 @@ export function Comments({
                 <Avatar className="mt-0.5 size-8 shrink-0">
                   <AvatarImage src={c.authorAvatarUrl ?? undefined} />
                   <AvatarFallback className="text-[10px]">
-                    {c.authorLogin.slice(0, 2).toUpperCase()}
+                    {c.authorName.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">
-                    <span className="font-medium">@{c.authorLogin}</span>{" "}
+                    <span className="font-medium">
+                      {formatHandle(c.authorLogin, c.authorName)}
+                    </span>{" "}
                     <span className="text-xs text-muted-foreground">
                       {timeAgo(c.createdAt)}
                     </span>
@@ -65,7 +68,7 @@ export function Comments({
                       type="submit"
                       variant="ghost"
                       size="icon"
-                      aria-label={`Remove comment by ${c.authorLogin}`}
+                      aria-label={`Remove comment by ${c.authorName}`}
                       title="Remove comment"
                     >
                       <X className="size-4" />

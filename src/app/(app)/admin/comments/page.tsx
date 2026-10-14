@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { displayNameSql } from "@/lib/display-name";
 import { repoComments, repos, users } from "@/db/schema";
 import { removeComment, restoreComment } from "@/app/actions/social";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ export default async function AdminCommentsPage() {
   const rows = await db
     .select({
       comment: repoComments,
-      authorLogin: users.githubLogin,
+      authorLogin: displayNameSql(),
       repoName: repos.fullName,
     })
     .from(repoComments)
