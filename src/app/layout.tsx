@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { StorageNotice } from "@/components/storage-notice";
@@ -75,9 +76,13 @@ export default async function RootLayout({
   const { className: themeClass, dataTheme } = htmlThemeAttrs(themeId);
 
   return (
-    // No suppressHydrationWarning and no blocking theme script: the class and
-    // data-theme below are rendered from the cookie, so the server's markup is
-    // already the final theme and the client has nothing to correct.
+    // ClerkProvider wraps <html> rather than sitting inside <body>, so that
+    // Clerk's modal sign-in and its hooks are available to every client
+    // component including the chrome.
+    <ClerkProvider>
+    {/* No suppressHydrationWarning and no blocking theme script: the class and
+        data-theme below are rendered from the cookie, so the server's markup is
+        already the final theme and the client has nothing to correct. */}
     <html
       lang="en"
       data-theme={dataTheme}
@@ -97,5 +102,6 @@ export default async function RootLayout({
         <GithubClickTracker />
       </body>
     </html>
+    </ClerkProvider>
   );
 }
