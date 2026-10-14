@@ -1,9 +1,16 @@
 import { and, count, eq, gt, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { ingestRepoCandidates, sponsorships } from "@/db/schema";
+import {
+  ingestRepoCandidates,
+  repos,
+  sponsorships,
+  starMints,
+  users,
+} from "@/db/schema";
 import {
   runIngestSweep,
   setIngestAutoPost,
+  setLandingStats,
   setSponsorshipsEnabled,
 } from "@/app/actions/admin-settings";
 import { autoPostActor } from "@/lib/ingest-post";
@@ -51,6 +58,14 @@ export default async function AdminSettingsPage() {
   const liveSponsorships = liveRow?.n ?? 0;
 
   const actor = flags.ingestAutoPost ? await autoPostActor() : null;
+
+  // The exact numbers the landing would print, so the decision to show them is
+  // made while looking at them.
+  const [[repoRow], [userRow], [mintRow]] = await Promise.all([
+    db.select({ n: count() }).from(repos).where(eq(repos.status, "active")),
+    db.select({ n: count() }).from(users),
+    db.select({ n: count() }).from(starMints),
+  ]);
 
   return (
     <div className="space-y-4">
@@ -119,6 +134,33 @@ export default async function AdminSettingsPage() {
             </Button>
           </form>
         )}
+      </div>
+
+      {/* ── Landing counts ───────────────────────────────────────────────── */}
+      <div className="space-y-3 rounded-md border p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 basis-64">
+            <h2 className="text-sm font-medium">Counts on the landing page</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The repo, stars-claimed and user totals under the hero, and the user
+              pill in the footer. Signed-out visitors only.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge variant={flags.landingStats ? "default" : "secondary"}>
+              {flags.landingStats ? "shown" : "hidden"}
+            </Badge>
+            <Toggle on={flags.landingStats} action={setLandingStats} label="Show" />
+          </div>
+        </div>
+        <p className="border-t pt-3 text-xs text-muted-foreground">
+          Reads right now as{" "}
+          <strong>
+            {repoRow?.n ?? 0} repos · {mintRow?.n ?? 0} stars claimed ·{" "}
+            {userRow?.n ?? 0} users
+          </strong>
+          . The landing rounds the user figure; the other two are exact.
+        </p>
       </div>
 
       {/* ── Sponsorships ─────────────────────────────────────────────────── */}
