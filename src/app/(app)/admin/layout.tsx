@@ -11,6 +11,7 @@ const NAV = [
   { href: "/admin/lists", label: "Lists" },
   { href: "/admin/comments", label: "Comments" },
   { href: "/admin/issue-reports", label: "Issue reports" },
+  { href: "/admin/ingest", label: "Ingest" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/anomalies", label: "Anomalies" },

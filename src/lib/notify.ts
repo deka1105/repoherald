@@ -2,7 +2,7 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { repos, sponsorships, users } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
-import { renderSponsorAlert } from "@/lib/email-templates";
+import { esc, renderSponsorAlert } from "@/lib/email-templates";
 import { log } from "@/lib/log";
 import { unsubscribeUrl } from "@/lib/unsubscribe";
 
@@ -86,5 +86,52 @@ export async function notifySponsorshipActivated(sponsorshipId: string): Promise
     log.info("notify.sponsor.done", { sponsorshipId, recipients: recipients.length, sent });
   } catch (e) {
     log.error("notify.sponsor.error", e, { sponsorshipId });
+  }
+}
+
+/**
+ * Tell the operator that someone filed a support ticket.
+ *
+ * Without this a ticket lands in a table and waits for somebody to think to
+ * look at /admin/support, which is the same as not having support.
+ *
+ * Best-effort in the strict sense: the person has already been told their
+ * message is in, and it is. A mail failure must not turn that into an error on
+ * their screen, so everything here is caught and logged.
+ *
+ * Unset OPERATOR_EMAIL means no notification. That is the right default rather
+ * than an oversight — before anyone is actually reading an inbox, a silent
+ * no-op beats mail piling up unread somewhere nobody has opened.
+ */
+export async function notifySupportTicket(input: {
+  ticketId: string;
+  fromEmail: string;
+  subject: string | null;
+  message: string;
+}): Promise<void> {
+  const operator = process.env.OPERATOR_EMAIL?.trim();
+  if (!operator) {
+    log.info("notify.support.skipped_no_operator", { ticketId: input.ticketId });
+    return;
+  }
+
+  try {
+    const subject = input.subject?.trim() || "(no subject)";
+    const adminUrl = appUrl("/admin/support");
+    const ok = await sendEmail({
+      to: operator,
+      subject: `Support: ${subject}`,
+      html:
+        `<p><strong>${esc(subject)}</strong></p>` +
+        `<p style="white-space:pre-wrap">${esc(input.message)}</p>` +
+        `<p>— ${esc(input.fromEmail)}<br>` +
+        `<a href="${adminUrl}">Open in admin</a></p>`,
+      text: `${subject}\n\n${input.message}\n\n— ${input.fromEmail}\n${adminUrl}`,
+      // So replying in a mail client answers the person, not the robot.
+      replyTo: input.fromEmail,
+    });
+    log.info("notify.support.done", { ticketId: input.ticketId, sent: ok });
+  } catch (e) {
+    log.error("notify.support.error", e, { ticketId: input.ticketId });
   }
 }
