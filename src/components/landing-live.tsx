@@ -90,6 +90,12 @@ export function Landing({
    * page sends people to a stranger's inbox.
    */
   instagramHandle: string | null;
+  /**
+   * False withdraws sponsorship from sale: the nav button, the footer button
+   * and the whole offers panel go, so the landing never advertises something
+   * /promote will refuse to sell.
+   */
+  sponsorships: boolean;
 }) {
   // Was local useState, which meant the landing's toggle persisted nothing and
   // reset to light on every load while the rest of the app remembered its own
@@ -131,9 +137,11 @@ export function Landing({
         <div className="rh-navlinks">
           <a href="#feed">Explore</a>
           <Link href="/post">Post a repo</Link>
-          <button type="button" onClick={openPanel}>
-            Sponsor
-          </button>
+          {sponsorships && (
+            <button type="button" onClick={openPanel}>
+              Sponsor
+            </button>
+          )}
         </div>
         <button
           type="button"
@@ -323,13 +331,16 @@ export function Landing({
           <a href="https://github.com" target="_blank" rel="noreferrer">
             GitHub
           </a>
-          <button type="button" onClick={openPanel}>
-            Sponsorships
-          </button>
+          {sponsorships && (
+            <button type="button" onClick={openPanel}>
+              Sponsorships
+            </button>
+          )}
         </div>
       </footer>
 
       {/* Sponsorship panel */}
+      {sponsorships && (
       <aside
         role="dialog"
         aria-label="Sponsorship offers"
@@ -377,6 +388,7 @@ export function Landing({
           Ends whichever comes first — days or stars.
         </div>
       </aside>
+      )}
     </div>
   );
 }

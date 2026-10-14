@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { getFeed, type FeedRepo } from "@/lib/feed";
 import { getActivePlans } from "@/lib/pricing";
 import { displayUserCount } from "@/lib/stats";
+import { getFlag } from "@/lib/settings";
 import { FeedHome } from "@/components/feed-home";
 import { Header } from "@/components/header";
 import { UserCount } from "@/components/user-count";
@@ -61,7 +62,8 @@ export default async function HomePage({
     );
   }
 
-  const [{ items, pinned }, statsResult, activePlans] = await Promise.all([
+  const [{ items, pinned }, statsResult, activePlans, sponsorships] =
+    await Promise.all([
     getFeed({}),
     db.execute(sql`
       SELECT
@@ -70,6 +72,7 @@ export default async function HomePage({
         (SELECT count(*) FROM users)::int AS user_count
     `),
     getActivePlans(),
+    getFlag("sponsorshipsEnabled"),
   ]);
   const stats = statsResult.rows[0] as unknown as {
     repo_count: number;
@@ -93,6 +96,7 @@ export default async function HomePage({
       // rather than pointing people at a handle nobody owns. Set
       // INGEST_INSTAGRAM to the account repoHeraldIG actually reads.
       instagramHandle={process.env.INGEST_INSTAGRAM?.trim().replace(/^@/, "") || null}
+      sponsorships={sponsorships}
       plans={activePlans.map((p) => ({
         key: p.key,
         durationDays: p.durationDays,
