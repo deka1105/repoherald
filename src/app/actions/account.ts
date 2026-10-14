@@ -3,7 +3,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { repos, users } from "@/db/schema";
-import { signOut } from "@/auth";
+import { redirect } from "next/navigation";
+import { clerkClient } from "@clerk/nextjs/server";
 import { requireUser } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
 import { log } from "@/lib/log";
@@ -16,6 +17,8 @@ import { log } from "@/lib/log";
 export async function deleteAccount() {
   const user = await requireUser();
   const anonLogin = `deleted-${user.id.slice(0, 8)}`;
+  // Captured before the transaction clears it.
+  const clerkUserId = user.clerkUserId;
 
   await db.transaction(async (tx) => {
     await tx
@@ -32,6 +35,10 @@ export async function deleteAccount() {
         githubFollowers: null,
         mintEligible: false,
         role: "user",
+        // Unlinked so the anonymised row is never adopted by a later sign-in
+        // that happens to match on one of the cleared fields.
+        clerkUserId: null,
+        googleId: null,
       })
       .where(eq(users.id, user.id));
     await tx
@@ -48,5 +55,18 @@ export async function deleteAccount() {
   });
 
   log.info("user.deleted", { userId: user.id });
-  await signOut({ redirectTo: "/" });
+
+  // Deleting the Clerk user is what actually ends the session — it revokes
+  // every device at once, which a cookie-clearing sign-out would not. Best
+  // effort: the local row is already anonymised, so a failure here must not
+  // leave the caller on a page that says their account still exists.
+  if (clerkUserId) {
+    try {
+      const client = await clerkClient();
+      await client.users.deleteUser(clerkUserId);
+    } catch (e) {
+      log.error("user.delete_account.clerk_failed", e);
+    }
+  }
+  redirect("/");
 }
