@@ -28,9 +28,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const row = await getListBySlug(slug);
   if (!row || row.list.status !== "active") return { title: "List — repoherald" };
+  // A private list's title is private too. generateMetadata runs without the
+  // page's viewer check, so it must not describe what it cannot authorise.
+  if (row.list.visibility === "private") return { title: "List — repoherald" };
   return {
     title: `${row.list.title} — repoherald`,
-    description: row.list.description ?? `A repo list curated by ${row.ownerLogin}.`,
+    description:
+      row.list.description ??
+      `A repo list curated by ${row.ownerLogin ?? "a member"}.`,
   };
 }
 
@@ -55,6 +60,10 @@ export default async function ListPage({
   if (list.status === "removed" && !isStaff) notFound();
 
   const isOwner = session?.user?.id === list.ownerUserId;
+  // "unlisted" is link-shareable by design; "private" is not. 404 rather than
+  // 403 so the response does not confirm the slug exists.
+  if (list.visibility === "private" && !isOwner && !isStaff) notFound();
+
   const canAdd = Boolean(session?.user) && (list.contributions === "open" || isOwner);
   const [items, views] = await Promise.all([
     getListItems(list.id),
