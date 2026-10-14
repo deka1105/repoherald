@@ -19,12 +19,15 @@ export default function PrivacyPage() {
 
       <h3>When you sign in</h3>
       <p>
-        You can sign in with GitHub or with Google. Either way we never see or store a password.
-        Signing in with Google using an address that already belongs to a GitHub account here
-        puts you into that same account rather than creating a second one; both providers tell us
-        whether the address is verified, and we only match on verified ones.
+        Sign-in is handled by <strong>Clerk</strong>, an identity provider. You can sign in with
+        GitHub or with Google, and we never see or store a password. Signing in with Google using
+        an address that already belongs to a GitHub account here puts you into that same account
+        rather than creating a second one; we only match on an address the provider has verified.
       </p>
-      <p>From Google we keep your account identifier, display name, email address and picture.</p>
+      <p>
+        We keep Clerk&rsquo;s identifier for your account, along with your display name, email
+        address and picture.
+      </p>
       <p>
         GitHub is optional. If you connect it, GitHub gives us, and we keep:
       </p>
@@ -38,9 +41,11 @@ export default function PrivacyPage() {
         </li>
         <li>
           An access token, so we can confirm you really starred a repository you claim credit for.
-          It is encrypted at rest with AES-256-GCM. We request read-only scopes
-          (<code>read:user</code>, <code>user:email</code>) — we cannot write to your repositories,
-          and we cannot star anything on your behalf.
+          When you sign in on the web the token is held by Clerk, which refreshes it; we read it
+          when we need it and do not keep our own copy. The mobile app signs in to GitHub directly,
+          and the token it obtains is stored here encrypted at rest with AES-256-GCM. Either way we
+          request read-only scopes (<code>read:user</code>, <code>user:email</code>) — we cannot
+          write to your repositories, and we cannot star anything on your behalf.
         </li>
       </ul>
 
@@ -125,7 +130,7 @@ export default function PrivacyPage() {
 
       <h2>What we do not collect</h2>
       <ul>
-        <li>No passwords — authentication is delegated to GitHub and Google.</li>
+        <li>No passwords — authentication is delegated to Clerk, GitHub and Google.</li>
         <li>No card numbers — those stay with Stripe.</li>
         <li>No advertising or cross-site tracking identifiers, and no data sold or brokered.</li>
         <li>No private repository contents, and no write access to anything you own.</li>
@@ -151,6 +156,14 @@ export default function PrivacyPage() {
             <td>Google</td>
             <td>Sign-in</td>
             <td>Your OAuth session</td>
+          </tr>
+          <tr>
+            <td>Clerk</td>
+            <td>Sign-in and session management</td>
+            <td>
+              Your name, email address, picture, and the access tokens from the providers you
+              connect
+            </td>
           </tr>
           <tr>
             <td>Neon</td>
