@@ -9,11 +9,12 @@
  * copy and both callers use it.
  */
 
-import { sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { encryptToken } from "@/lib/crypto";
 import { grantWelcomeCredit } from "@/lib/credits";
+import { findLinkTarget } from "@/lib/account-link";
 
 export type GithubProfile = {
   id: number;
@@ -67,6 +68,29 @@ export async function upsertGithubUser(
     mintEligible: computeMintEligible(p),
   };
 
+  // Link rather than insert when this person already has an account — either
+  // the same GitHub id as before, or a verified email matching an account they
+  // made with Google. Without this, connecting GitHub to a Gmail account would
+  // silently create a second account holding none of their lists or credits.
+  //
+  // GitHub only lets a *verified* address be the profile email, and Auth.js
+  // falls back to the primary verified address from /user/emails, so p.email is
+  // safe to link on.
+  const target = await findLinkTarget({ githubId: p.id, verifiedEmail: p.email });
+
+  if (target) {
+    const [row] = await db
+      .update(users)
+      .set(
+        isBootstrapAdmin
+          ? { ...values, githubId: p.id, role: "admin" as const }
+          : { ...values, githubId: p.id }
+      )
+      .where(eq(users.id, target.id))
+      .returning({ id: users.id, role: users.role });
+    return { id: row.id, role: row.role, githubLogin: p.login };
+  }
+
   const [row] = await db
     .insert(users)
     .values({
@@ -74,21 +98,10 @@ export async function upsertGithubUser(
       githubId: p.id,
       role: isBootstrapAdmin ? "admin" : "user",
     })
-    .onConflictDoUpdate({
-      target: users.githubId,
-      // Non-bootstrap sign-ins leave role untouched so moderators and
-      // dashboard-granted admins aren't demoted on their next sign-in.
-      set: isBootstrapAdmin ? { ...values, role: "admin" } : values,
-    })
-    // xmax = 0 marks a freshly inserted row (vs. an ON CONFLICT update),
-    // so the welcome bonus fires exactly once, on first sign-in.
-    .returning({
-      id: users.id,
-      role: users.role,
-      isNew: sql<boolean>`(xmax = 0)`,
-    });
+    .returning({ id: users.id, role: users.role });
 
-  if (row.isNew && values.mintEligible) {
+  // First sign-in, so the welcome bonus fires exactly once.
+  if (values.mintEligible) {
     await grantWelcomeCredit(row.id);
   }
 
