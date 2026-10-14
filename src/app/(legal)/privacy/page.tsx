@@ -19,7 +19,14 @@ export default function PrivacyPage() {
 
       <h3>When you sign in</h3>
       <p>
-        Sign-in is GitHub-only — we never see or store a password. GitHub gives us, and we keep:
+        You can sign in with GitHub or with Google. Either way we never see or store a password.
+        Signing in with Google using an address that already belongs to a GitHub account here
+        puts you into that same account rather than creating a second one; both providers tell us
+        whether the address is verified, and we only match on verified ones.
+      </p>
+      <p>From Google we keep your account identifier, display name, email address and picture.</p>
+      <p>
+        GitHub is optional. If you connect it, GitHub gives us, and we keep:
       </p>
       <ul>
         <li>Your GitHub numeric ID, username, display name, and avatar URL.</li>
@@ -81,6 +88,15 @@ export default function PrivacyPage() {
         list in your browser; nothing about it is sent to us.
       </p>
 
+      <h3>Your Instagram and TikTok handles</h3>
+      <p>
+        You can tell us the Instagram or TikTok account you send repositories from. Both are
+        optional, and we have no way to verify that an account is yours — a handle is a claim, not
+        proof, and the only thing it decides is whose private list a find is put into. One account
+        can hold a given handle at a time. Clearing it removes the handle and leaves your list and
+        its contents alone.
+      </p>
+
       <h3>Repositories people send us on Instagram</h3>
       <p>
         We run a tool that reads the direct messages sent to our own Instagram account and picks
@@ -92,9 +108,14 @@ export default function PrivacyPage() {
         Those usernames belong to people who never signed up here, so we keep them narrowly.{" "}
         <strong>They are never published.</strong> They exist so that a moderator reviewing a
         suggestion can see where it came from, and whether one account is pushing the same
-        repository repeatedly. A repository found this way does not reach the feed on its own: a
-        moderator has to approve it and post it under their own name, exactly as if they had found
-        it themselves.
+        repository repeatedly.
+      </p>
+      <p>
+        <strong>A repository found this way is never put on the feed.</strong> Once a moderator
+        approves it, it is filed into a <strong>private list belonging to the person who sent
+        it</strong> — matched by the handle on their account — which only they and our staff can
+        open. If nobody has claimed the sending handle, there is nobody to file it for and it
+        simply waits.
       </p>
       <p>
         Where we cannot tell who sent something — a group thread, say — we record that it is
@@ -104,7 +125,7 @@ export default function PrivacyPage() {
 
       <h2>What we do not collect</h2>
       <ul>
-        <li>No passwords — authentication is delegated to GitHub.</li>
+        <li>No passwords — authentication is delegated to GitHub and Google.</li>
         <li>No card numbers — those stay with Stripe.</li>
         <li>No advertising or cross-site tracking identifiers, and no data sold or brokered.</li>
         <li>No private repository contents, and no write access to anything you own.</li>
@@ -125,6 +146,11 @@ export default function PrivacyPage() {
             <td>GitHub</td>
             <td>Sign-in and star verification</td>
             <td>Your OAuth session and token use</td>
+          </tr>
+          <tr>
+            <td>Google</td>
+            <td>Sign-in</td>
+            <td>Your OAuth session</td>
           </tr>
           <tr>
             <td>Neon</td>

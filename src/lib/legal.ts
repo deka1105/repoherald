@@ -35,7 +35,7 @@ export const LEGAL = {
    * Bump ONLY when the substance changes — the date is a promise to the reader
    * that nothing material changed since. Editing a typo is not a new version.
    */
-  lastUpdated: "2026-09-18",
+  lastUpdated: "2026-10-14",
   /** Minimum age. GitHub itself requires 13+, and sign-in is GitHub-only. */
   minimumAge: 13,
 } as const;
