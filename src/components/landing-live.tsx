@@ -77,10 +77,19 @@ export function Landing({
   stats,
   cards,
   plans,
+  instagramHandle,
 }: {
   stats: LandingStats;
   cards: LandingCard[];
   plans: LandingPlan[];
+  /**
+   * Instagram account that accepts repo suggestions, without the "@". NULL
+   * when unset, and the invitation is then omitted entirely rather than
+   * rendered against a guessed handle — the same reasoning as the legal
+   * identity block in src/lib/legal.ts. A dead or wrong handle on a landing
+   * page sends people to a stranger's inbox.
+   */
+  instagramHandle: string | null;
 }) {
   // Was local useState, which meant the landing's toggle persisted nothing and
   // reset to light on every load while the rest of the app remembered its own
@@ -208,6 +217,47 @@ export function Landing({
       <div className="rh-container">
         <hr className="rh-hr" />
       </div>
+
+      {/* Send us what you saved — only when there is somewhere to send it */}
+      {instagramHandle && (
+        <>
+          <section className="rh-section">
+            <div className="rh-label">Found it somewhere else</div>
+            <div className="rh-send">
+              <div className="rh-send-body">
+                <h2 className="rh-send-h">
+                  Your saved folder is full of repos you never opened.
+                </h2>
+                <p className="rh-send-p">
+                  Everyone has one — a reel about some tool you meant to look at
+                  later, buried three months deep. Send them over and we&apos;ll do
+                  the digging: we look up every repository, catalogue it, and put
+                  the good ones on the feed where people can find them.
+                </p>
+                <p className="rh-send-note">
+                  Send the links to <strong>@{instagramHandle}</strong> — a reel, a
+                  post, a thread, wherever you found it. A person reviews every
+                  suggestion, so nothing is listed automatically. We keep the link
+                  and who sent it so that reviewer has the context;{" "}
+                  <strong>neither is ever published</strong>, as our{" "}
+                  <Link href="/privacy">Privacy Policy</Link> sets out.
+                </p>
+              </div>
+              <a
+                className="rh-btn rh-btn-lg rh-send-cta"
+                href={`https://www.instagram.com/${instagramHandle}/`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Send us a repo →
+              </a>
+            </div>
+          </section>
+          <div className="rh-container">
+            <hr className="rh-hr" />
+          </div>
+        </>
+      )}
 
       {/* Feed preview */}
       <section className="rh-section" id="feed">
