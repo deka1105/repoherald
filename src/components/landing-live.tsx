@@ -78,6 +78,7 @@ export function Landing({
   cards,
   plans,
   instagramHandle,
+  sponsorships,
 }: {
   stats: LandingStats;
   cards: LandingCard[];
