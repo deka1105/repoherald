@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/db";
 import { requireAdmin } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
@@ -61,8 +61,11 @@ export async function setSponsorshipsEnabled(formData: FormData) {
   revalidatePath("/", "layout");
   // getFeed reads the flag from INSIDE unstable_cache, whose key does not
   // include it — without this the feed keeps its sponsored rows for up to the
-  // 5-minute bucket after sponsorship is withdrawn.
-  revalidateTag("feed");
+  // 5-minute bucket after sponsorship is withdrawn. updateTag, not
+  // revalidateTag: this is a Server Action, and updateTag is the one with
+  // read-your-own-writes semantics (and in Next 16 revalidateTag now demands a
+  // cache profile as its second argument).
+  updateTag("feed");
 }
 
 /** Post what is waiting now, rather than at the next nightly run. */
