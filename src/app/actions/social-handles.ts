@@ -9,6 +9,7 @@ import { writeAudit } from "@/lib/audit";
 import {
   ensurePlatformList,
   HANDLE_COLUMN,
+  HANDLE_FIELD,
   normaliseHandle,
   PLATFORM_LABEL,
   type Platform,
@@ -42,7 +43,7 @@ export async function setSocialHandle(
   if (!raw) {
     await db
       .update(users)
-      .set({ [column.name === "instagram_username" ? "instagramUsername" : "tiktokUsername"]: null })
+      .set({ [HANDLE_FIELD[platform]]: null })
       .where(eq(users.id, user.id));
     revalidatePath("/account");
     return { ok: `${label} handle removed. Your list is untouched.` };
@@ -66,10 +67,7 @@ export async function setSocialHandle(
 
   await db
     .update(users)
-    .set({
-      [column.name === "instagram_username" ? "instagramUsername" : "tiktokUsername"]:
-        handle,
-    })
+    .set({ [HANDLE_FIELD[platform]]: handle })
     .where(eq(users.id, user.id));
 
   // Created now rather than lazily at filing time, so the user can see where

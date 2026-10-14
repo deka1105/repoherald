@@ -11,9 +11,16 @@ export const PLATFORM_LABEL: Record<Platform, string> = {
   tiktok: "TikTok",
 };
 
+/** The drizzle column, for WHERE clauses. */
 export const HANDLE_COLUMN = {
   instagram: users.instagramUsername,
   tiktok: users.tiktokUsername,
+} as const;
+
+/** The model field name, for SET clauses. */
+export const HANDLE_FIELD = {
+  instagram: "instagramUsername",
+  tiktok: "tiktokUsername",
 } as const;
 
 /**
