@@ -676,3 +676,87 @@ export const creditPurchases = pgTable(
     index("credit_purchases_intent_idx").on(t.stripePaymentIntentId),
   ]
 );
+
+// ── Ingest: repos discovered off-platform ────────────────────────────────────
+//
+// Repos that arrived from somewhere other than their owner — today, Instagram
+// reels mined by repoHeraldIG (github.com/deka1105/repoHeraldIG).
+//
+// These are NOT `repos`. `repos.postedByUserId` is NOT NULL against a
+// GitHub-OAuth'd user, and the rule is that you may only post a repo you own
+// or are an org member of. A repo a stranger sent you satisfies neither, so it
+// lands here and a moderator promotes it — becoming the posting user and
+// taking responsibility for it. Writing discovered repos straight into `repos`
+// is the feed-spam hole that rule exists to close.
+//
+// Shape follows `reports` and `supportTickets`: untrusted input with a status,
+// a reviewer and a timestamp.
+export const ingestRepoCandidates = pgTable(
+  "ingest_repo_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // Nullable, unlike repos.githubRepoId: a candidate can be recorded from a
+    // link before anything has confirmed the repo still exists.
+    githubRepoId: bigint("github_repo_id", { mode: "number" }).unique(),
+    fullName: text("full_name").notNull().unique(),
+    ownerLogin: text("owner_login").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    primaryLanguage: text("primary_language"),
+    starsCount: integer("stars_count").notNull().default(0),
+    avatarUrl: text("avatar_url"),
+    isArchived: boolean("is_archived").notNull().default(false),
+
+    platform: text("platform", {
+      enum: ["instagram", "tiktok", "x", "reddit", "facebook"],
+    })
+      .notNull()
+      .default("instagram"),
+    status: text("status", { enum: ["pending", "approved", "rejected", "promoted"] })
+      .notNull()
+      .default("pending"),
+    discoveredAt: timestamp("discovered_at", { withTimezone: true }).notNull().defaultNow(),
+
+    reviewedByUserId: uuid("reviewed_by_user_id").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    reviewNote: text("review_note"),
+    // Ties a candidate to the listing it became, so one repo is never promoted
+    // twice and the trail from reel to feed stays readable.
+    promotedRepoId: uuid("promoted_repo_id").references(() => repos.id),
+  },
+  (t) => [index("ingest_candidates_status_idx").on(t.status, t.discoveredAt)]
+);
+
+// One row per time a repo was seen in a post. A repo can arrive from several
+// people, and who sent it is signal worth keeping rather than a duplicate to
+// collapse — a repo three people independently sent you is a different thing
+// from one someone mentioned once.
+//
+// senderUsername and posterUsername are personal data about third parties who
+// never agreed to be here. They are the reason /privacy names this source, and
+// they are deleted with the candidate.
+export const ingestSightings = pgTable(
+  "ingest_sightings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateId: uuid("candidate_id")
+      .notNull()
+      .references(() => ingestRepoCandidates.id, { onDelete: "cascade" }),
+    postUrl: text("post_url").notNull(),
+    shortcode: text("shortcode"),
+    // NULL means the sender could not be determined — a group thread, or an
+    // ambiguous layout. Recorded as unknown rather than guessed at.
+    senderUsername: text("sender_username"),
+    posterUsername: text("poster_username"),
+    messageTs: timestamp("message_ts", { withTimezone: true }),
+    foundIn: text("found_in", { enum: ["caption", "screen", "narration"] }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Postgres treats NULLs as distinct, so this does not deduplicate sightings
+    // whose sender is unknown. That is the lesser evil: collapsing them would
+    // merge genuinely separate sightings that happen to share a gap.
+    uniqueIndex("ingest_sightings_unique").on(t.candidateId, t.postUrl, t.senderUsername),
+    index("ingest_sightings_sender_idx").on(t.senderUsername),
+  ]
+);
