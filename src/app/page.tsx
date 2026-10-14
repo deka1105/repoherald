@@ -1,34 +1,14 @@
 import { sql } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { getFeed, type FeedRepo } from "@/lib/feed";
 import { getActivePlans } from "@/lib/pricing";
 import { displayUserCount } from "@/lib/stats";
 import { getFlag } from "@/lib/settings";
 import { FeedHome } from "@/components/feed-home";
 import { Header } from "@/components/header";
 import { UserCount } from "@/components/user-count";
-import { Landing, type LandingCard } from "@/components/landing-live";
+import { Landing } from "@/components/landing-live";
 import { CreditNotifier } from "@/components/credit-notifier";
-
-function fmtStars(n: number): string {
-  return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
-}
-
-function toCard(r: FeedRepo): LandingCard {
-  return {
-    id: r.id,
-    fullName: r.fullName,
-    description: r.description,
-    chips: [
-      ...(r.primaryLanguage ? [r.primaryLanguage] : []),
-      ...r.categoryLabels.slice(0, 2),
-    ].slice(0, 3),
-    stars: fmtStars(r.starsCount),
-    sponsored: r.sponsored,
-    highlighted: r.highlighted,
-  };
-}
 
 export default async function HomePage({
   searchParams,
@@ -62,9 +42,7 @@ export default async function HomePage({
     );
   }
 
-  const [{ items, pinned }, statsResult, activePlans, sponsorships] =
-    await Promise.all([
-    getFeed({}),
+  const [statsResult, activePlans, sponsorships, showStats] = await Promise.all([
     db.execute(sql`
       SELECT
         (SELECT count(*) FROM repos WHERE status = 'active')::int AS repo_count,
@@ -73,16 +51,13 @@ export default async function HomePage({
     `),
     getActivePlans(),
     getFlag("sponsorshipsEnabled"),
+    getFlag("landingStats"),
   ]);
   const stats = statsResult.rows[0] as unknown as {
     repo_count: number;
     stars_claimed: number;
     user_count: number;
   };
-
-  const cards = [...pinned, ...items.filter((i) => !i.sponsored)]
-    .slice(0, 3)
-    .map(toCard);
 
   return (
     <Landing
@@ -91,12 +66,12 @@ export default async function HomePage({
         starsClaimed: stats.stars_claimed,
         userCount: displayUserCount(stats.user_count),
       }}
-      cards={cards}
       // Unset means the landing omits the "send us what you saved" block
       // rather than pointing people at a handle nobody owns. Set
       // INGEST_INSTAGRAM to the account repoHeraldIG actually reads.
       instagramHandle={process.env.INGEST_INSTAGRAM?.trim().replace(/^@/, "") || null}
       sponsorships={sponsorships}
+      showStats={showStats}
       plans={activePlans.map((p) => ({
         key: p.key,
         durationDays: p.durationDays,
