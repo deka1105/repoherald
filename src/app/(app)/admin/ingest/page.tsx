@@ -69,7 +69,10 @@ export default async function AdminIngestPage() {
           return (
             <div key={c.id} className="space-y-3 rounded-md border p-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
+                {/* basis-64 rather than flex-1's basis-0: the row stays on one
+                   line at any desktop width regardless of description length,
+                   and still wraps the buttons underneath on a narrow screen. */}
+                <div className="min-w-0 flex-1 basis-64">
                   <p className="text-sm">
                     <a
                       href={`https://github.com/${c.fullName}`}
