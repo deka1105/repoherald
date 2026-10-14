@@ -120,6 +120,13 @@
       "when": 1789827147244,
       "tag": "0016_drop_deprecated_user_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791942025708,
+      "tag": "0017_public_cable",
+      "breakpoints": true
     }
   ]
 }
