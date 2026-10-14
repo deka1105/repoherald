@@ -130,7 +130,11 @@ export function Landing({
           repoherald
         </Link>
         <div className="rh-navlinks">
-          <Link href="/api/auth/signin">Explore</Link>
+          {/* The feed is behind sign-in, so "Explore" opens it rather than
+              linking at a page that would only bounce. */}
+          <ClerkSignInButton mode="modal">
+            <button type="button">Explore</button>
+          </ClerkSignInButton>
           <Link href="/post">Post a repo</Link>
           {sponsorships && (
             <button type="button" onClick={openPanel}>
@@ -162,9 +166,11 @@ export function Landing({
         </p>
         <div className="rh-cta">
           <SignInButton large />
-          <Link href="/api/auth/signin" className="rh-ghost">
-            Browse repos
-          </Link>
+          <ClerkSignInButton mode="modal">
+            <button type="button" className="rh-ghost">
+              Browse repos
+            </button>
+          </ClerkSignInButton>
         </div>
         {/* Clickwrap: the terms are named and linked at the point of agreeing,
             not buried in a footer. */}
