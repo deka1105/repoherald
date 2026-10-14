@@ -19,6 +19,15 @@ export const users = pgTable("users", {
   // checks for these rather than assuming them.
   githubId: bigint("github_id", { mode: "number" }).unique(),
   githubLogin: text("github_login"),
+  // Set on first Clerk sign-in. Nullable because mobile sign-in does its own
+  // GitHub exchange and never goes through Clerk, so a mobile-only account has
+  // no Clerk identity — and because existing accounts predate Clerk and are
+  // linked to it by verified email the first time they sign in.
+  clerkUserId: text("clerk_user_id").unique(),
+  // Retained from the Auth.js era and still written by the mobile sign-in path.
+  // Web sign-ins no longer populate it: Clerk holds those tokens and refreshes
+  // them. See src/lib/github-token.ts, which reads Clerk first and falls back
+  // here so a mobile-only account keeps working.
   googleId: text("google_id").unique(),
   name: text("name"),
   // UNIQUE because it is the account-linking key: signing in with Google using
