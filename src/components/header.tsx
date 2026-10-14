@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { getAvailableDiscounts, type AvailableDiscount } from "@/lib/pricing";
+import { getFlag } from "@/lib/settings";
 import { HeaderNav, type NavUser } from "@/components/header-nav";
 import { MobileNav } from "@/components/mobile-nav";
 import { WelcomeGuide } from "@/components/welcome-guide";
@@ -17,8 +18,11 @@ export async function Header() {
 
   // Surface any usable discount codes to the logged-in user (best-effort; a
   // failed query must never break the chrome). Admins run the promos, so skip.
+  // One read for the whole chrome; the flag is cached for 30s in settings.ts.
+  const sponsorships = await getFlag("sponsorshipsEnabled");
+
   let discounts: AvailableDiscount[] = [];
-  if (session?.user && session.user.role !== "admin") {
+  if (sponsorships && session?.user && session.user.role !== "admin") {
     try {
       discounts = await getAvailableDiscounts(session.user.id);
     } catch {
@@ -28,10 +32,12 @@ export async function Header() {
 
   return (
     <>
-      <HeaderNav user={user} />
-      <MobileNav user={user} />
+      <HeaderNav user={user} sponsorships={sponsorships} />
+      <MobileNav user={user} sponsorships={sponsorships} />
       {user && <WelcomeGuide />}
-      {user && discounts.length > 0 && <DiscountPromo codes={discounts} />}
+      {sponsorships && user && discounts.length > 0 && (
+        <DiscountPromo codes={discounts} />
+      )}
     </>
   );
 }

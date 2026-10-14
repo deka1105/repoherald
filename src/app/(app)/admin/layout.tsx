@@ -18,6 +18,7 @@ const NAV = [
   { href: "/admin/rewards", label: "Rewards" },
   { href: "/admin/support", label: "Support" },
   { href: "/admin/audit", label: "Audit log", adminOnly: true },
+  { href: "/admin/settings", label: "Settings", adminOnly: true },
 ];
 
 export default async function AdminLayout({
