@@ -89,6 +89,10 @@ export default async function HomePage({
         userCount: displayUserCount(stats.user_count),
       }}
       cards={cards}
+      // Unset means the landing omits the "send us what you saved" block
+      // rather than pointing people at a handle nobody owns. Set
+      // INGEST_INSTAGRAM to the account repoHeraldIG actually reads.
+      instagramHandle={process.env.INGEST_INSTAGRAM?.trim().replace(/^@/, "") || null}
       plans={activePlans.map((p) => ({
         key: p.key,
         durationDays: p.durationDays,
