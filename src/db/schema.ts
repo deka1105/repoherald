@@ -14,10 +14,17 @@ import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
-  githubId: bigint("github_id", { mode: "number" }).notNull().unique(),
-  githubLogin: text("github_login").notNull(),
+  // NULLABLE since Google sign-in exists: GitHub is something you connect, not
+  // how you get in. Everything GitHub-gated — posting a repo, minting stars —
+  // checks for these rather than assuming them.
+  githubId: bigint("github_id", { mode: "number" }).unique(),
+  githubLogin: text("github_login"),
+  googleId: text("google_id").unique(),
   name: text("name"),
-  email: text("email"),
+  // UNIQUE because it is the account-linking key: signing in with Google using
+  // the address already on a GitHub account lands you in that account rather
+  // than a second one. Both providers hand us a provider-verified address.
+  email: text("email").unique(),
   avatarUrl: text("avatar_url"),
   githubAccessTokenEnc: text("github_access_token_enc"),
   tokenInvalidAt: timestamp("token_invalid_at", { withTimezone: true }),
@@ -42,6 +49,18 @@ export const users = pgTable("users", {
     .defaultNow(),
   // Opt-in: email me when a new sponsored repo goes live. Off by default (consent).
   sponsorAlertsOptIn: boolean("sponsor_alerts_opt_in").notNull().default(false),
+
+  // Social handles the user claims, stored lowercase without a leading "@" so
+  // they can be matched against ingest_sightings.sender_username, which comes
+  // from Instagram/TikTok where handles are case-insensitive.
+  //
+  // UNIQUE: a handle identifies exactly one account, otherwise a repo sent from
+  // it has two possible destinations. Claiming is unverified — see the note on
+  // the account page — so uniqueness is what stops a quiet collision, not proof
+  // of ownership.
+  instagramUsername: text("instagram_username").unique(),
+  tiktokUsername: text("tiktok_username").unique(),
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -610,6 +629,18 @@ export const repoLists = pgTable(
     contributions: text("contributions", { enum: ["open", "closed"] })
       .notNull()
       .default("open"),
+    // "unlisted" is what every list was before this column: not enumerable,
+    // but readable by anyone holding the link. "private" is stronger — only the
+    // owner and staff can open it. Defaulting to unlisted keeps every existing
+    // list exactly as shareable as it was when its owner made it.
+    visibility: text("visibility", { enum: ["unlisted", "private"] })
+      .notNull()
+      .default("unlisted"),
+    // Platform lists are created by us, not by the owner, when they claim a
+    // handle. They are where ingested repos are filed.
+    source: text("source", { enum: ["manual", "instagram", "tiktok"] })
+      .notNull()
+      .default("manual"),
     // Moderation: a 'removed' list 404s for everyone except staff.
     status: text("status", { enum: ["active", "removed"] })
       .notNull()
@@ -617,7 +648,14 @@ export const repoLists = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("repo_lists_owner_idx").on(t.ownerUserId, t.createdAt)]
+  (t) => [
+    index("repo_lists_owner_idx").on(t.ownerUserId, t.createdAt),
+    // One Instagram list and one TikTok list per owner. Partial, so it never
+    // constrains the manual lists people make themselves.
+    uniqueIndex("repo_lists_owner_source_uq")
+      .on(t.ownerUserId, t.source)
+      .where(sql`source <> 'manual'`),
+  ]
 );
 
 // Items may only point at repos already listed on repoherald — curating an
