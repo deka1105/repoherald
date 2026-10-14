@@ -6,7 +6,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { signInWithGitHub } from "@/app/actions/auth";
+import { SignInButton as ClerkSignInButton } from "@clerk/nextjs";
 import { PlanPrice } from "@/components/plan-price";
 import { useTheme } from "@/components/theme-provider";
 import "./landing/landing.css";
@@ -55,12 +55,14 @@ function GitHubIcon() {
 }
 
 function SignInButton({ large }: { large?: boolean }) {
+  // Modal rather than a redirect: the landing is one long page and sending
+  // somebody away from it to come back loses their place in it.
   return (
-    <form action={signInWithGitHub} style={{ display: "contents" }}>
-      <button type="submit" className={`rh-btn${large ? " rh-btn-lg" : ""}`}>
-        <GitHubIcon /> Sign in with GitHub
+    <ClerkSignInButton mode="modal">
+      <button type="button" className={`rh-btn${large ? " rh-btn-lg" : ""}`}>
+        <GitHubIcon /> Sign in
       </button>
-    </form>
+    </ClerkSignInButton>
   );
 }
 

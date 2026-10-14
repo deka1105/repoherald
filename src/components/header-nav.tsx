@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
-import { signInWithGitHub, signOutAction } from "@/app/actions/auth";
+import { SignInButton, SignOutButton } from "@clerk/nextjs";
 import { useTheme } from "@/components/theme-provider";
 import { ModeToggle } from "@/components/mode-toggle";
 import {
@@ -125,19 +125,19 @@ export function HeaderNav({
             ) : (
               <span className="rh-user-avatar" />
             )}
-            <span className="rh-user-name">{user.githubLogin}</span>
-            <form action={signOutAction} style={{ display: "contents" }}>
-              <button type="submit" className="rh-signout">
+            <span className="rh-user-name">{user.githubLogin ?? "Account"}</span>
+            <SignOutButton redirectUrl="/">
+              <button type="button" className="rh-signout">
                 Sign out
               </button>
-            </form>
+            </SignOutButton>
           </div>
         ) : (
-          <form action={signInWithGitHub} style={{ display: "contents" }}>
-            <button type="submit" className="rh-btn">
-              <GitHubIcon /> Sign in with GitHub
+          <SignInButton mode="modal">
+            <button type="button" className="rh-btn">
+              <GitHubIcon /> Sign in
             </button>
-          </form>
+          </SignInButton>
         )}
       </nav>
       <hr className="rh-hr" />
