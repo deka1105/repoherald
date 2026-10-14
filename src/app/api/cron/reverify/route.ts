@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { autoPostPendingCandidates } from "@/lib/ingest-post";
 import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -441,8 +442,24 @@ export async function GET(request: Request) {
     await syncRepos();
     await checkSocialShares();
     const issues = await validateIssueReports();
+    // No-ops unless the ingest auto-post flag is on. Last, and its own try:
+    // posting suggestions is the least important thing this job does, and must
+    // never cost the star reverification that runs above it.
+    let autoPosted = 0;
+    try {
+      const swept = await autoPostPendingCandidates();
+      autoPosted = swept.posted;
+      if (swept.posted || swept.skipped.length) {
+        log.info("cron.ingest.autopost", {
+          posted: swept.posted,
+          skipped: swept.skipped.length,
+        });
+      }
+    } catch (e) {
+      log.error("cron.ingest.autopost.failed", e);
+    }
     log.info("cron.reverify", { checked, revoked, issues });
-    return NextResponse.json({ ok: true, checked, revoked, issues });
+    return NextResponse.json({ ok: true, checked, revoked, issues, autoPosted });
   } catch (e) {
     log.error("cron.reverify.failed", e);
     return NextResponse.json({ ok: false }, { status: 500 });
