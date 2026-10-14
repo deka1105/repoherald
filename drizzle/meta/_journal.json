@@ -127,6 +127,13 @@
       "when": 1791942025708,
       "tag": "0017_public_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792013484951,
+      "tag": "0018_far_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }
