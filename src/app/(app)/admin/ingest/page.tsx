@@ -4,15 +4,16 @@ import { ingestRepoCandidates, ingestSightings } from "@/db/schema";
 import { approveCandidate, rejectCandidate } from "@/app/actions/ingest";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { candidateOwner } from "@/lib/ingest-post";
 import { timeAgo } from "@/lib/utils";
 
 // Repos that arrived from somewhere other than their owner — currently
 // Instagram DMs, mined by repoHeraldIG.
 //
-// Nothing here is on the feed until someone approves it. `repos.postedByUserId`
-// is NOT NULL and the rule is that you may only post a repo you own, so a repo
-// a stranger sent us has no legitimate poster until a moderator takes it on.
-// Approving is that act, and it writes the moderator as the posting user.
+// Nothing here reaches the feed at all. Approving files a repo into the PRIVATE
+// list of whoever sent it — matched from the sighting's sender handle to the
+// account that has claimed it. A candidate whose sender nobody has claimed has
+// no destination, so its button is disabled and it waits in the queue.
 //
 // Sender and poster usernames are shown HERE and nowhere else. They are how a
 // reviewer sees that one account is pushing the same repo five times; they are
@@ -51,12 +52,32 @@ export default async function AdminIngestPage() {
     (c) => c.status !== "promoted" && c.status !== "rejected"
   ).length;
 
+  // Resolved per candidate so the queue can name the destination rather than
+  // greying out a button with no explanation.
+  const owners = new Map(
+    await Promise.all(
+      candidates.map(async (c) => [c.id, await candidateOwner(c)] as const)
+    )
+  );
+  const ownerless = candidates.filter(
+    (c) =>
+      c.status !== "promoted" &&
+      c.status !== "rejected" &&
+      !owners.get(c.id)?.userId
+  ).length;
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {waiting} awaiting review. <strong>Approve</strong> posts the repo to the feed
-        under your name — you become its poster, and the audit log records that. There is
-        no undo: to pull one back afterwards, hide it from Listings.
+        {waiting} awaiting review. <strong>Approve</strong> files the repo into the
+        private list of the account that sent it. Nothing here reaches the feed.
+        {ownerless > 0 && (
+          <>
+            {" "}
+            {ownerless} of them {ownerless === 1 ? "has" : "have"} no claimed sender
+            and {ownerless === 1 ? "is" : "are"} waiting for one.
+          </>
+        )}
       </p>
 
       {candidates.length === 0 ? (
@@ -97,6 +118,22 @@ export default async function AdminIngestPage() {
                     {c.githubRepoId == null && " · repo id unresolved"}
                     {c.reviewNote ? ` · “${c.reviewNote}”` : ""}
                   </p>
+                  {c.status !== "rejected" && (
+                    <p className="mt-1 text-xs">
+                      {owners.get(c.id)?.userId ? (
+                        <span className="text-muted-foreground">
+                          files into @{owners.get(c.id)?.senders[0]}&apos;s private{" "}
+                          {c.platform} list
+                        </span>
+                      ) : (
+                        <span className="text-destructive">
+                          {owners.get(c.id)?.senders.length
+                            ? `no account has claimed @${owners.get(c.id)?.senders[0]} yet`
+                            : "sender unknown, so there is nobody to file this for"}
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge
@@ -114,8 +151,12 @@ export default async function AdminIngestPage() {
                     <>
                       <form action={approveCandidate}>
                         <input type="hidden" name="id" value={c.id} />
-                        <Button type="submit" size="sm" disabled={c.githubRepoId == null}>
-                          Approve &amp; post
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={c.githubRepoId == null || !owners.get(c.id)?.userId}
+                        >
+                          Approve &amp; file
                         </Button>
                       </form>
                       <form action={rejectCandidate}>
