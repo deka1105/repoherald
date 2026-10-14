@@ -11,7 +11,7 @@ import {
   starMints,
   users,
 } from "@/db/schema";
-import { decryptToken } from "@/lib/crypto";
+import { getGithubToken } from "@/lib/github-token";
 import {
   clawbackMint,
   clawbackShareReward,
@@ -94,15 +94,20 @@ async function reverifyStars(): Promise<{ checked: number; revoked: number }> {
   let checked = 0;
   let revoked = 0;
 
+  // Grouped by user, so this is one token lookup per user per run rather than
+  // one per mint. With Clerk that lookup is a network call, which is why the
+  // grouping above matters more than it used to.
   for (const [userId, rows] of byUser) {
-    const tokenEnc = rows[0].user.githubAccessTokenEnc;
-    if (!tokenEnc) continue;
-    let token: string;
+    let token: string | null;
     try {
-      token = decryptToken(tokenEnc);
+      token = await getGithubToken(userId);
     } catch {
       continue;
     }
+    // No GitHub connected, or Clerk could not produce a token. Skip rather
+    // than revoke: an unverifiable star is not a disproved one, and revoking
+    // on a provider outage would claw back credits people legitimately earned.
+    if (!token) continue;
 
     try {
       for (const { mint, repo } of rows) {
@@ -340,9 +345,10 @@ async function syncRepos() {
     .limit(REPO_SYNC_LIMIT);
 
   for (const { repo, user } of stale) {
-    if (!user.githubAccessTokenEnc) continue;
     try {
-      const token = decryptToken(user.githubAccessTokenEnc);
+      const token = await getGithubToken(user.id);
+      // Nothing to sync as: the poster has no usable GitHub credential.
+      if (!token) continue;
       const ghRepo = await fetchRepoById(token, repo.githubRepoId);
       if (!ghRepo) {
         await freezeRepo(repo.id, "repo_deleted_or_private");
