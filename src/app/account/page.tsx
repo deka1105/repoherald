@@ -7,6 +7,12 @@ import { db } from "@/db";
 import { repos, users } from "@/db/schema";
 import { FEED_LAYOUT_COOKIE, parseFeedLayout } from "@/lib/feed-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SocialHandleForm } from "@/components/social-handle-form";
+import {
+  setInstagramHandle,
+  setTiktokHandle,
+} from "@/app/actions/social-handles";
+import { repoLists } from "@/db/schema";
 import { ThemeChooser } from "@/components/account/theme-chooser";
 import { FeedLayoutChooser } from "@/components/account/feed-layout-chooser";
 import { MyPosts } from "@/components/account/my-posts";
@@ -35,6 +41,15 @@ export default async function AccountPage() {
   ]);
   if (!user) redirect("/");
 
+  // Slugs for the private platform lists, so each handle can link to where its
+  // finds land. Absent until the handle is first claimed.
+  const platformLists = await db
+    .select({ source: repoLists.source, slug: repoLists.slug })
+    .from(repoLists)
+    .where(eq(repoLists.ownerUserId, user.id));
+  const slugFor = (source: string) =>
+    platformLists.find((l) => l.source === source)?.slug ?? null;
+
   const feedLayout = parseFeedLayout(cookieStore.get(FEED_LAYOUT_COOKIE)?.value);
 
   return (
@@ -42,10 +57,42 @@ export default async function AccountPage() {
       <div>
         <h1 className="text-xl font-semibold">Account settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Signed in as {user.githubLogin}. Manage your listings, alerts, and
-          appearance.
+          Signed in as {user.githubLogin ?? user.email ?? "a member"}. Manage your
+          listings, alerts, and appearance.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Social accounts</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <p className="text-sm text-muted-foreground">
+            Both optional. Tell us the accounts you send repos from, and anything
+            we find in those messages is filed into a private list only you can
+            open — nothing is published, and nothing appears on the feed.
+          </p>
+          <SocialHandleForm
+            label="Instagram"
+            name="instagram"
+            current={user.instagramUsername}
+            listSlug={slugFor("instagram")}
+            action={setInstagramHandle}
+          />
+          <SocialHandleForm
+            label="TikTok"
+            name="tiktok"
+            current={user.tiktokUsername}
+            listSlug={slugFor("tiktok")}
+            action={setTiktokHandle}
+          />
+          <p className="text-xs text-muted-foreground">
+            We can&apos;t verify that you own these accounts, so a handle is a
+            claim rather than proof. One account can claim a handle at a time, and
+            all it does is decide whose private list a find goes into.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
