@@ -75,13 +75,12 @@ function SignInButton({ large }: { large?: boolean }) {
 
 export function Landing({
   stats,
-  cards,
   plans,
   instagramHandle,
   sponsorships,
+  showStats,
 }: {
   stats: LandingStats;
-  cards: LandingCard[];
   plans: LandingPlan[];
   /**
    * Instagram account that accepts repo suggestions, without the "@". NULL
@@ -97,6 +96,8 @@ export function Landing({
    * /promote will refuse to sell.
    */
   sponsorships: boolean;
+  /** Whether to print the repo / stars / user counts. */
+  showStats: boolean;
 }) {
   // Was local useState, which meant the landing's toggle persisted nothing and
   // reset to light on every load while the rest of the app remembered its own
@@ -136,7 +137,7 @@ export function Landing({
           repoherald
         </Link>
         <div className="rh-navlinks">
-          <a href="#feed">Explore</a>
+          <Link href="/api/auth/signin">Explore</Link>
           <Link href="/post">Post a repo</Link>
           {sponsorships && (
             <button type="button" onClick={openPanel}>
@@ -168,9 +169,9 @@ export function Landing({
         </p>
         <div className="rh-cta">
           <SignInButton large />
-          <a href="#feed" className="rh-ghost">
+          <Link href="/api/auth/signin" className="rh-ghost">
             Browse repos
-          </a>
+          </Link>
         </div>
         {/* Clickwrap: the terms are named and linked at the point of agreeing,
             not buried in a footer. */}
@@ -180,18 +181,23 @@ export function Landing({
           <Link href="/privacy">Privacy Policy</Link>. We request read-only GitHub
           access and never post on your behalf.
         </p>
-        <div className="rh-stats">
-          <span>
-            <span className="rh-glyph">◈</span> {fmt(stats.repoCount)} repos
-          </span>
-          <span className="rh-dot">·</span>
-          <span>
-            <span className="rh-glyph">★</span> {fmt(stats.starsClaimed)} stars
-            claimed
-          </span>
-          <span className="rh-dot">·</span>
-          <span>{fmt(stats.userCount)} users</span>
-        </div>
+        {showStats && (
+          <div className="rh-stats">
+            <span>
+              <span className="rh-glyph">◈</span> {fmt(stats.repoCount)}{" "}
+              {stats.repoCount === 1 ? "repo" : "repos"}
+            </span>
+            <span className="rh-dot">·</span>
+            <span>
+              <span className="rh-glyph">★</span> {fmt(stats.starsClaimed)}{" "}
+              {stats.starsClaimed === 1 ? "star" : "stars"} claimed
+            </span>
+            <span className="rh-dot">·</span>
+            <span>
+              {fmt(stats.userCount)} {stats.userCount === 1 ? "user" : "users"}
+            </span>
+          </div>
+        )}
       </header>
       <div className="rh-container">
         <hr className="rh-hr" />
@@ -315,9 +321,16 @@ export function Landing({
       {/* Footer */}
       <hr className="rh-hr" style={{ marginTop: "auto" }} />
       <footer className="rh-foot">
-        <span className="rh-userpill">
-          <span className="rh-dot-amber" /> {fmt(stats.userCount)} users
-        </span>
+        {/* The empty span keeps the wordmark centred: .rh-foot is
+            space-between across three children. */}
+        {showStats ? (
+          <span className="rh-userpill">
+            <span className="rh-dot-amber" /> {fmt(stats.userCount)}{" "}
+            {stats.userCount === 1 ? "user" : "users"}
+          </span>
+        ) : (
+          <span />
+        )}
         <span className="rh-foot-mark">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={shield} alt="" />
