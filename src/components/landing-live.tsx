@@ -30,15 +30,6 @@ export type LandingStats = {
   userCount: number;
 };
 
-export type LandingCard = {
-  id: string;
-  fullName: string;
-  description: string | null;
-  chips: string[];
-  stars: string;
-  sponsored: boolean;
-  highlighted: boolean;
-};
 
 export type LandingPlan = {
   key: string;
@@ -273,50 +264,6 @@ export function Landing({
           </div>
         </>
       )}
-
-      {/* Feed preview */}
-      <section className="rh-section" id="feed">
-        <div className="rh-feedhead">
-          <div className="rh-label">The feed</div>
-          <Link href="/api/auth/signin" className="rh-viewall">
-            View all →
-          </Link>
-        </div>
-        <div className="rh-cards">
-          {cards.map((c) => (
-            <article
-              key={c.id}
-              className={`rh-card${c.sponsored ? " rh-card-sponsored" : ""}`}
-            >
-              <div className="rh-avatar">
-                {c.fullName.charAt(0).toUpperCase()}
-              </div>
-              <div className="rh-card-body">
-                <div className="rh-card-title">
-                  {c.fullName}
-                  {c.sponsored && <span className="rh-tag-sponsored">Sponsored</span>}
-                  {!c.sponsored && c.highlighted && (
-                    <span className="rh-tag-highlighted">
-                      <span>★</span> Highlighted
-                    </span>
-                  )}
-                </div>
-                {c.description && <p className="rh-card-desc">{c.description}</p>}
-                <div className="rh-chips">
-                  {c.chips.map((chip) => (
-                    <span key={chip} className="rh-chip">
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="rh-starcount">
-                <span className="rh-star">★</span> {c.stars}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
 
       {/* Footer */}
       <hr className="rh-hr" style={{ marginTop: "auto" }} />
