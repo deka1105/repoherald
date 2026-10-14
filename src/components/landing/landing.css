@@ -340,6 +340,59 @@
   margin: 0;
 }
 
+/* ---------- Send us what you saved ---------- */
+.rh-send {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 32px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--chip);
+}
+.rh-send-body {
+  max-width: 62ch;
+}
+.rh-send-h {
+  font-weight: 600;
+  font-size: 23px;
+  letter-spacing: -0.4px;
+  margin: 0 0 10px;
+}
+.rh-send-p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--muted);
+  margin: 0;
+}
+.rh-send-note {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 14px 0 0;
+}
+.rh-send-note strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+.rh-send-note a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rh-send-note a:hover,
+.rh-send-note a:focus-visible {
+  color: var(--fg);
+}
+/* The button is the one thing that must not shrink: a wrapped CTA reads as a
+   broken layout, and this block is wide enough for the text to absorb it. */
+.rh-send-cta {
+  flex-shrink: 0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 /* ---------- Feed preview ---------- */
 .rh-feedhead {
   display: flex;
@@ -683,6 +736,15 @@
   }
   .rh-steps {
     grid-template-columns: 1fr;
+  }
+  .rh-send {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 24px;
+    gap: 24px;
+  }
+  .rh-send-h {
+    font-size: 20px;
   }
   .rh-step {
     padding: 22px 0;
