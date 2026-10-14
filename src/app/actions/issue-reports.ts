@@ -45,8 +45,15 @@ export async function submitIssueReport(
         "Your GitHub account doesn't meet the minimum activity requirements to earn credits yet.",
     };
   }
-  if (!user.githubAccessTokenEnc || user.tokenInvalidAt) {
-    return { error: "Your GitHub session is stale — please sign in again." };
+  // githubLogin is in the guard because GitHub is now optional: a Gmail-only
+  // account has no login and no token, and everything below this line needs
+  // both. Checking it here also narrows the type for the rest of the function.
+  if (!user.githubLogin || !user.githubAccessTokenEnc || user.tokenInvalidAt) {
+    return {
+      error: user.githubLogin
+        ? "Your GitHub session is stale — please sign in again."
+        : "Connect your GitHub account first — this needs it.",
+    };
   }
 
   const repoId = String(formData.get("repoId") ?? "");
