@@ -134,6 +134,13 @@
       "when": 1792013484951,
       "tag": "0018_far_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792015922626,
+      "tag": "0019_unique_galactus",
+      "breakpoints": true
     }
   ]
 }
