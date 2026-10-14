@@ -1,5 +1,4 @@
 import "server-only";
-import { decryptToken } from "@/lib/crypto";
 import { fetchIssue } from "@/lib/github";
 import {
   grantIssueReportReward,
@@ -30,11 +29,11 @@ type Row = {
 export async function validateOneIssueReport(row: Row): Promise<ValidationOutcome> {
   const { report, repo, user } = row;
   if (report.status !== "pending") return "skipped";
-  if (!user.githubAccessTokenEnc || user.tokenInvalidAt) return "skipped";
-
   let token: string;
   try {
-    token = decryptToken(user.githubAccessTokenEnc);
+    const resolved = await getGithubToken(user.id);
+    if (!resolved) return "skipped";
+    token = resolved;
   } catch {
     return "skipped";
   }

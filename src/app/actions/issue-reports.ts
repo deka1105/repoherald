@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { getGithubToken } from "@/lib/github-token";
 import { issueReports, repos, users } from "@/db/schema";
 import { actorTypeOf, requireModerator, requireUser } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
-import { decryptToken } from "@/lib/crypto";
 import {
   ISSUE_REPORT_CREDITS,
   ISSUE_REPORT_DAILY_CAP,
@@ -110,7 +110,8 @@ export async function submitIssueReport(
 
   let issue;
   try {
-    const token = decryptToken(user.githubAccessTokenEnc);
+    const token = await getGithubToken(user.id);
+    if (!token) return { error: "Connect your GitHub account first — this needs it." };
     issue = await fetchIssue(token, repo.ownerLogin, repo.name, issueNumber);
   } catch (e) {
     if (e instanceof GithubAuthError) {

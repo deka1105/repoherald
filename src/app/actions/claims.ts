@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
+import { getGithubToken } from "@/lib/github-token";
 import { repos, starMints, users } from "@/db/schema";
 import { requireUser } from "@/lib/authz";
-import { decryptToken } from "@/lib/crypto";
 import { CreditError, mintCredit } from "@/lib/credits";
 import { GithubAuthError, getStarredAt, isStarred } from "@/lib/github";
 
@@ -53,7 +53,8 @@ export async function claimStar(repoId: string): Promise<ClaimState> {
   }
 
   try {
-    const token = decryptToken(user.githubAccessTokenEnc);
+    const token = await getGithubToken(user.id);
+    if (!token) return { error: "Connect your GitHub account first — this needs it." };
     const starred = await isStarred(token, repo.ownerLogin, repo.name);
     if (!starred) {
       return {

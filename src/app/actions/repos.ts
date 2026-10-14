@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
+import { getGithubToken } from "@/lib/github-token";
 import { categories, repoCategories, repos, reports } from "@/db/schema";
 import { requireUser } from "@/lib/authz";
-import { decryptToken } from "@/lib/crypto";
 import { writeAudit } from "@/lib/audit";
 import {
   fetchRepoByFullName,
@@ -104,7 +104,10 @@ export async function postRepo(
 
   const categoryIds = formData.getAll("categoryIds").map(String).filter(Boolean);
 
-  const token = decryptToken(user.githubAccessTokenEnc);
+  const token = await getGithubToken(user.id);
+  if (!token) {
+    return { error: "Connect your GitHub account first — this needs it." };
+  }
   const ghRepo = await fetchRepoByFullName(token, ownerLogin, repoName);
   if (!ghRepo) return { error: "Repo not found on GitHub (or you can't access it)." };
   if (ghRepo.private) return { error: "Only public repos can be listed." };
