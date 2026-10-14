@@ -68,6 +68,16 @@ export async function setSponsorshipsEnabled(formData: FormData) {
   updateTag("feed");
 }
 
+export async function setLandingStats(formData: FormData) {
+  const on = String(formData.get("on") ?? "") === "1";
+  await flip(
+    "landingStats",
+    on,
+    on ? "settings.landing_stats.on" : "settings.landing_stats.off"
+  );
+  revalidatePath("/");
+}
+
 /** Post what is waiting now, rather than at the next nightly run. */
 export async function runIngestSweep() {
   await requireAdmin();

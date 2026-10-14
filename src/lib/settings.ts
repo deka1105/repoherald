@@ -23,6 +23,12 @@ export const FLAGS = {
    * flag is what changes the site, not installing it.
    */
   sponsorshipsEnabled: { key: "sponsorships_enabled", default: true },
+  /**
+   * Print the repo / stars / user counts on the landing page. ON by default,
+   * again so installing the flag changes nothing. Worth turning off while the
+   * numbers are small: "6 users" argues against the product.
+   */
+  landingStats: { key: "landing_stats", default: true },
 } as const;
 
 export type FlagName = keyof typeof FLAGS;
