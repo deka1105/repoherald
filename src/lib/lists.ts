@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { repoListItems, repoLists, repos, users } from "@/db/schema";
 
@@ -64,17 +64,34 @@ export async function getListItems(listId: string) {
 
 /** A user's own lists, newest first, with live item counts. */
 export async function getUserLists(userId: string) {
-  return db
-    .select({
-      list: repoLists,
-      itemCount: sql<number>`(
-        SELECT count(*)::int FROM ${repoListItems}
-        WHERE ${repoListItems.listId} = ${repoLists.id}
-      )`,
-    })
+  const lists = await db
+    .select()
     .from(repoLists)
     .where(and(eq(repoLists.ownerUserId, userId), eq(repoLists.status, "active")))
     .orderBy(desc(repoLists.createdAt));
+  if (lists.length === 0) return [];
+
+  // Counted in a second query rather than a correlated subquery in the SELECT
+  // list. Drizzle renders an interpolated column unqualified in a select field
+  // (it qualifies them in WHERE), so the obvious version compiled to
+  //   SELECT count(*) FROM repo_list_items WHERE "list_id" = "id"
+  // where both names resolved to the INNER table — asking how many items have
+  // a list_id equal to their own primary key. Always zero, never an error, and
+  // every list read "0 repos" while its page showed them all. A GROUP BY
+  // cannot correlate to the wrong table, so it cannot fail this way.
+  const counts = await db
+    .select({ listId: repoListItems.listId, n: sql<number>`count(*)::int` })
+    .from(repoListItems)
+    .where(
+      inArray(
+        repoListItems.listId,
+        lists.map((l) => l.id)
+      )
+    )
+    .groupBy(repoListItems.listId);
+
+  const byList = new Map(counts.map((c) => [c.listId, c.n]));
+  return lists.map((list) => ({ list, itemCount: byList.get(list.id) ?? 0 }));
 }
 
 /** Lists the user owns that don't already contain this repo — the options
