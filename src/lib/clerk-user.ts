@@ -31,11 +31,33 @@ export type AppUser = {
  */
 export async function resolveClerkUser(clerkUserId: string): Promise<AppUser | null> {
   const [existing] = await db
-    .select({ id: users.id, role: users.role, githubLogin: users.githubLogin })
+    .select({
+      id: users.id,
+      role: users.role,
+      githubLogin: users.githubLogin,
+      email: users.email,
+    })
     .from(users)
     .where(eq(users.clerkUserId, clerkUserId))
     .limit(1);
-  if (existing) return existing;
+
+  if (existing) {
+    // The configuration outranks the row. Without this the guarantee would
+    // only hold on first sign-in: anything that lowered the role afterwards —
+    // a direct edit, a restored dump — would stick, because this fast path is
+    // what every later request takes. The stored address is one Clerk marked
+    // verified, or one GitHub's verified-address list supplied before the
+    // migration; an address nobody proved never reaches this column.
+    if (existing.role !== "admin" && isPrimaryAdminEmail(existing.email)) {
+      await db.update(users).set({ role: "admin" }).where(eq(users.id, existing.id));
+      return { id: existing.id, role: "admin", githubLogin: existing.githubLogin };
+    }
+    return {
+      id: existing.id,
+      role: existing.role,
+      githubLogin: existing.githubLogin,
+    };
+  }
 
   return provisionFromClerk(clerkUserId);
 }
