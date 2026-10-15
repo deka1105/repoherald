@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { findLinkTarget, type UserRole } from "@/lib/account-link";
 import { bootstrapAdminLogins, computeMintEligible } from "@/lib/github-user";
+import { isPrimaryAdminEmail } from "@/lib/primary-admins";
 import { grantWelcomeCredit } from "@/lib/credits";
 
 export type AppUser = {
@@ -78,17 +79,24 @@ async function provisionFromClerk(clerkUserId: string): Promise<AppUser | null> 
   if (target) {
     const [row] = await db
       .update(users)
-      .set(values)
+      .set({
+        ...values,
+        // Re-asserted on adoption, not just at creation: a primary admin who
+        // was demoted — or whose row predates the configuration — comes back
+        // as an admin rather than staying wherever the table left them.
+        ...(isPrimaryAdminEmail(verifiedEmail) ? { role: "admin" as const } : {}),
+      })
       .where(eq(users.id, target.id))
       .returning({ id: users.id, role: users.role, githubLogin: users.githubLogin });
     return row;
   }
 
-  // Bootstrap admins are still keyed on GitHub login, deliberately: an email
-  // address has never been how this app decides authority.
-  const isBootstrapAdmin = githubLogin
-    ? bootstrapAdminLogins().has(githubLogin.toLowerCase())
-    : false;
+  // Two ways to be an admin before anyone has clicked anything: a configured
+  // GitHub login, or a configured address. The login route is unreachable for
+  // a Google-only sign-in, which is why the address route exists.
+  const isBootstrapAdmin =
+    (githubLogin ? bootstrapAdminLogins().has(githubLogin.toLowerCase()) : false) ||
+    isPrimaryAdminEmail(verifiedEmail);
 
   // Mint eligibility needs GitHub profile age and footprint, which Clerk does
   // not carry. Default to false; the nightly sync and a GitHub-backed action
