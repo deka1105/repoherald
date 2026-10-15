@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 import { db } from "@/db";
 import {
   auditLog,
@@ -15,6 +15,7 @@ import {
   ensurePlatformList,
   HANDLE_COLUMN,
   normaliseHandle,
+  PLATFORM_LABEL,
   type Platform,
 } from "@/lib/platform-lists";
 
@@ -93,8 +94,8 @@ export async function candidateOwner(candidate: Candidate): Promise<{
 export async function postCandidate(
   candidate: Candidate,
   actorUserId: string,
-  actorType: "admin" | "moderator",
-  auditAction: "ingest.promote" | "ingest.autopost"
+  actorType: "admin" | "moderator" | "user",
+  auditAction: "ingest.promote" | "ingest.autopost" | "ingest.backfill"
 ): Promise<PostOutcome> {
   if (candidate.promotedRepoId) return { ok: false, reason: "Already filed." };
 
