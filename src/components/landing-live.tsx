@@ -439,7 +439,8 @@ export function Landing({
               than carrying a second, competing "accept" button. */}
           <aside aria-label="Cookies and storage" className="rhl-notice">
             <p>
-              <strong>repoherald stores two cookies.</strong> One keeps you signed in, one
+              <strong>repoherald stores two cookies.</strong>{" "}
+              One keeps you signed in, one
               remembers whether you chose light or dark. Both are exempt from consent &mdash;
               there is nothing here to opt into. View counts are cookieless and store no IP
               address.
@@ -461,19 +462,19 @@ export function Landing({
             <nav aria-label="Footer" className="rhl-footnav">
               <ul>
                 <li>
-                  <Link href="/terms">Terms</Link>
+                  <Link href="/terms" className="rhl-footlink">Terms</Link>
                 </li>
                 <li>
-                  <Link href="/privacy">Privacy</Link>
+                  <Link href="/privacy" className="rhl-footlink">Privacy</Link>
                 </li>
                 <li>
-                  <Link href="/cookies">Cookies</Link>
+                  <Link href="/cookies" className="rhl-footlink">Cookies</Link>
                 </li>
                 <li>
-                  <Link href="/refunds">Refunds</Link>
+                  <Link href="/refunds" className="rhl-footlink">Refunds</Link>
                 </li>
                 <li>
-                  <Link href="/support">Support</Link>
+                  <Link href="/support" className="rhl-footlink">Support</Link>
                 </li>
                 {sponsorships && (
                   <li>
@@ -482,6 +483,7 @@ export function Landing({
                       aria-haspopup="dialog"
                       aria-expanded={panelOpen}
                       onClick={openPanel}
+                      className="rhl-footlink"
                     >
                       Sponsorships
                     </button>

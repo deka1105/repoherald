@@ -635,7 +635,7 @@
   padding: 0;
   list-style: none;
 }
-.rhl-footnav a,
+.rhl-footlink,
 .rhl-footnav button {
   background: none;
   border: 0;
@@ -646,7 +646,7 @@
   text-decoration: none;
   cursor: pointer;
 }
-.rhl-footnav a:hover,
+.rhl-footlink:hover,
 .rhl-footnav button:hover {
   color: var(--fg);
 }
