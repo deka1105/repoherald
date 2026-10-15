@@ -8,6 +8,7 @@ import { repos, users } from "@/db/schema";
 import { FEED_LAYOUT_COOKIE, parseFeedLayout } from "@/lib/feed-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialHandleForm } from "@/components/social-handle-form";
+import { ConnectGithub } from "@/components/account/connect-github";
 import {
   setInstagramHandle,
   setTiktokHandle,
@@ -21,7 +22,12 @@ import { DeleteAccount } from "@/app/(app)/wallet/delete-account";
 
 export const metadata = { title: "Account settings — repoherald" };
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ github?: string }>;
+}) {
+  const { github } = await searchParams;
   const session = await auth();
   if (!session?.user) redirect("/");
 
@@ -61,6 +67,18 @@ export default async function AccountPage() {
           listings, alerts, and appearance.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">GitHub</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ConnectGithub
+            githubLogin={user.githubLogin}
+            justConnected={github === "connected"}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
