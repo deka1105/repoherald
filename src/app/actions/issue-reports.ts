@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { getGithubToken, requireGithub } from "@/lib/github-token";
+import { requireGithub } from "@/lib/github-token";
 import { issueReports, repos, users } from "@/db/schema";
 import { actorTypeOf, requireModerator, requireUser } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
@@ -104,9 +104,7 @@ export async function submitIssueReport(
 
   let issue;
   try {
-    const token = await getGithubToken(user.id);
-    if (!token) return { error: "Connect your GitHub account first — this needs it." };
-    issue = await fetchIssue(token, repo.ownerLogin, repo.name, issueNumber);
+    issue = await fetchIssue(gate.token, repo.ownerLogin, repo.name, issueNumber);
   } catch (e) {
     if (e instanceof GithubAuthError) {
       await db

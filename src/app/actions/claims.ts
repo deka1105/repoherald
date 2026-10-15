@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { getGithubToken, requireGithub } from "@/lib/github-token";
+import { requireGithub } from "@/lib/github-token";
 import { repos, starMints, users } from "@/db/schema";
 import { requireUser } from "@/lib/authz";
 import { CreditError, mintCredit } from "@/lib/credits";
@@ -47,9 +47,7 @@ export async function claimStar(repoId: string): Promise<ClaimState> {
   }
 
   try {
-    const token = await getGithubToken(user.id);
-    if (!token) return { error: "Connect your GitHub account first — this needs it." };
-    const starred = await isStarred(token, repo.ownerLogin, repo.name);
+    const starred = await isStarred(gate.token, repo.ownerLogin, repo.name);
     if (!starred) {
       return {
         error: "We couldn't find your star. Star the repo on GitHub, then claim.",
