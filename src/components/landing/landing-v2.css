@@ -844,6 +844,10 @@
   .rhl-search button {
     width: 100%;
     height: 52px;
+    /* flex: none, or the base `flex: 1 1 300px` keeps its basis — which is the
+     * MAIN axis, and the main axis is now vertical. The input grew to a 300px
+     * tall box and ignored the height set right next to it. */
+    flex: none;
   }
   .rhl-ctas {
     flex-direction: column;
