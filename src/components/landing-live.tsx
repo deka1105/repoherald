@@ -306,6 +306,33 @@ export function Landing({
         </>
       )}
 
+      {/* Upcoming — named as not-yet-built, so the page stops short of
+          promising them the way the old copy promised a feed that had gone. */}
+      <section className="rh-section">
+        <div className="rh-label">Upcoming</div>
+        <div className="rh-steps">
+          <div className="rh-step">
+            <div className="rh-step-index">◇ Soon</div>
+            <h3>Browser extension</h3>
+            <p>
+              Save a repo from wherever you already are, without copying a link
+              into a message first.
+            </p>
+          </div>
+          <div className="rh-step">
+            <div className="rh-step-index">◈ Soon</div>
+            <h3>TikTok</h3>
+            <p>
+              Send finds from TikTok the same way you send them from Instagram.
+              You can claim your TikTok handle today; the sweep comes next.
+            </p>
+          </div>
+        </div>
+      </section>
+      <div className="rh-container">
+        <hr className="rh-hr" />
+      </div>
+
       {/* Footer */}
       <hr className="rh-hr" style={{ marginTop: "auto" }} />
       <footer className="rh-foot">
