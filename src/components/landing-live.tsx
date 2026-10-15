@@ -157,18 +157,43 @@ export function Landing({
       {/* Hero */}
       <header className="rh-hero">
         <div className="rh-eyebrow">
-          <span className="rh-star">★</span> Star what deserves to be seen.
+          <span className="rh-star">★</span> For everyone who saves more than they read.
         </div>
-        <h1 className="rh-h1">Where good repos get found.</h1>
+        <h1 className="rh-h1">You already found it. Find it again.</h1>
         <p className="rh-sub">
-          Post your work, let developers star what deserves attention, and turn
-          verified stars into highlight time on the feed.
+          Send us the repos and tools you save anywhere — a reel, a post, a
+          thread you scrolled past. We look each one up, catalogue it, and put
+          it somewhere you can search.
         </p>
+        {/* The headline claim, as a working control rather than a promise. A
+            plain GET form so a search is a URL, and so it works before any
+            JavaScript has loaded. */}
+        <form action="/search" method="get" className="rh-cta" role="search">
+          <input
+            name="q"
+            type="search"
+            placeholder="rust, scraper, that 3D thing…"
+            aria-label="Search repositories"
+            style={{
+              flex: "1 1 240px",
+              minWidth: 0,
+              padding: "11px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(128,128,128,0.35)",
+              background: "transparent",
+              color: "inherit",
+              font: "inherit",
+            }}
+          />
+          <button type="submit" className="rh-btn rh-btn-lg">
+            Search
+          </button>
+        </form>
         <div className="rh-cta">
           <SignInButton large />
           <ClerkSignInButton mode="modal">
             <button type="button" className="rh-ghost">
-              Browse repos
+              Sign in to search your own
             </button>
           </ClerkSignInButton>
         </div>
@@ -177,8 +202,9 @@ export function Landing({
         <p className="rh-consent">
           By signing in you agree to our{" "}
           <Link href="/terms">Terms of Service</Link> and{" "}
-          <Link href="/privacy">Privacy Policy</Link>. We request read-only GitHub
-          access and never post on your behalf.
+          <Link href="/privacy">Privacy Policy</Link>. You sign in with Google or
+          an email address. Connecting GitHub is optional, read-only, and only
+          needed to post your own work — we never post on your behalf.
         </p>
         {showStats && (
           <div className="rh-stats">
@@ -204,26 +230,32 @@ export function Landing({
 
       {/* How it works */}
       <section className="rh-section">
-        <div className="rh-label">How it works</div>
+        <div className="rh-label">What this is for</div>
         <div className="rh-steps">
           <div className="rh-step">
             <div className="rh-step-index">◇ 01</div>
-            <h3>Post your repo</h3>
-            <p>Connect GitHub and list any public repository in under a minute.</p>
+            <h3>Send us what you saved</h3>
+            <p>
+              A reel, a post, a link buried in a thread. Send it over and we look
+              up the repository behind it — what it is, what it&apos;s written in,
+              what it actually does.
+            </p>
           </div>
           <div className="rh-step">
             <div className="rh-step-index">★ 02</div>
-            <h3>Star &amp; verify</h3>
+            <h3>Share a list with anyone</h3>
             <p>
-              Real developers star what they value; each star is verified against
-              GitHub.
+              Group repos into a list and send someone the link. They don&apos;t
+              need an account to open it, and you decide whether anyone can add
+              to it.
             </p>
           </div>
           <div className="rh-step">
             <div className="rh-step-index">◈ 03</div>
-            <h3>Earn highlight time</h3>
+            <h3>Share your own work</h3>
             <p>
-              Verified stars translate into time featured near the top of the feed.
+              Connect GitHub and list a repository you own, so other developers
+              can find it and star it. Optional — nothing else here needs it.
             </p>
           </div>
         </div>
@@ -245,8 +277,9 @@ export function Landing({
                 <p className="rh-send-p">
                   Everyone has one — a reel about some tool you meant to look at
                   later, buried three months deep. Send them over and we&apos;ll do
-                  the digging: we look up every repository, catalogue it, and put
-                  the good ones on the feed where people can find them.
+                  the digging: we look up every repository, catalogue it, and file
+                  it into a private list that only you can open — and that you can
+                  finally search.
                 </p>
                 <p className="rh-send-note">
                   Send the links to <strong>@{instagramHandle}</strong> — a reel, a
