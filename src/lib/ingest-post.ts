@@ -275,3 +275,164 @@ export async function autoPostPendingCandidates(limit = 50): Promise<SweepResult
   }
   return result;
 }
+
+export type BackfillResult = {
+  /** Candidates filed for the first time by this call. */
+  filed: number;
+  /** Repos filed before the handle was claimed, now shown in the list too. */
+  linked: number;
+  /** Unreviewed candidates left for a moderator, because auto-filing is off. */
+  waiting: number;
+  skipped: { fullName: string; reason: string }[];
+};
+
+/**
+ * Show someone everything that arrived from their handle BEFORE they claimed it.
+ *
+ * repoHeraldIG sweeps DMs continuously, so finds routinely land weeks before
+ * the person who sent them has an account — and until now claiming a handle
+ * created an empty list and left that history stranded in the admin queue. A
+ * claim is the moment the handle and the account are connected, so it is the
+ * moment the backlog should appear.
+ *
+ * Two kinds of history, deliberately handled differently:
+ *
+ *  - Never filed (pending/approved). Filed now, through the same postCandidate
+ *    used by the admin button and the sweep, so one code path decides what a
+ *    filed repo looks like. Unreviewed ones are only filed when auto-filing is
+ *    on: if an admin has chosen that a human looks first, claiming a handle is
+ *    not a way around that. They are counted as `waiting` rather than skipped,
+ *    because nothing is wrong with them.
+ *
+ *  - Already filed (promoted), including the ones posted under the old
+ *    publish-to-feed behaviour. The repo exists and the candidate is spent, so
+ *    there is nothing to file; it just was never shown to the person who sent
+ *    it. Only a list item is added. The repo's own status is left exactly as it
+ *    is — pulling a published repo off the feed is a separate decision and not
+ *    one to make quietly inside somebody pressing "Claim".
+ *
+ * Ownership is re-resolved per candidate rather than assumed from the handle,
+ * so when several people sent the same repo it still lands with whoever brought
+ * it in first. Idempotent: filed candidates carry promotedRepoId and list items
+ * are guarded by the (list_id, repo_id) unique index, so re-claiming is a no-op.
+ */
+export async function backfillForHandle(
+  userId: string,
+  platform: Platform,
+  handle: string,
+  limit = 200
+): Promise<BackfillResult> {
+  const result: BackfillResult = { filed: 0, linked: 0, waiting: 0, skipped: [] };
+
+  const normalised = normaliseHandle(handle);
+  if (!normalised) return result;
+
+  // Senders are stored as the scraper saw them ("@Deka_1105", "deka_1105"),
+  // so matching happens through normaliseHandle rather than in SQL — one
+  // definition of what a handle is, shared with the rest of the ingest path.
+  const rows = await db
+    .select({
+      candidate: ingestRepoCandidates,
+      sender: ingestSightings.senderUsername,
+    })
+    .from(ingestRepoCandidates)
+    .innerJoin(
+      ingestSightings,
+      eq(ingestSightings.candidateId, ingestRepoCandidates.id)
+    )
+    .where(
+      and(
+        eq(ingestRepoCandidates.platform, platform),
+        // A rejected candidate stays rejected. Claiming a handle is not an
+        // appeal against a moderator.
+        ne(ingestRepoCandidates.status, "rejected")
+      )
+    )
+    .orderBy(asc(ingestRepoCandidates.discoveredAt));
+
+  const mine = new Map<string, Candidate>();
+  for (const row of rows) {
+    if (mine.size >= limit) break;
+    const sender = row.sender ? normaliseHandle(row.sender) : null;
+    if (sender === normalised) mine.set(row.candidate.id, row.candidate);
+  }
+  if (mine.size === 0) return result;
+
+  const list = await ensurePlatformList(userId, platform);
+  const autoPost = await getFlag("ingestAutoPost");
+
+  for (const candidate of mine.values()) {
+    if (candidate.promotedRepoId) {
+      const owner = await candidateOwner(candidate);
+      if (owner.userId !== userId) {
+        result.skipped.push({
+          fullName: candidate.fullName,
+          reason: "Already filed for whoever sent it first.",
+        });
+        continue;
+      }
+      const inserted = await db
+        .insert(repoListItems)
+        .values({
+          listId: list.id,
+          repoId: candidate.promotedRepoId,
+          addedByUserId: userId,
+        })
+        .onConflictDoNothing()
+        .returning({ id: repoListItems.id });
+      if (inserted.length) result.linked += 1;
+      continue;
+    }
+
+    if (candidate.status === "pending" && !autoPost) {
+      result.waiting += 1;
+      continue;
+    }
+
+    const outcome = await postCandidate(candidate, userId, "user", "ingest.backfill");
+    if (!outcome.ok) {
+      result.skipped.push({ fullName: candidate.fullName, reason: outcome.reason });
+    } else if (outcome.listId === list.id) {
+      result.filed += 1;
+    }
+  }
+
+  if (result.filed || result.linked) {
+    await writeAudit(db, {
+      actorUserId: userId,
+      actorType: "user",
+      action: "ingest.backfill",
+      entityType: "repo_list",
+      entityId: list.id,
+      metadata: {
+        platform,
+        handle: normalised,
+        filed: result.filed,
+        linked: result.linked,
+        waiting: result.waiting,
+      },
+    });
+  }
+
+  return result;
+}
+
+/** One sentence a person can read, for the account page. */
+export function describeBackfill(r: BackfillResult, platform: Platform): string | null {
+  const label = PLATFORM_LABEL[platform];
+  const shown = r.filed + r.linked;
+  const parts: string[] = [];
+  if (shown) {
+    parts.push(
+      `${shown} ${shown === 1 ? "repo" : "repos"} you sent before claiming ` +
+        `${shown === 1 ? "it is" : "they are"} now in your ${label} list`
+    );
+  }
+  if (r.waiting) {
+    parts.push(
+      `${r.waiting} more ${r.waiting === 1 ? "is" : "are"} waiting to be reviewed`
+    );
+  }
+  if (!parts.length) return null;
+  return `${parts.join(", and ")}.`;
+}
