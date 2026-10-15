@@ -53,7 +53,7 @@ export async function claimStar(repoId: string): Promise<ClaimState> {
         error: "We couldn't find your star. Star the repo on GitHub, then claim.",
       };
     }
-    const starredAt = await getStarredAt(token, repo.githubRepoId);
+    const starredAt = await getStarredAt(gate.token, repo.githubRepoId);
     if (!starredAt || starredAt < repo.createdAt) {
       return {
         error:

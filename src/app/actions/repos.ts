@@ -108,7 +108,7 @@ export async function postRepo(
     user.role === "admin" ||
     ghRepo.owner.login.toLowerCase() === gate.githubLogin.toLowerCase() ||
     (ghRepo.owner.type === "Organization" &&
-      (await isOrgMember(token, ghRepo.owner.login)));
+      (await isOrgMember(gate.token, ghRepo.owner.login)));
   if (!ownsIt) {
     return { error: "You can only post repos you own or belong to (org member)." };
   }
@@ -139,7 +139,7 @@ export async function postRepo(
     }
   }
 
-  const languages = await fetchRepoLanguages(token, ghRepo.owner.login, ghRepo.name);
+  const languages = await fetchRepoLanguages(gate.token, ghRepo.owner.login, ghRepo.name);
 
   const [inserted] = await db
     .insert(repos)
