@@ -93,6 +93,7 @@ export function HeaderNav({
         </Link>
         <div className="rh-navlinks">
           <Link href="/">Explore</Link>
+          <Link href="/search">Search</Link>
           <Link href="/post">Post a repo</Link>
           {sponsorships && <Link href="/promote">Sponsor</Link>}
           {user && <Link href="/lists">Lists</Link>}
