@@ -50,3 +50,36 @@ export async function getGithubToken(userId: string): Promise<string | null> {
   if (row.tokenEnc && !row.tokenInvalidAt) return decryptToken(row.tokenEnc);
   return null;
 }
+
+export type GithubGate =
+  | { ok: true; token: string; githubLogin: string }
+  | { ok: false; error: string };
+
+/**
+ * The guard every GitHub-backed action needs: a login AND a usable token.
+ *
+ * It exists because the obvious version of this check was wrong in three
+ * places at once. Each action tested `users.github_access_token_enc`, which is
+ * the token this app encrypts itself — and since identity moved to Clerk, web
+ * users do not have one. Clerk holds their token. So the guard rejected
+ * everybody on the web before the Clerk-aware lookup below it ever ran, and
+ * posting, star claims and issue reports were all dead.
+ *
+ * Resolving the token IS the check: getGithubToken() asks Clerk first and
+ * falls back to the locally encrypted token for mobile, and already refuses a
+ * token marked invalid. Returning the token rather than a boolean means the
+ * caller cannot forget to use the same one it just validated.
+ */
+export async function requireGithub(user: {
+  id: string;
+  githubLogin: string | null;
+}): Promise<GithubGate> {
+  if (!user.githubLogin) {
+    return { ok: false, error: "Connect your GitHub account first — this needs it." };
+  }
+  const token = await getGithubToken(user.id);
+  if (!token) {
+    return { ok: false, error: "Your GitHub session is stale — please sign in again." };
+  }
+  return { ok: true, token, githubLogin: user.githubLogin };
+}

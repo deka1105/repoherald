@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { getGithubToken } from "@/lib/github-token";
+import { getGithubToken, requireGithub } from "@/lib/github-token";
 import { issueReports, repos, users } from "@/db/schema";
 import { actorTypeOf, requireModerator, requireUser } from "@/lib/authz";
 import { writeAudit } from "@/lib/audit";
@@ -45,16 +45,10 @@ export async function submitIssueReport(
         "Your GitHub account doesn't meet the minimum activity requirements to earn credits yet.",
     };
   }
-  // githubLogin is in the guard because GitHub is now optional: a Gmail-only
-  // account has no login and no token, and everything below this line needs
-  // both. Checking it here also narrows the type for the rest of the function.
-  if (!user.githubLogin || !user.githubAccessTokenEnc || user.tokenInvalidAt) {
-    return {
-      error: user.githubLogin
-        ? "Your GitHub session is stale — please sign in again."
-        : "Connect your GitHub account first — this needs it.",
-    };
-  }
+  // One shared gate: a login plus a token that actually resolves, for Clerk
+  // web users and mobile alike. See requireGithub().
+  const gate = await requireGithub(user);
+  if (!gate.ok) return { error: gate.error };
 
   const repoId = String(formData.get("repoId") ?? "");
   const rawUrl = String(formData.get("issueUrl") ?? "").trim();
@@ -75,7 +69,7 @@ export async function submitIssueReport(
   }
   if (
     repo.postedByUserId === user.id ||
-    repo.ownerLogin.toLowerCase() === user.githubLogin.toLowerCase()
+    repo.ownerLogin.toLowerCase() === gate.githubLogin.toLowerCase()
   ) {
     return { error: "You can't earn credits for reporting issues on your own repo." };
   }
@@ -128,7 +122,7 @@ export async function submitIssueReport(
   if (issue.isPullRequest) {
     return { error: "That link is a pull request, not an issue." };
   }
-  if (issue.authorLogin.toLowerCase() !== user.githubLogin.toLowerCase()) {
+  if (issue.authorLogin.toLowerCase() !== gate.githubLogin.toLowerCase()) {
     return { error: "Only the issue's author can claim credit for it." };
   }
   if (issue.createdAt < repo.createdAt) {

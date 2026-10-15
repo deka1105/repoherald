@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { getGithubToken } from "@/lib/github-token";
+import { getGithubToken, requireGithub } from "@/lib/github-token";
 import { repos, starMints, users } from "@/db/schema";
 import { requireUser } from "@/lib/authz";
 import { CreditError, mintCredit } from "@/lib/credits";
@@ -23,16 +23,10 @@ export async function claimStar(repoId: string): Promise<ClaimState> {
         "Your GitHub account doesn't meet the minimum activity requirements to earn credits yet.",
     };
   }
-  // githubLogin is in the guard because GitHub is now optional: a Gmail-only
-  // account has no login and no token, and everything below this line needs
-  // both. Checking it here also narrows the type for the rest of the function.
-  if (!user.githubLogin || !user.githubAccessTokenEnc || user.tokenInvalidAt) {
-    return {
-      error: user.githubLogin
-        ? "Your GitHub session is stale — please sign in again."
-        : "Connect your GitHub account first — this needs it.",
-    };
-  }
+  // One shared gate: a login plus a token that actually resolves, for Clerk
+  // web users and mobile alike. See requireGithub().
+  const gate = await requireGithub(user);
+  if (!gate.ok) return { error: gate.error };
 
   const repo = await db.query.repos.findFirst({ where: eq(repos.id, repoId) });
   if (!repo || repo.status !== "active") {
@@ -40,7 +34,7 @@ export async function claimStar(repoId: string): Promise<ClaimState> {
   }
   if (
     repo.postedByUserId === user.id ||
-    repo.ownerLogin.toLowerCase() === user.githubLogin.toLowerCase()
+    repo.ownerLogin.toLowerCase() === gate.githubLogin.toLowerCase()
   ) {
     return { error: "You can't earn credits for starring your own repo." };
   }
