@@ -57,10 +57,15 @@
   --panel-shadow: -24px 0 48px rgba(0, 0, 0, 0.5);
 }
 
-.rhl a {
+/* Prose links only. A bare `.rhl a` (specificity 0-1-1) outranks every
+ * single-class component rule below it (0-1-0), which silently repainted the
+ * nav, the wordmark and — worst — the dark CTA buttons in accent-ink: amber
+ * text on a near-black button. :not([class]) keeps this to the links that
+ * carry no styling of their own. */
+.rhl a:not([class]) {
   color: var(--accent-ink);
 }
-.rhl a:hover {
+.rhl a:not([class]):hover {
   color: var(--fg);
 }
 /* Solid, never alpha-reduced — an accessibility floor AGENTS.md records. */
