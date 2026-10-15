@@ -130,10 +130,14 @@ export function Landing({
           repoherald
         </Link>
         <div className="rh-navlinks">
-          {/* "Explore" used to open the sign-in modal, because the thing it
-              named — the feed on this page — was removed. Search is a real
-              destination that works signed out, so it links there instead. */}
+          {/* Two different things, deliberately. The feed lives on "/" once you
+              are signed in, so Explore still has to open the modal. Search is a
+              real page that works signed out, and it reaches the private finds
+              the feed will never show. */}
           <Link href="/search">Search</Link>
+          <ClerkSignInButton mode="modal">
+            <button type="button">Explore</button>
+          </ClerkSignInButton>
           <Link href="/post">Post a repo</Link>
           {sponsorships && (
             <button type="button" onClick={openPanel}>
