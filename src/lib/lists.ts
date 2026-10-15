@@ -82,10 +82,16 @@ export async function getUserLists(userId: string) {
   const counts = await db
     .select({ listId: repoListItems.listId, n: sql<number>`count(*)::int` })
     .from(repoListItems)
+    // Same exclusion getListItems() applies, so the number on this page and
+    // the rows on the list's own page can never disagree.
+    .innerJoin(repos, eq(repos.id, repoListItems.repoId))
     .where(
-      inArray(
-        repoListItems.listId,
-        lists.map((l) => l.id)
+      and(
+        inArray(
+          repoListItems.listId,
+          lists.map((l) => l.id)
+        ),
+        sql`${repos.status} <> 'removed'`
       )
     )
     .groupBy(repoListItems.listId);
