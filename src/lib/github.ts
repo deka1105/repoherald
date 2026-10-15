@@ -176,3 +176,28 @@ export async function fetchIssue(
     createdAt: new Date(b.created_at),
   };
 }
+
+/**
+ * The authenticated user's own profile.
+ *
+ * Needed because Clerk's external-account record carries only an id and a
+ * username — not account age or footprint, which is what mint eligibility is
+ * judged on. Without this, connecting GitHub would restore posting but leave
+ * the account permanently ineligible to earn credits, which is a confusing
+ * half-connected state.
+ */
+export async function fetchViewer(token: string): Promise<{
+  id: number;
+  login: string;
+  name: string | null;
+  email: string | null;
+  avatar_url: string;
+  created_at: string;
+  public_repos: number;
+  followers: number;
+} | null> {
+  const res = await gh("/user", { token });
+  checkCommonErrors(res);
+  if (!res.ok) return null;
+  return res.json();
+}
