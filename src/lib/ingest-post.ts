@@ -424,8 +424,8 @@ export function describeBackfill(r: BackfillResult, platform: Platform): string 
   const parts: string[] = [];
   if (shown) {
     parts.push(
-      `${shown} ${shown === 1 ? "repo" : "repos"} you sent before claiming ` +
-        `${shown === 1 ? "it is" : "they are"} now in your ${label} list`
+      `${shown} ${shown === 1 ? "repo" : "repos"} you sent before claiming this ` +
+        `handle ${shown === 1 ? "is" : "are"} now in your ${label} list`
     );
   }
   if (r.waiting) {
