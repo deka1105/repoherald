@@ -130,11 +130,10 @@ export function Landing({
           repoherald
         </Link>
         <div className="rh-navlinks">
-          {/* The feed is behind sign-in, so "Explore" opens it rather than
-              linking at a page that would only bounce. */}
-          <ClerkSignInButton mode="modal">
-            <button type="button">Explore</button>
-          </ClerkSignInButton>
+          {/* "Explore" used to open the sign-in modal, because the thing it
+              named — the feed on this page — was removed. Search is a real
+              destination that works signed out, so it links there instead. */}
+          <Link href="/search">Search</Link>
           <Link href="/post">Post a repo</Link>
           {sponsorships && (
             <button type="button" onClick={openPanel}>
