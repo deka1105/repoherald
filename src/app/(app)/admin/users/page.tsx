@@ -1,4 +1,4 @@
-import { desc, ilike, sql } from "drizzle-orm";
+import { desc, ilike, or, sql } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { users } from "@/db/schema";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { isPrimaryAdminEmail } from "@/lib/primary-admins";
 import {
   Table,
   TableBody,
@@ -34,6 +35,15 @@ function EligibilityBadge({
       {u.mintEligible ? "eligible" : "ineligible"}
     </Badge>
   );
+}
+
+/**
+ * Not every account has a GitHub login any more, and a row rendering as an
+ * empty cell is indistinguishable from a broken query. Admin screens are the
+ * one place the address is the most useful handle, and only admins see it.
+ */
+function who(u: { githubLogin: string | null; name: string | null; email: string | null }) {
+  return u.githubLogin ?? u.name ?? u.email ?? "—";
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -127,7 +137,15 @@ export default async function AdminUsersPage({
     db
       .select()
       .from(users)
-      .where(q ? ilike(users.githubLogin, `%${q}%`) : undefined)
+      .where(
+        q
+          ? or(
+              ilike(users.githubLogin, `%${q}%`),
+              ilike(users.email, `%${q}%`),
+              ilike(users.name, `%${q}%`)
+            )
+          : undefined
+      )
       .orderBy(desc(users.createdAt))
       .limit(100),
     db
@@ -164,7 +182,7 @@ export default async function AdminUsersPage({
               <TableBody>
                 {youngAccounts.map(({ user: u, ageDays }) => (
                   <TableRow key={u.id}>
-                    <TableCell>{u.githubLogin}</TableCell>
+                    <TableCell>{who(u)}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {ageDays != null ? `${ageDays}d` : "—"}
                     </TableCell>
@@ -214,8 +232,13 @@ export default async function AdminUsersPage({
           {rows.map((u) => (
             <TableRow key={u.id}>
               <TableCell>
-                {u.githubLogin}
+                {who(u)}
                 <RoleBadge role={u.role} />
+                {isPrimaryAdminEmail(u.email) && (
+                  <Badge variant="secondary" className="ml-2">
+                    primary
+                  </Badge>
+                )}
                 {u.tokenInvalidAt && (
                   <Badge variant="outline" className="ml-2">
                     stale token
@@ -266,7 +289,13 @@ export default async function AdminUsersPage({
               )}
               {isAdmin && (
                 <TableCell>
-                  <RoleButtons userId={u.id} current={u.role} />
+                  {isPrimaryAdminEmail(u.email) ? (
+                    <span className="text-xs text-muted-foreground">
+                      set by ADMIN_EMAILS
+                    </span>
+                  ) : (
+                    <RoleButtons userId={u.id} current={u.role} />
+                  )}
                 </TableCell>
               )}
             </TableRow>
