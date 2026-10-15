@@ -14,6 +14,7 @@ import {
   PLATFORM_LABEL,
   type Platform,
 } from "@/lib/platform-lists";
+import { backfillForHandle, describeBackfill } from "@/lib/ingest-post";
 
 export type HandleState = { error?: string; ok?: string };
 
@@ -83,9 +84,20 @@ export async function setSocialHandle(
     metadata: { platform, handle },
   });
 
+  // Anything already swept from this handle predates the claim — the sweep runs
+  // whether or not the sender has an account. Show it now, or the list opens
+  // empty and the history stays invisible.
+  const backfill = await backfillForHandle(user.id, platform, handle);
+  const summary = describeBackfill(backfill, platform);
+
   revalidatePath("/account");
   revalidatePath(`/lists/${list.slug}`);
-  return { ok: `@${handle} claimed. Finds will be filed into "${label} finds".` };
+  revalidatePath("/lists");
+  return {
+    ok: summary
+      ? `@${handle} claimed. ${summary}`
+      : `@${handle} claimed. Finds will be filed into "${label} finds".`,
+  };
 }
 
 export async function setInstagramHandle(prev: HandleState, formData: FormData) {
