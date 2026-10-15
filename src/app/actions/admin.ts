@@ -17,6 +17,7 @@ import {
 import { requireAdmin, requireModerator, actorTypeOf } from "@/lib/authz";
 import { grantShareReward } from "@/lib/credits";
 import { writeAudit } from "@/lib/audit";
+import { isPrimaryAdminEmail } from "@/lib/primary-admins";
 import { refundSponsorshipForRepo } from "@/lib/stripe";
 
 function ok(): { error?: string } {
@@ -141,6 +142,24 @@ export async function setUserRole(
   if (admin.id === userId && role !== "admin") {
     return { error: "You can't remove your own admin access." };
   }
+
+  // A primary admin is defined by ADMIN_EMAILS, not by this table, so changing
+  // the row would be undone on their next request anyway. Refusing here says
+  // so plainly instead of letting the button appear to work. It also closes
+  // the obvious hole in the rule above: one admin demoting another.
+  const [target] = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (isPrimaryAdminEmail(target?.email)) {
+    return {
+      error:
+        "That account is a primary admin, set by ADMIN_EMAILS. Remove the " +
+        "address from that variable and redeploy to change it.",
+    };
+  }
+
   await db
     .update(users)
     .set({ role })
