@@ -1,0 +1,85 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0a0a;--fg:#f5f5f4;--muted:#9c9c97;--accent:#e8ad46;--hair:rgba(255,255,255,0.13);--card:#141413;--dead:#5a5a57;--tile:#1a1a18}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;background:var(--bg);overflow:hidden}
+  body{font-family:Inter,system-ui,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+  #stage{position:relative;width:1080px;height:1920px}
+  .l{position:absolute;left:80px;right:80px}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .huge{font-size:150px;font-weight:700;letter-spacing:-.05em;line-height:1}
+  .big{font-size:78px;line-height:1.14;font-weight:700;letter-spacing:-.02em}
+  .mid{font-size:50px;line-height:1.26;font-weight:600;letter-spacing:-.01em}
+  .note{font-size:38px;line-height:1.4;color:var(--muted)}
+  .grid{position:absolute;left:80px;right:80px;display:grid;
+        grid-template-columns:repeat(3,1fr);gap:8px}
+  .tile{aspect-ratio:1;background:var(--tile);border-radius:4px}
+  .card{position:absolute;left:80px;right:80px;background:var(--card);
+        border:1px solid var(--hair);border-radius:22px;padding:34px 38px}
+  .row{padding:20px 0;border-bottom:1px solid var(--hair)}
+  .rname{font-size:37px;font-weight:600}
+  .why{font-size:30px;color:var(--accent);margin-top:9px;line-height:1.35}
+  .src{font-size:26px;color:var(--dead);margin-top:7px}
+  .cap{position:absolute;left:80px;right:80px;bottom:150px;text-align:center;
+       font-size:46px;line-height:1.3;font-weight:600}
+  .wm{position:absolute;left:0;right:0;bottom:70px;text-align:center;
+      font-size:30px;color:var(--muted);letter-spacing:.14em;font-weight:500}
+  .pill{display:inline-block;font-size:27px;font-weight:600;padding:7px 18px;
+        border-radius:999px;background:rgba(232,173,70,.16);color:var(--accent)}
+</style></head><body><div id="stage"></div>
+<script>
+const F=window.__FACTS__||{};
+const S=document.getElementById("stage");
+function add(cls,html,y){const d=document.createElement("div");d.className="l "+cls;
+  d.innerHTML=html;d.style.top=y+"px";S.appendChild(d);return d;}
+function cap(t){const d=document.createElement("div");d.className="cap";d.textContent=t;S.appendChild(d);}
+// The saved grid: identical squares, no titles. That IS the pain, drawn.
+function grid(y,rows,dim){const g=document.createElement("div");g.className="grid";
+  g.style.top=y+"px";g.style.opacity=dim||1;
+  g.innerHTML=Array.from({length:rows*3},()=>'<div class="tile"></div>').join("");
+  S.appendChild(g);return g;}
+const FOUND=[
+ {n:"tolerant-csv/parser",w:"The one that eats our broken export quoting.",s:"sent 14 Mar · found in the caption"},
+ {n:"ndjson/tail",w:"Streamed a 9GB log without dying.",s:"sent 2 Apr · found on screen"},
+ {n:"argv/lite",w:"1.2kb. For when commander is too heavy.",s:"sent 27 Jun · found in the narration"}];
+function list(y,notes){const c=document.createElement("div");c.className="card";c.style.top=y+"px";
+  c.innerHTML='<div style="font-size:40px;font-weight:700;letter-spacing:-.01em">Instagram finds</div>'
+   +'<div style="font-size:30px;color:var(--muted);margin:9px 0 6px">private · only you</div>'
+   +FOUND.map(r=>'<div class="row"><div class="rname mono">'+r.n+'</div>'
+     +(notes?'<div class="why">'+r.w+'</div><div class="src">'+r.s+'</div>':'')+'</div>').join("");
+  S.appendChild(c);return c;}
+const SCENES={
+ 1:()=>{add("big","You saved it because it was good.",480);grid(680,3,.55);
+        cap("You saved it because it was good.");},
+ 2:()=>{grid(420,3,.35);add("huge",'<span style="color:var(--accent)">237</span>',1010);
+        add("big","saved. Now find the CSV one.",1180);
+        cap("Now find the CSV one.");},
+ 3:()=>{add("mid","No titles. No notes. No search that works.",500);grid(620,2,.35);
+        add("note","You scroll for two minutes and give up.",1310);
+        cap("You scroll for two minutes and give up.");},
+ 4:()=>{add("big","You already did the hard part.",520);
+        add("mid","You found it. You read it. You decided it was worth keeping.",800);
+        add("big",'<span style="color:var(--accent)">Then it fell in a pit.</span>',1080);
+        cap("You already did the hard part.");},
+ 5:()=>{add("huge",'<span style="color:var(--accent)">Send it.</span>',620);
+        add("big","Don't save it. DM it.",830);
+        add("note","Same two seconds. Different ending.",1050);
+        cap("Don't save it. DM it.");},
+ 6:()=>{add("mid","We read the post for you.",470);
+        add("big","The caption. The text on screen.<br>The narration.",600);
+        add("note","A repo name said out loud in a reel still lands in your list.",960);
+        cap("Even when it's only said out loud.");},
+ 7:()=>{add("mid","It comes back as something you can read.",450);list(570,1);
+        cap("It comes back readable.");},
+ 8:()=>{add("big","Claim your handle and the ones you already sent are waiting.",500);
+        add("note","From before you had an account. The sweep was already running.",840);
+        add("",'<span class="pill">+ the rest is queued for review</span>',960);
+        add("mid",'Saving was never the problem.<br><span style="color:var(--accent)">Finding it again was.</span>',1100);
+        cap("It was already there.");}
+};
+window.renderScene=function(n){S.innerHTML="";SCENES[n]();
+  const w=document.createElement("div");w.className="wm";w.textContent="REPOHERALD";S.appendChild(w);};
+window.renderScene(1);
+</script></body></html>
