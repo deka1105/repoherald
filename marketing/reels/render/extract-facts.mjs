@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 const REPO = "/Users/shubhamarundekatey/ClaudeCode/day23/repoherald";
 const feed = readFileSync(`${REPO}/src/lib/feed.ts`, "utf8");
 const credits = readFileSync(`${REPO}/src/lib/credits.ts`, "utf8");
+const lists = readFileSync(`${REPO}/src/lib/lists.ts`, "utf8");
 
 const must = (re, src, label) => {
   const m = re.exec(src);
@@ -27,6 +28,9 @@ const facts = {
   donationMinutes: Number(must(/DONATION_MINUTES = (\d+)/, credits, "donation minutes")),
   dailyCap: Number(must(/DAILY_MINT_CAP = (\d+)/, credits, "daily cap")),
   weeklyCap: Number(must(/WEEKLY_MINT_CAP = (\d+)/, credits, "weekly cap")),
+  maxLists: Number(must(/MAX_LISTS_PER_USER = (\d+)/, lists, "max lists")),
+  maxItems: Number(must(/MAX_ITEMS_PER_LIST = (\d+)/, lists, "max items")),
+  noteMax: Number(must(/NOTE_MAX = (\d+)/, lists, "note max")),
 };
 
 // The two numbers the script claims on camera. Computed, never typed.

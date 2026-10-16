@@ -1,0 +1,84 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0a0a;--fg:#f5f5f4;--muted:#9c9c97;--accent:#e8ad46;--hair:rgba(255,255,255,0.13);--card:#141413;--dead:#5a5a57}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;background:var(--bg);overflow:hidden}
+  body{font-family:Inter,system-ui,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+  #stage{position:relative;width:1080px;height:1920px}
+  .l{position:absolute;left:80px;right:80px}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .huge{font-size:170px;font-weight:700;letter-spacing:-.05em;line-height:1}
+  .big{font-size:78px;line-height:1.14;font-weight:700;letter-spacing:-.02em}
+  .mid{font-size:50px;line-height:1.26;font-weight:600;letter-spacing:-.01em}
+  .note{font-size:38px;line-height:1.4;color:var(--muted)}
+  .card{position:absolute;left:80px;right:80px;background:var(--card);
+        border:1px solid var(--hair);border-radius:22px;padding:36px 40px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;
+       padding:22px 0;border-bottom:1px solid var(--hair)}
+  .rname{font-size:38px;font-weight:600}
+  .rwhen{font-size:30px;color:var(--dead)}
+  .why{font-size:31px;color:var(--accent);margin-top:10px;line-height:1.35}
+  .cap{position:absolute;left:80px;right:80px;bottom:150px;text-align:center;
+       font-size:46px;line-height:1.3;font-weight:600}
+  .wm{position:absolute;left:0;right:0;bottom:70px;text-align:center;
+      font-size:30px;color:var(--muted);letter-spacing:.14em;font-weight:500}
+  .pill{display:inline-block;font-size:27px;font-weight:600;padding:7px 18px;
+        border-radius:999px;background:rgba(232,173,70,.16);color:var(--accent)}
+</style></head><body><div id="stage"></div>
+<script>
+const F=window.__FACTS__||{};
+const S=document.getElementById("stage");
+function add(cls,html,y){const d=document.createElement("div");d.className="l "+cls;
+  d.innerHTML=html;d.style.top=y+"px";S.appendChild(d);return d;}
+function cap(t){const d=document.createElement("div");d.className="cap";d.textContent=t;S.appendChild(d);}
+function card(y,rows,{title,count,notes}={}){
+  const c=document.createElement("div");c.className="card";c.style.top=y+"px";
+  let h = title?'<div style="font-size:42px;font-weight:700;letter-spacing:-.01em">'+title+'</div>'
+        +'<div style="font-size:31px;color:var(--muted);margin-top:10px;margin-bottom:12px">'+count+'</div>':'';
+  h += rows.map(r=>'<div class="row"><div><div class="rname mono">'+r.n+'</div>'
+       +(notes&&r.w?'<div class="why">'+r.w+'</div>':'')
+       +'</div><div class="rwhen">'+(r.t||'')+'</div></div>').join("");
+  c.innerHTML=h;S.appendChild(c);return c;
+}
+const STARRED=[{n:"sindresorhus/ora",t:"starred 2023"},{n:"tj/commander.js",t:"starred 2023"},
+  {n:"chalk/chalk",t:"starred 2022"},{n:"vadimdemedes/ink",t:"starred 2024"}];
+const CURATED=[{n:"you/csv-tolerant",w:"Handles the broken quoting our exports produce.",t:""},
+  {n:"you/ndjson-tail",w:"Only thing that streamed a 9GB log without dying.",t:""},
+  {n:"you/argv-lite",w:"Use when commander is too heavy. 1.2kb.",t:""}];
+const SCENES={
+ 1:()=>{add("huge","847",640);add("big","repos you have starred.",840);
+        cap("You've starred 847 repos.");},
+ 2:()=>{add("huge",'<span style="color:var(--accent)">847</span>',600);
+        add("big","Name three.",800);
+        card(1000,STARRED.slice(0,3),{});
+        cap("Name three.");},
+ 3:()=>{add("mid","GitHub stars are write-only.",540);
+        card(660,STARRED,{});
+        add("note","No folder. No note. No reason why.",1260);
+        cap("No folder. No note. No reason why.");},
+ 4:()=>{add("big","Someone sent you a repo in March.",560);
+        add("mid",'It was good. You remember that much.',900);
+        add("big",'<span style="color:var(--accent)">It is gone.</span>',1060);
+        cap("It's gone.");},
+ 5:()=>{add("mid","A list you can actually read back.",500);
+        card(620,CURATED,{title:"Parsing things that are not clean",count:"12 repos · shared by link",notes:1});
+        cap("A list you can read back.");},
+ 6:()=>{add("big",F.noteMax+" characters on <span style="+'"color:var(--accent)"'+">why</span>.",560);
+        add("mid","Written while you still remember. Read when you no longer do.",900);
+        add("note",F.maxLists+" lists, up to "+F.maxItems+" repos each. The link is unguessable.",1160);
+        cap(F.noteMax+" characters on why.");},
+ 7:()=>{add("mid","Claim the handle you DM from.",480);
+        add("big","The list opens with what you already sent.",620);
+        add("note","From before you had an account. The sweep was already running.",960);
+        add("",'<span class="pill">+ the rest is queued for review</span>',1090);
+        cap("It was already there.");},
+ 8:()=>{add("big","One link. Not forty tabs.",620);
+        add("mid",'<span style="color:var(--accent)">repoherald</span>',900);
+        cap("One link.");}
+};
+window.renderScene=function(n){S.innerHTML="";SCENES[n]();
+  const w=document.createElement("div");w.className="wm";w.textContent="REPOHERALD";S.appendChild(w);};
+window.renderScene(1);
+</script></body></html>
