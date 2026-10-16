@@ -13,6 +13,12 @@ script naming where in this repo each claim comes from. If you change the caps,
 the formula or the sponsorship rules, the matching script is wrong — same rule
 `AGENTS.md` applies to the legal pages.
 
+Two things drift silently. The claim caps are **admin-tunable**: `mintCredit`
+reads `getClaimCaps()` and only falls back to `DAILY_MINT_CAP` / `WEEKLY_MINT_CAP`,
+so "six a day, twenty a week" is today's default, not a constant. And sponsorship
+star caps are per-sponsorship with DB-driven plans, so no script should ever say
+a specific cap number out loud.
+
 ## Posting order
 
 | # | File | Length | Hook type | Status |
