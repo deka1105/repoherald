@@ -57,3 +57,9 @@ _scratch*
 
 # CI artifact from the plan stage — regenerated per pipeline run
 plan-impact.json
+
+# Reel renders (binaries + node_modules); the render source is tracked
+marketing/reels/out/
+marketing/reels/render/node_modules/
+marketing/reels/render/frames/
+marketing/reels/render/stills/

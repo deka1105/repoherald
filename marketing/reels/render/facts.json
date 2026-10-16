@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-10-16",
+  "decayHours": 48,
+  "boostMult": 100,
+  "boostDiv": 60,
+  "selfMinutes": 60,
+  "donationMinutes": 15,
+  "dailyCap": 6,
+  "weeklyCap": 20,
+  "lnSmall": "0.65",
+  "lnLarge": "0.01",
+  "formula": "ln(1 + stars) − age_hours/48 + 100 × minutes/60"
+}
