@@ -28,13 +28,13 @@
 
 `[ACTIONABLE DETAIL]`
 
-> "All three carry a sponsor label. Not a faint grey one. A label."
+> "All three carry a Sponsored badge, on the card itself."
 
 > "What it does not buy: search. The search function has no sponsorship term in it. Not weighted low — *absent*. Type a query and you get the same results whether anyone paid or not."
 
 `[EXTREME VALUE — a verifiable claim, not a promise]`
 
-> "And it ends on whichever comes first: the days you bought, or a star cap. Hit seventy-five stars on day two and it's over on day two."
+> "And it ends on whichever comes first: the days you bought, or a star cap you set when you buy. Hit the cap on day two and it's over on day two."
 
 > "If your repo gets deleted off GitHub mid-sponsorship, a job refunds you automatically. You don't email me. There's no ticket."
 
@@ -69,5 +69,6 @@ Sponsorship on my site pins two cards and injects a third — all labelled. It d
 
 - `src/lib/feed.ts`: up to 2 pinned + 1 injected at a bucket-stable seeded position
 - `src/lib/search.ts` contains no sponsorship ordering term at all
-- `sponsorships.starsCap` ends placement on time **or** stars, whichever first
+- `sponsorships.starsCap` ends placement on time **or** stars, whichever first. The cap is per-sponsorship and plans are DB-driven (`sponsor_plans`) — never quote a number on camera
+- `repo-card.tsx:158` renders `<Badge variant="secondary">Sponsored</Badge>` on every sponsored card — that is the muted variant, so don't claim it is loud
 - Deleted repo → `freezeRepo` + `refundSponsorshipForRepo`, automatic, no ticket

@@ -32,7 +32,7 @@
 
 > "None of those are 'is this worth opening'. They're all 'who already has an audience'."
 
-> "So I built the feed differently. The only free thing that moves a repo up is a star somebody actually gave — verified against GitHub with their own token, not mine."
+> "So I built the feed differently. The only free lever you can pull again tomorrow is a star somebody actually gave — verified against GitHub with their own token, not mine."
 
 `[ACTIONABLE INSIGHT]`
 
@@ -60,14 +60,14 @@
 
 ## Instagram caption
 
-Every place you can post a side project rewards your audience, not your project. So I built one where the only free lever is a star someone actually gave. Comment REPO for the link at launch.
+Every place you can post a side project rewards your audience, not your project. So I built one where the only repeatable free lever is a star someone actually gave. Comment REPO for the link at launch.
 
 `#indiehackers #buildinpublic #opensource #github #devtools`
 
 ## YouTube Shorts
 
 - **Title:** Your GitHub repo has 3 stars and the code isn't the problem
-- **Description:** Every place you can post a side project ranks your audience, not your project. Here's a feed where the only free lever is a star someone actually gave.
+- **Description:** Every place you can post a side project ranks your audience, not your project. Here's a feed where the only repeatable free lever is a star someone actually gave.
 
 ## Source facts
 
@@ -75,3 +75,4 @@ Every place you can post a side project rewards your audience, not your project.
 - `like_count` and `comment_count` are selected and displayed but absent from the score
 - Star verification uses the starring user's own token: `GET /user/starred/{owner}/{repo}`
 - 1 credit = 60 min self-highlight, or 15 min donated to another repo
+- "Repeatable" is load-bearing: issue reports pay 12 credits free, but only once per repo; the welcome bonus is once ever. Stars are the only free lever available again tomorrow.

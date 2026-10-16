@@ -10,7 +10,7 @@
 
 ## HOOK (0–3s)
 
-> "What happens if you make a currency where the only way to print it is to do something nice for a stranger?"
+> "What happens if you build a currency you print by doing something nice for a stranger?"
 
 `[BURNING QUESTION — philosophical framing on a technical build; high mass appeal]`
 
@@ -31,7 +31,7 @@
 
 `[EXTREME VALUE — implementation detail devs respect]`
 
-> "After that, you print credits one way: you star a listed repo on GitHub, and you claim it. I check with GitHub, using your token. Six a day, twenty a week."
+> "After that, the main way you print credits is this: you star a listed repo on GitHub, and you claim it. I check with GitHub, using your token. Six a day, twenty a week."
 
 > "One credit buys an hour at the top of the feed — for your own repo."
 
@@ -49,7 +49,7 @@
 
 ## PAYOFF (72–84s)
 
-> "So the only way to be rich here is to have recently paid attention to other people's work. You can't save it, you can't farm it, and you can't buy the part that matters."
+> "So the way to be rich here is to have recently paid attention to other people's work. You can't save it, and you can't farm it. You *can* buy it — but a bought credit buys exactly the same hour as an earned one. Money doesn't buy a better hour."
 
 `[PAYOFF — resolves the opening question completely]`
 
@@ -65,13 +65,13 @@ This one carries on the voice — keep cuts slow. Show the ledger table and the 
 
 ## Instagram caption
 
-A currency you can only print by starring someone else's repo. Ten credits to start. Six a day after that. Spending one on yourself buys an hour — spending it on a stranger buys fifteen minutes, and people still do it. Comment CREDIT for launch.
+A currency you mostly print by starring someone else's repo. Ten credits to start. Six a day after that. Spending one on yourself buys an hour — spending it on a stranger buys fifteen minutes, and people still do it. Comment CREDIT for launch.
 
 `#buildinpublic #indiehackers #opensource #github #systemdesign`
 
 ## YouTube Shorts
 
-- **Title:** I made a currency you can only print by helping strangers
+- **Title:** I made a currency you print by helping strangers
 - **Description:** Ten credits to start, six a day after. Append-only ledger, balances that can go negative, and credits that expire at twelve months.
 
 ## Source facts
@@ -81,3 +81,5 @@ A currency you can only print by starring someone else's repo. Ten credits to st
 - `SELF_HIGHLIGHT_MINUTES = 60`, `DONATION_MINUTES = 15`
 - `ISSUE_REPORT_CREDITS = 12`, `ISSUE_VALIDATION_DAYS = 7`, one per repo per person
 - `CREDIT_TTL_MONTHS = 12`
+- `spendCredit` checks only `creditBalance >= 1` — a **purchased** credit buys the same highlight as an earned one, so never say money can't buy placement
+- Free credit sources are four, not one: welcome bonus, star claim, issue report, social share
