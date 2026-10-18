@@ -85,7 +85,9 @@ function Feed() {
     }
   }, [cursor]);
 
-  useEffect(() => { load(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    void load(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Both gates must clear before the splash lifts: the feed has content, and
   // Clerk has decided whether this launch is signed in — otherwise the account
