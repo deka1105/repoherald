@@ -154,6 +154,32 @@ Do not add marketing captions over screenshot 1. Apple's own reviewers and most
 browsers judge the first shot in under a second; the bare UI reads as more
 honest than a slogan on a gradient.
 
+## Fields that still need a decision from you
+
+The copy above is finished. These are the App Store Connect fields that cannot
+be written from the codebase — each has a recommended answer.
+
+| Field | Recommended answer | Why |
+|---|---|---|
+| **Pricing** | Free | Nothing is sold in the app. |
+| **Availability** | All territories | No geo-restricted content or compliance exposure. |
+| **Content Rights** — "Does your app contain, show, or access third-party content?" | **Yes** → "I have the necessary rights" | The feed shows public GitHub repository metadata (names, descriptions, avatars) via GitHub's public API. It is third-party content and the honest answer is yes; answering no is the common mistake and triggers a rejection when review notices the avatars. |
+| **App Review contact** | Your name, a phone number you will answer, and an email you read | Review calls this if sign-in fails. A dead contact turns a 1-day clarification into a 1-week rejection loop. |
+| **Demo account** | Supply one | Browsing needs no account, but review must be able to test **sign-in and account deletion** for 5.1.1(v). Create a throwaway Google or GitHub account, sign into the app once so the row exists, and put the credentials in the demo fields. Say in the notes that deleting it is expected and fine. |
+| **Sign-in required?** | **No** | The feed works signed-out. Answering yes without a demo account is an automatic rejection. |
+| **Export compliance** | Already answered | `ITSAppUsesNonExemptEncryption: false` is in the binary, so the questionnaire is skipped at upload. |
+| **Attachment** | None needed | — |
+
+### Icon
+
+`assets/icon.png` was **Expo's default template icon with the design
+construction guides still on it** — dashed alignment lines, circles and
+crosshairs — until 2026-10-18. That is a Guideline 2.3.8 rejection and would
+have shipped as the App Store artwork. It is now generated from the real
+heraldic mark in `public/brand/shield-white.png` on the brand background,
+1024x1024 with no alpha as Apple requires. **Branding is your call** — if you
+want a different mark, replace the file and re-run `expo prebuild -p ios`.
+
 ## Review notes
 
 See `SUBMISSION.md` — the draft there is current. Two things it gets right that
