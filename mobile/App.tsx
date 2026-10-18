@@ -12,7 +12,7 @@
  */
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator, FlatList, Linking, Pressable, RefreshControl,
+  ActivityIndicator, FlatList, Linking, Platform, Pressable, RefreshControl,
   SafeAreaView, StatusBar, StyleSheet, Text, View,
 } from "react-native";
 import { Image } from "expo-image";
@@ -173,7 +173,15 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  // react-native's SafeAreaView applies insets on iOS ONLY — on Android it is a
+  // plain View, so the header drew under the status bar and the wordmark
+  // collided with the clock. Android needs the inset applied by hand; from
+  // API 35 the system is edge-to-edge by default, so this is not optional.
+  root: {
+    flex: 1,
+    backgroundColor: C.bg,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0,
+  },
   centre: { flex: 1, alignItems: "center", justifyContent: "center" },
   // The rule stretches edge to edge on iPad while the content inside it stays
   // in the reading column with the cards.
@@ -186,7 +194,8 @@ const styles = StyleSheet.create({
     width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center",
   },
   list: {
-    padding: 16, paddingBottom: 48,
+    // Extra bottom room on Android, where the gesture bar overlays content.
+    padding: 16, paddingBottom: Platform.OS === "android" ? 96 : 48,
     width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center",
   },
   logo: { color: C.text, fontSize: 14, fontWeight: "800", letterSpacing: 3 },
