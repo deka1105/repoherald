@@ -29,7 +29,8 @@
     "plugins": [
       "expo-secure-store",
       "expo-web-browser",
-      "expo-image"
+      "expo-image",
+      "@clerk/expo"
     ],
     "scheme": "repoherald",
     "primaryColor": "#0a090c"
