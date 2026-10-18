@@ -19,3 +19,6 @@ GoogleService-Info.plist
 .env*
 !.env.example
 .DS_Store
+
+# App Store screenshots — regenerable, binary
+/screenshots/
