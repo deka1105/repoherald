@@ -134,6 +134,22 @@ Shot list, in order — the first two are what most people ever see:
 5. The account sheet showing About and Danger zone, so review can see deletion
    is reachable without reading the notes.
 
+**Captured 2026-10-18** from a **Release** build on iPhone 17 Pro Max and iPad
+Pro 13-inch (M5), status bar overridden to 9:41 / full bars. Shot 1 of each set
+is in `mobile/screenshots/` (gitignored). Shots 2–5 need taps, which cannot be
+driven from here — `simctl` has no tap verb and `idb` is not installed. The
+Release build is installed on both simulators, so tap through and run:
+
+```sh
+xcrun simctl io "iPhone 17 Pro Max" screenshot shot.png
+```
+
+**Before you shoot the feed again, check what is in it.** On 2026-10-18 the third
+card in production was `simplifaisoul/osiris`, whose description ends in
+`…Rqs3ewpump` — a pump.fun token address. A crypto token address in your first
+App Store screenshot is a bad look at best and a Guideline 3.1.1 conversation at
+worst. Hide or moderate that listing before capturing.
+
 Do not add marketing captions over screenshot 1. Apple's own reviewers and most
 browsers judge the first shot in under a second; the bare UI reads as more
 honest than a slogan on a gradient.
