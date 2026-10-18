@@ -1,6 +1,6 @@
 # iOS submission checklist
 
-State as of 2026-10-17. Everything under **Done** is in the repo and verified;
+State as of 2026-10-18. Everything under **Done** is in the repo and verified;
 everything under **Owner actions** needs an account, a key or a human decision
 and cannot be done from the codebase.
 
@@ -17,6 +17,7 @@ and cannot be done from the codebase.
 | iPad | Kept `supportsTablet: true`. Feed and sheets are capped to a 720pt reading column so the layout doesn't stretch; Expo enables all four orientations on tablet, which this handles. |
 | Encryption | `ITSAppUsesNonExemptEncryption: false` confirmed in the generated `Info.plist` — skips the export-compliance questionnaire per upload. |
 | API domain | `API_BASE` moved from `repoherald.vercel.app` to `repoherald.com`. The former 308-redirects to the latter, so every call was paying an extra round trip and relying on the `Authorization` header surviving an origin change. |
+| **Feed card titles** | **Shipping bug, found 2026-10-18 by running the app.** `FeedRepo` in `src/api.ts` declared `name` and `ownerLogin`; `src/lib/feed.ts` has never sent either, and `request<T>` casts the response instead of validating it, so both were `undefined` and **every card in the feed rendered with no title**. `tsc` could not see it. The card now derives both halves from `fullName`. |
 | Housekeeping | Clean dependency reinstall (duplicate `expo-constants` is gone), `react-dom` pinned to 19.2.3 to match SDK 57, and an ESLint config for the mobile app, which had none despite the root config deferring to it. |
 
 Verified: `expo-doctor` 18/18, `tsc --noEmit` clean (app and server), `eslint`
@@ -25,6 +26,12 @@ mobile endpoints smoke-tested — public feed 200; `GET`/`DELETE /me` 401 withou
 a token, with a forged token, with a correctly-signed token for a non-existent
 user, and with an expired one; `/session` 400 on a missing token and 401 on an
 unverifiable Clerk token.
+
+**Verified on a simulator 2026-10-18:** `expo run:ios` builds and launches on
+iPhone 17 Pro Max (Xcode 26.5); the public feed loads live data from production
+and renders correctly. This is how the missing-title bug above was found —
+every gate was green while the app was visibly broken, because the only check
+that fails on a lying cast is looking at it.
 
 **Not verified:** the signed-in happy path (real sign-in, token exchange,
 deletion of a real account). It needs a real Clerk account and, for deletion, a
