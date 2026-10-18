@@ -41,11 +41,12 @@ export default function PrivacyPage() {
         </li>
         <li>
           An access token, so we can confirm you really starred a repository you claim credit for.
-          When you sign in on the web the token is held by Clerk, which refreshes it; we read it
-          when we need it and do not keep our own copy. The mobile app signs in to GitHub directly,
-          and the token it obtains is stored here encrypted at rest with AES-256-GCM. Either way we
-          request read-only scopes (<code>read:user</code>, <code>user:email</code>) — we cannot
-          write to your repositories, and we cannot star anything on your behalf.
+          Signing in on the web or in the iOS app both go through Clerk, which holds the token and
+          refreshes it; we read it when we need it and do not keep our own copy. Accounts created by
+          an older version of the iOS app, which signed in to GitHub directly, still have a token
+          stored here encrypted at rest with AES-256-GCM. Either way we request read-only scopes
+          (<code>read:user</code>, <code>user:email</code>) — we cannot write to your repositories,
+          and we cannot star anything on your behalf.
         </li>
       </ul>
 
@@ -221,9 +222,10 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>
-          <strong>Delete your account.</strong> Signed in, go to{" "}
-          <Link href="/wallet">your wallet</Link> and use “Delete account”. This removes your
-          tokens and personal details immediately and hides your listings.
+          <strong>Delete your account.</strong> On the web, signed in, go to{" "}
+          <Link href="/wallet">your wallet</Link> and use “Delete account”. In the iOS app, open the
+          account screen and use “Delete my account”. Either one removes your tokens and personal
+          details immediately and hides your listings.
         </li>
         <li>
           <strong>No account, or cannot sign in?</strong> Send a deletion or access request through{" "}
