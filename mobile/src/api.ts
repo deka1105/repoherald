@@ -16,9 +16,14 @@ export class ApiError extends Error {
 
 export type FeedRepo = {
   id: string;
+  /**
+   * "owner/name" — the ONLY name the server sends. It previously also declared
+   * `name` and `ownerLogin` here, which `src/lib/feed.ts` has never returned:
+   * `request<T>` casts the JSON rather than validating it, so both were
+   * `undefined` at runtime and every feed card rendered with no title. Split
+   * this instead of adding fields the API does not have.
+   */
   fullName: string;
-  ownerLogin: string;
-  name: string;
   description: string | null;
   primaryLanguage: string | null;
   starsCount: number;

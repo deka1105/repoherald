@@ -30,6 +30,12 @@ import { CLERK_PUBLISHABLE_KEY } from "./src/config";
 // fills in a moment later.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+/** "owner/name" is all the API sends, so the card derives both halves from it.
+ *  Falls back to the whole string rather than rendering an empty title if a
+ *  listing ever arrives without a slash. */
+const repoOwner = (fullName: string) => fullName.split("/")[0] ?? fullName;
+const repoName = (fullName: string) => fullName.split("/")[1] ?? fullName;
+
 function RepoCard({ repo }: { repo: FeedRepo }) {
   return (
     <Pressable
@@ -44,8 +50,8 @@ function RepoCard({ repo }: { repo: FeedRepo }) {
           <View style={[styles.avatar, { backgroundColor: C.line }]} />
         )}
         <View style={{ flex: 1 }}>
-          <Text style={styles.repoName} numberOfLines={1}>{repo.name}</Text>
-          <Text style={styles.owner} numberOfLines={1}>{repo.ownerLogin}</Text>
+          <Text style={styles.repoName} numberOfLines={1}>{repoName(repo.fullName)}</Text>
+          <Text style={styles.owner} numberOfLines={1}>{repoOwner(repo.fullName)}</Text>
         </View>
         <Text style={styles.stars}>★ {repo.starsCount.toLocaleString()}</Text>
       </View>
