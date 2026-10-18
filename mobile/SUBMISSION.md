@@ -16,6 +16,7 @@ and cannot be done from the codebase.
 | Dark mode | `userInterfaceStyle: "dark"` — the UI was always hardcoded dark, so system surfaces now match. `expo-system-ui` applies the root background. |
 | iPad | Kept `supportsTablet: true`. Feed and sheets are capped to a 720pt reading column so the layout doesn't stretch; Expo enables all four orientations on tablet, which this handles. |
 | Encryption | `ITSAppUsesNonExemptEncryption: false` confirmed in the generated `Info.plist` — skips the export-compliance questionnaire per upload. |
+| API domain | `API_BASE` moved from `repoherald.vercel.app` to `repoherald.com`. The former 308-redirects to the latter, so every call was paying an extra round trip and relying on the `Authorization` header surviving an origin change. |
 | Housekeeping | Clean dependency reinstall (duplicate `expo-constants` is gone), `react-dom` pinned to 19.2.3 to match SDK 57, and an ESLint config for the mobile app, which had none despite the root config deferring to it. |
 
 Verified: `expo-doctor` 18/18, `tsc --noEmit` clean (app and server), `eslint`
@@ -32,9 +33,11 @@ row we are willing to destroy. Do it in TestFlight before submitting.
 ## Owner actions, in order
 
 ### 1. Clerk production instance
-The web's local env uses a `pk_test_` key, i.e. a Clerk **development**
-instance, whose OAuth connections use Clerk's shared credentials and are not
-meant for end users. A shipped app needs the production instance:
+**`https://repoherald.com` is currently serving `pk_test_aW5jbHVk…`** — the live
+website is pointed at a Clerk **development** instance, not just the local env.
+Development instances use Clerk's shared OAuth credentials and are not intended
+for end users, so this needs fixing for the website regardless of the app. A
+shipped iOS app needs the production instance:
 
 - Enable the **Apple**, **GitHub** and **Google** connections on it.
 - **Native applications** → add this app: bundle ID `com.dekisuki05.repoherald`,
@@ -72,11 +75,22 @@ message rather than shipping a silently broken sign-in — see `src/config.ts`.
 `eas.json` expects `mobile/AuthKey_UJ39YTD9H2.p8`, which is gitignored and not
 on this machine. Put it back before `eas submit`.
 
-### 5. Deploy the web app first
-The app talks to `https://repoherald.vercel.app`, and
-`POST /api/mobile/v1/session` **only accepts a Clerk token now**. The app cannot
-sign anyone in until that deploy is live. Git auto-deploy has been dead, so this
-is a manual `vercel --prod`.
+### 5. Deploy the web app first — measured, not assumed
+Probed `https://repoherald.com` on 2026-10-17. **Production is running the old
+code**, so none of the server side of this work is live yet:
+
+| Probe | Response | Means |
+|---|---|---|
+| `POST /api/mobile/v1/session` with `{}` | `400 missing_access_token` | old GitHub-token route still live; the Clerk route is **not** deployed |
+| `DELETE /api/mobile/v1/me` | `405` | the account-deletion endpoint is **not** deployed |
+| `GET /api/mobile/v1/feed` | `200`, 13 items | unchanged, fine |
+
+Local `main` is pushed and identical to `origin/main`, so the code is on GitHub
+and simply has not been deployed — consistent with Vercel git auto-deploy being
+dead on this project. Needs a manual `vercel --prod`.
+
+Until that deploy lands, the app cannot sign anyone in: it sends a Clerk token
+and the live route expects a GitHub one.
 
 ### 6. Build, test, submit
 ```sh
@@ -101,8 +115,8 @@ Nothing else. The app ships no analytics or crash SDK and never calls the
 website's view counter, so **Usage Data** and **Diagnostics** are *not
 collected*, and the answer to tracking is **No**.
 
-**URLs:** privacy `https://repoherald.vercel.app/privacy`, support
-`https://repoherald.vercel.app/support`.
+**URLs:** privacy `https://repoherald.com/privacy`, support
+`https://repoherald.com/support`. Both verified 200 with no redirect.
 
 **Screenshots:** iPhone 6.9" and iPad 13" are the required sets — confirm exact
 pixel sizes in App Store Connect, since Apple revises them.
