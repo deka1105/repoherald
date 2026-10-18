@@ -9,7 +9,16 @@
  * the bundle, so an unset key produces a shipped app that cannot sign anyone in
  * rather than one that reads the value later. See `env` in eas.json.
  */
-export const API_BASE = "https://repoherald.vercel.app";
+/**
+ * The canonical production origin.
+ *
+ * NOT the *.vercel.app hostname: that answers every request with a 308 to
+ * repoherald.com, so each API call would cost an extra round trip and would
+ * depend on the client re-sending the Authorization header across an
+ * origin change — which is exactly the kind of thing a fetch implementation
+ * is entitled not to do.
+ */
+export const API_BASE = "https://repoherald.com";
 
 export const CLERK_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
