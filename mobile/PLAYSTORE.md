@@ -132,6 +132,27 @@ Expected outcome: **Everyone / PEGI 3**.
 | Health | No |
 | Data deletion | In-app, plus `https://repoherald.com/account` |
 
+## Android bugs found by running it, 2026-10-18
+
+Both were invisible to `tsc`, `eslint` and `expo-doctor`, and both would have
+been in every Play Store screenshot.
+
+**1. The header drew under the system status bar.** `App.tsx` wrapped the root
+in `SafeAreaView` imported from `react-native` — which applies insets **on iOS
+only**. On Android it is a plain `View`, so "REPOHERALD" rendered on top of the
+system clock and "Sign in" on top of the wifi and battery icons.
+`react-native-safe-area-context` is not installed, so the root now applies
+`StatusBar.currentHeight` as top padding on Android, and the list gets extra
+bottom padding for the gesture bar. From API 35 Android is edge-to-edge by
+default, so this is not cosmetic — it gets worse, not better, on new devices.
+
+> If you later add `react-native-safe-area-context` (Expo's recommended
+> approach, and the one that handles notches and landscape properly), replace
+> the manual padding with `useSafeAreaInsets` rather than stacking both.
+
+**2. Feed cards had no titles** — the same `FeedRepo` cast bug documented in
+`SUBMISSION.md`. It affected both platforms.
+
 ## Permissions — fixed 2026-10-18
 
 Expo's prebuild template declares these in `android/app/src/main/`, which merges
