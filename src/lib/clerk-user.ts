@@ -12,6 +12,17 @@ export type AppUser = {
   id: string;
   role: UserRole;
   githubLogin: string | null;
+  /**
+   * True only on the request that first inserted this row.
+   *
+   * The welcome credit is granted by the caller rather than here, because the
+   * web and the iOS app disagree about when it is due and both are right: the
+   * web has never granted it (this flag is how a caller could start), while the
+   * mobile sign-in has always granted it on a brand-new account and must keep
+   * doing so. Adoption of a pre-Clerk row is NOT creation — those accounts
+   * already have their credits.
+   */
+  created: boolean;
 };
 
 /**
@@ -50,12 +61,18 @@ export async function resolveClerkUser(clerkUserId: string): Promise<AppUser | n
     // migration; an address nobody proved never reaches this column.
     if (existing.role !== "admin" && isPrimaryAdminEmail(existing.email)) {
       await db.update(users).set({ role: "admin" }).where(eq(users.id, existing.id));
-      return { id: existing.id, role: "admin", githubLogin: existing.githubLogin };
+      return {
+        id: existing.id,
+        role: "admin",
+        githubLogin: existing.githubLogin,
+        created: false,
+      };
     }
     return {
       id: existing.id,
       role: existing.role,
       githubLogin: existing.githubLogin,
+      created: false,
     };
   }
 
@@ -110,7 +127,7 @@ async function provisionFromClerk(clerkUserId: string): Promise<AppUser | null> 
       })
       .where(eq(users.id, target.id))
       .returning({ id: users.id, role: users.role, githubLogin: users.githubLogin });
-    return row;
+    return { ...row, created: false };
   }
 
   // Two ways to be an admin before anyone has clicked anything: a configured
@@ -133,7 +150,7 @@ async function provisionFromClerk(clerkUserId: string): Promise<AppUser | null> 
     })
     .returning({ id: users.id, role: users.role, githubLogin: users.githubLogin });
 
-  return row;
+  return { ...row, created: true };
 }
 
 /** Re-export so callers do not need to know where the heuristic lives. */
