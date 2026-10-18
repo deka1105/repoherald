@@ -77,9 +77,26 @@ iOS, and naming an unavailable method in the listing is a policy violation.
 |---|---|---|
 | App icon | 512 × 512, 32-bit PNG | `assets/play-icon-512.png` — generated 2026-10-18 from the real brand mark |
 | Feature graphic | 1024 × 500, no alpha | `playstore/feature-graphic.png` — generated 2026-10-18 |
-| Phone screenshots | 2–8, min 320px, 16:9 or 9:16 | Pixel 8 captures, see below |
+| Phone screenshots | 2–8, min 320px, 16:9 or 9:16 | **Not captured — see below** |
 | 7" tablet | optional but recommended | — |
 | 10" tablet | optional but recommended | reuse the iPad composition |
+
+**Phone screenshots are outstanding.** The release APK builds, installs and runs
+on the Pixel 8 emulator and the feed renders correctly — that is how both bugs
+above were found. But after several hours of Gradle builds the emulator's own
+`system_server` and Pixel Launcher began ANR-ing, putting a "isn't responding"
+system dialog over every capture. The app was never the process at fault (its
+PID stayed alive and logcat shows no fatal errors); the host is simply starved.
+
+Capture these on a real device, or on a freshly booted emulator with nothing
+else running:
+
+```sh
+adb shell am start -n com.dekisuki05.repoherald/.MainActivity
+adb exec-out screencap -p > phone-01-feed.png
+```
+
+Play accepts 1080 x 2400 from a Pixel 8 as-is.
 
 Without a feature graphic Play will not let you publish — it is the one asset
 people most often discover missing at the end.
@@ -180,6 +197,26 @@ Verify after any prebuild:
 
 ```sh
 grep -oE 'android.permission.[A-Z_]+' android/app/src/main/AndroidManifest.xml | sort -u
+```
+
+## What was verified on 2026-10-18
+
+| Check | Result |
+|---|---|
+| `expo prebuild -p android --clean` | clean, exit 0 |
+| `expo run:android --variant release` | **BUILD SUCCESSFUL**, APK produced and installed |
+| App launches on Pixel 8 emulator, API 36 | yes, feed loads live production data |
+| `tsc --noEmit` | clean |
+| Adaptive icon | `ic_launcher.xml` carries background, foreground **and** monochrome |
+| `blockedPermissions` | 4 x `tools:node="remove"` in the merged source manifest; only `INTERNET` survives the merge |
+
+The only thing a clean prebuild does **not** show is the final merged manifest —
+`tools:node="remove"` is applied by the manifest merger at build time, so the
+source still lists all five. Verify the shipped artifact once, after an EAS
+build, with:
+
+```sh
+aapt2 dump xmltree --file AndroidManifest.xml <your>.apk | grep -A1 uses-permission
 ```
 
 ## Build and submit
