@@ -67,9 +67,38 @@ export function getMe() {
   return request<{ user: Me }>("/api/mobile/v1/me");
 }
 
-export function exchangeGithubToken(accessToken: string) {
-  return request<{ token: string; expiresAt: string; user: { id: string; githubLogin: string } }>(
-    "/api/mobile/v1/session",
-    { method: "POST", body: JSON.stringify({ accessToken }) }
-  );
+/**
+ * Trade a short-lived Clerk session token for our own 30-day bearer token.
+ *
+ * Deliberately not sent with the Authorization header: this is the one call
+ * that has no bearer token yet, and the Clerk token is the body's payload
+ * rather than this client's credential.
+ */
+export function exchangeClerkToken(clerkToken: string) {
+  return request<{
+    token: string;
+    expiresAt: string;
+    user: {
+      id: string;
+      githubLogin: string | null;
+      name: string | null;
+      avatarUrl: string | null;
+    };
+  }>("/api/mobile/v1/session", {
+    method: "POST",
+    body: JSON.stringify({ clerkToken }),
+  });
+}
+
+/**
+ * Delete the signed-in account, permanently.
+ *
+ * App Store Guideline 5.1.1(v) requires this to exist inside the app. The
+ * server anonymises the row and deletes the Clerk user, which ends every other
+ * session too; this client only has to drop its own token afterwards.
+ */
+export function deleteAccount() {
+  return request<{ deleted: boolean }>("/api/mobile/v1/me", {
+    method: "DELETE",
+  });
 }
