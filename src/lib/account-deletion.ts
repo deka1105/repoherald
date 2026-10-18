@@ -65,9 +65,12 @@ export async function purgeAccount(user: {
   // leave the caller believing their account still exists.
   //
   // The mobile bearer token is not revoked by this, because it cannot be (see
-  // src/lib/mobile-auth.ts). It is instead made useless: /me resolves the
-  // token's user id against `users.clerk_user_id`, which is now NULL, so every
-  // later request 401s and the app treats itself as signed out.
+  // src/lib/mobile-auth.ts). It is instead made useless by the `clerk_user_id`
+  // NULL above: this row is anonymised rather than removed, so the mobile
+  // endpoints cannot treat "row missing" as "account gone". They check for a
+  // live Clerk identity instead — see the guard in
+  // src/app/api/mobile/v1/me/route.ts, which is what makes every later request
+  // from a deleted account 401 so the app signs itself out.
   if (user.clerkUserId) {
     try {
       const client = await clerkClient();
