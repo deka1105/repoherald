@@ -85,7 +85,11 @@ function Feed() {
     }
   }, [cursor]);
 
-  useEffect(() => { load(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // The first page, once. `load` is async and awaits getFeed before it touches
+  // state, so nothing is set synchronously here — but the rule cannot see
+  // through the call boundary, hence the second disable.
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  useEffect(() => { load(true); }, []);
 
   // Both gates must clear before the splash lifts: the feed has content, and
   // Clerk has decided whether this launch is signed in — otherwise the account
