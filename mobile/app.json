@@ -5,23 +5,67 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "scheme": "repoherald",
+    "primaryColor": "#0a090c",
+    "backgroundColor": "#0a090c",
+    "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dekisuki05.repoherald",
-      "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": [
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeEmailAddress",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeName",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          },
+          {
+            "NSPrivacyCollectedDataType": "NSPrivacyCollectedDataTypeUserID",
+            "NSPrivacyCollectedDataTypeLinked": true,
+            "NSPrivacyCollectedDataTypeTracking": false,
+            "NSPrivacyCollectedDataTypePurposes": [
+              "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+            ]
+          }
+        ],
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryFileTimestamp",
+            "NSPrivacyAccessedAPITypeReasons": ["C617.1", "0A2A.1", "3B52.1"]
+          },
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryDiskSpace",
+            "NSPrivacyAccessedAPITypeReasons": ["E174.1", "85F4.1"]
+          }
+        ]
       }
     },
     "android": {
       "package": "com.dekisuki05.repoherald",
-      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0a090c"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,9 +74,16 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-image",
-      "@clerk/expo"
-    ],
-    "scheme": "repoherald",
-    "primaryColor": "#0a090c"
+      "@clerk/expo",
+      "expo-apple-authentication",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0a090c",
+          "imageWidth": 200
+        }
+      ]
+    ]
   }
 }
