@@ -7,7 +7,8 @@
  *
  * Credits can be *earned* here but not bought. Selling a digital currency
  * outside In-App Purchase is a Guideline 3.1.1 rejection, so the purchase
- * flow stays on the web until IAP is wired up.
+ * flow stays on the web until IAP is wired up — and the app does not link to
+ * it either.
  */
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -15,13 +16,19 @@ import {
   SafeAreaView, StatusBar, StyleSheet, Text, View,
 } from "react-native";
 import { Image } from "expo-image";
+import * as SplashScreen from "expo-splash-screen";
+import { ClerkProvider } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { AuthProvider, useAuth } from "./src/auth";
 import { getFeed, type FeedRepo } from "./src/api";
+import { AccountSheet } from "./src/account";
+import { SignInSheet } from "./src/signin";
+import { C, CONTENT_MAX_WIDTH } from "./src/theme";
+import { CLERK_PUBLISHABLE_KEY } from "./src/config";
 
-const C = {
-  bg: "#0a090c", card: "#141317", line: "#26242b",
-  text: "#f2f2f0", dim: "#8e8c95", accent: "#9d78ff",
-};
+// Held until the feed's first paint, so the app never shows an empty list that
+// fills in a moment later.
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RepoCard({ repo }: { repo: FeedRepo }) {
   return (
@@ -53,12 +60,14 @@ function RepoCard({ repo }: { repo: FeedRepo }) {
 }
 
 function Feed() {
-  const { me, loading: authLoading, signIn, signOut } = useAuth();
+  const { me, loading: authLoading } = useAuth();
   const [items, setItems] = useState<FeedRepo[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAccount, setShowAccount] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
 
   const load = useCallback(async (reset: boolean) => {
     try {
@@ -78,20 +87,37 @@ function Feed() {
 
   useEffect(() => { load(true); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Both gates must clear before the splash lifts: the feed has content, and
+  // Clerk has decided whether this launch is signed in — otherwise the account
+  // button visibly changes shape a beat after the app appears.
+  useEffect(() => {
+    if (!loading && !authLoading) SplashScreen.hideAsync().catch(() => {});
+  }, [loading, authLoading]);
+
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.bar}>
-        <Text style={styles.logo}>REPOHERALD</Text>
-        {authLoading ? null : me ? (
-          <Pressable onPress={signOut} accessibilityRole="button">
-            <Text style={styles.credits}>{me.creditBalance} credits</Text>
-          </Pressable>
-        ) : (
-          <Pressable onPress={signIn} accessibilityRole="button">
-            <Text style={styles.signIn}>Sign in</Text>
-          </Pressable>
-        )}
+      <View style={styles.barOuter}>
+        <View style={styles.bar}>
+          <Text style={styles.logo}>REPOHERALD</Text>
+          {authLoading ? null : me ? (
+            <Pressable
+              onPress={() => setShowAccount(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Account — ${me.creditBalance} credits`}
+              hitSlop={10}>
+              <Text style={styles.credits}>{me.creditBalance} credits</Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => setShowSignIn(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in"
+              hitSlop={10}>
+              <Text style={styles.signIn}>Sign in</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
 
       {loading ? (
@@ -101,7 +127,7 @@ function Feed() {
           data={items}
           keyExtractor={(r, i) => `${r.id}-${i}`}
           renderItem={({ item }) => <RepoCard repo={item} />}
-          contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+          contentContainerStyle={styles.list}
           onEndReachedThreshold={0.6}
           onEndReached={() => { if (cursor) load(false); }}
           refreshControl={
@@ -119,25 +145,39 @@ function Feed() {
           }
         />
       )}
+
+      <AccountSheet visible={showAccount} onClose={() => setShowAccount(false)} />
+      <SignInSheet visible={showSignIn} onClose={() => setShowSignIn(false)} />
     </SafeAreaView>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Feed />
-    </AuthProvider>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+      <AuthProvider>
+        <Feed />
+      </AuthProvider>
+    </ClerkProvider>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   centre: { flex: 1, alignItems: "center", justifyContent: "center" },
+  // The rule stretches edge to edge on iPad while the content inside it stays
+  // in the reading column with the cards.
+  barOuter: {
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line,
+  },
   bar: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 16, paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line,
+    width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center",
+  },
+  list: {
+    padding: 16, paddingBottom: 48,
+    width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center",
   },
   logo: { color: C.text, fontSize: 14, fontWeight: "800", letterSpacing: 3 },
   signIn: { color: C.accent, fontSize: 15, fontWeight: "600" },
@@ -151,7 +191,7 @@ const styles = StyleSheet.create({
   repoName: { color: C.text, fontSize: 16, fontWeight: "700" },
   owner: { color: C.dim, fontSize: 13, marginTop: 1 },
   stars: { color: C.dim, fontSize: 13 },
-  desc: { color: "#b9b7c0", fontSize: 14, lineHeight: 20, marginTop: 12 },
+  desc: { color: C.body, fontSize: 14, lineHeight: 20, marginTop: 12 },
   lang: { color: C.dim, fontSize: 12, marginTop: 10, letterSpacing: 0.5 },
   empty: { color: C.dim, textAlign: "center", marginTop: 48, fontSize: 14 },
 });
