@@ -132,6 +132,35 @@ Expected outcome: **Everyone / PEGI 3**.
 | Health | No |
 | Data deletion | In-app, plus `https://repoherald.com/account` |
 
+## Permissions — fixed 2026-10-18
+
+Expo's prebuild template declares these in `android/app/src/main/`, which merges
+into the **release** manifest:
+
+| Permission | Needed? | Why it was there |
+|---|---|---|
+| `INTERNET` | **Yes** | The API. Kept. |
+| `SYSTEM_ALERT_WINDOW` | No | Template default. Users see this as **"Display over other apps"** — a sensitive permission that hurts install conversion and draws Play scrutiny. |
+| `READ_EXTERNAL_STORAGE` | No | Template default. `expo-image` caches to internal app storage. |
+| `WRITE_EXTERNAL_STORAGE` | No | Template default. |
+| `VIBRATE` | No | Template default. Nothing in the app vibrates. |
+
+The four unneeded ones are now listed in `android.blockedPermissions` in
+`app.json`, so the shipped manifest requests only `INTERNET`. React Native's
+dev-menu overlay declares its own `SYSTEM_ALERT_WINDOW` in `src/debug/`, which
+is a separate manifest that never ships.
+
+**If the debug dev-menu overlay misbehaves locally**, drop
+`SYSTEM_ALERT_WINDOW` from the blocked list — the manifest-merger `remove`
+directive can reach the debug variant too. The release manifest is what matters
+for Play; the other three are safe to block unconditionally.
+
+Verify after any prebuild:
+
+```sh
+grep -oE 'android.permission.[A-Z_]+' android/app/src/main/AndroidManifest.xml | sort -u
+```
+
 ## Build and submit
 
 `eas.json` already has an Android submit profile on the `internal` track.
