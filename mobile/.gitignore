@@ -22,3 +22,6 @@ GoogleService-Info.plist
 
 # App Store screenshots — regenerable, binary
 /screenshots/
+
+# Play Store graphics — regenerable, binary
+/playstore/
