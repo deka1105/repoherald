@@ -14,6 +14,17 @@ export const API_BASE = "https://repoherald.vercel.app";
 export const CLERK_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
 
+// ClerkProvider throws on an empty key anyway; this only makes the cause
+// legible. A build that reaches here is one where the EAS environment named by
+// the build profile has no EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY — see .env.example.
+if (!CLERK_PUBLISHABLE_KEY) {
+  throw new Error(
+    "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY is unset. This build cannot sign anyone " +
+      "in. Set it in the EAS environment for this build profile (see " +
+      "mobile/.env.example) and rebuild."
+  );
+}
+
 /** The deep link Clerk returns to after a browser-based SSO flow. Must match
  *  the entry allowlisted under Native applications in the Clerk dashboard. */
 export const SSO_REDIRECT_PATH = "sso-callback";
