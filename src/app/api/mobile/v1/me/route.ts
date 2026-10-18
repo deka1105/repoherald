@@ -50,8 +50,21 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
 
-  const { clerkUserId: _clerkUserId, ...user } = row;
-  return NextResponse.json({ version: 1, user });
+  // Listed field by field rather than spread minus clerk_user_id: this is a
+  // public response shape, and an added column should not be able to leak into
+  // it just because the query above grew.
+  return NextResponse.json({
+    version: 1,
+    user: {
+      id: row.id,
+      githubLogin: row.githubLogin,
+      name: row.name,
+      avatarUrl: row.avatarUrl,
+      creditBalance: row.creditBalance,
+      mintEligible: row.mintEligible,
+      role: row.role,
+    },
+  });
 }
 
 /**
