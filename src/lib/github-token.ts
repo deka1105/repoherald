@@ -10,12 +10,15 @@ import { decryptToken } from "@/lib/crypto";
  *
  * There are two sources, because there are two ways to sign in:
  *
- *   Clerk — the web. Clerk holds the OAuth token and refreshes it, so it is
- *           tried first and is the fresher of the two.
- *   Local — the mobile app, which runs its own GitHub OAuth against
- *           /api/mobile/v1/session and stores the token encrypted here. Clerk
- *           never sees that sign-in, so a mobile-only account has no Clerk
- *           token and this fallback is the only one it has.
+ *   Clerk — every current sign-in, web and iOS alike. Clerk holds the OAuth
+ *           token and refreshes it, so it is tried first and is the fresher of
+ *           the two.
+ *   Local — historical. The mobile app used to run its own GitHub OAuth
+ *           against /api/mobile/v1/session and store the token encrypted here;
+ *           it now signs in through Clerk, so nothing writes this column any
+ *           more. The fallback stays because the accounts created that way
+ *           still hold a token here and it is the only one they have until
+ *           their owner signs in again.
  *
  * Returns null rather than throwing when the user simply has no GitHub
  * connected, which is now an ordinary state rather than an error.

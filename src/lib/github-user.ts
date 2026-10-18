@@ -49,6 +49,13 @@ export function bootstrapAdminLogins(): Set<string> {
  * credit on first sign-in only.
  *
  * Returns the user's id, role and github login — what a session needs.
+ *
+ * @deprecated No longer called. Its one caller was the mobile session route,
+ * which now signs in through Clerk like the web (App Store Guideline 4.8 wants
+ * a privacy-preserving login option alongside GitHub, and Clerk makes Sign in
+ * with Apple a dashboard switch). Provisioning therefore goes through
+ * `resolveClerkUser`. Kept because it is the only description of the pre-Clerk
+ * GitHub-identity path, which the `users` rows it created still reflect.
  */
 export async function upsertGithubUser(
   p: GithubProfile,
