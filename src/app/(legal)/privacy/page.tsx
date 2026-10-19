@@ -81,8 +81,10 @@ export default function PrivacyPage() {
 
       <h3>The browser extension</h3>
       <p>
-        Our Chrome and Firefox extension shows whether the GitHub repository you are looking at is
-        listed here. <strong>Browsing GitHub sends us nothing.</strong> The extension periodically
+        Our Chrome and Firefox extension is written but not yet published to any store, so nobody
+        has it unless they loaded it themselves. This is how it behaves when you do: it shows
+        whether the GitHub repository you are looking at is listed here.{" "}
+        <strong>Browsing GitHub sends us nothing.</strong> The extension periodically
         downloads the public list of listed repositories and checks it on your own machine, so we
         never learn which repositories you visit.
       </p>

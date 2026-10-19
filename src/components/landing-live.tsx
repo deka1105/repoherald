@@ -407,11 +407,12 @@ export function Landing({
               <div className="rhl-row">
                 <div className="rhl-row-head">
                   <h3>Browser extension</h3>
-                  <span className="rhl-tag">Not built yet</span>
+                  <span className="rhl-tag">Not released yet</span>
                 </div>
                 <p>
-                  The plan is to send a repo from the page you&rsquo;re on, without the detour
-                  through a DM. It doesn&rsquo;t exist yet.
+                  Send a repo from the page you&rsquo;re on, without the detour through a DM. It is
+                  written, but it is not in the Chrome or Firefox stores yet, so you cannot install
+                  it.
                 </p>
               </div>
 
