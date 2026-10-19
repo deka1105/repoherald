@@ -81,22 +81,22 @@ iOS, and naming an unavailable method in the listing is a policy violation.
 | 7" tablet | optional but recommended | — |
 | 10" tablet | optional but recommended | reuse the iPad composition |
 
-**Phone screenshots are outstanding.** The release APK builds, installs and runs
-on the Pixel 8 emulator and the feed renders correctly — that is how both bugs
-above were found. But after several hours of Gradle builds the emulator's own
-`system_server` and Pixel Launcher began ANR-ing, putting a "isn't responding"
-system dialog over every capture. The app was never the process at fault (its
-PID stayed alive and logcat shows no fatal errors); the host is simply starved.
+**Captured 2026-10-18**, Pixel 8 emulator, 1080 x 2400 — `playstore/phone/`:
+`01-feed.png`, `02-feed-scrolled.png`, `03-signin.png`. Play accepts these as-is.
 
-Capture these on a real device, or on a freshly booted emulator with nothing
-else running:
+Two capture notes worth keeping:
 
-```sh
-adb shell am start -n com.dekisuki05.repoherald/.MainActivity
-adb exec-out screencap -p > phone-01-feed.png
-```
+- **Do not use SystemUI demo mode** to fake a clean status bar. The broadcasts
+  (`com.android.systemui.demo`) wedged SystemUI into a repeating "System UI
+  isn't responding" dialog that sat over every screenshot. Backing demo mode out
+  fixed it immediately. The real status bar reads fine.
+- `adb install` of the 74 MB APK fails with a broken pipe on this emulator.
+  `adb push` to `/data/local/tmp/` then `adb shell pm install` works every time.
+  A locally-signed rebuild also needs `adb uninstall` first, since it will not
+  replace the EAS-signed one (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
 
-Play accepts 1080 x 2400 from a Pixel 8 as-is.
+**Still to capture:** a 7" and 10" tablet set (optional but recommended), and
+the account sheet, which needs a signed-in session.
 
 Without a feature graphic Play will not let you publish — it is the one asset
 people most often discover missing at the end.
@@ -150,6 +150,18 @@ Expected outcome: **Everyone / PEGI 3**.
 | Data deletion | In-app, plus `https://repoherald.com/account` |
 
 ## Android bugs found by running it, 2026-10-18
+
+**3. The modal sheets had the same status-bar collision as the header**, found
+after fixing the header. `presentationStyle="pageSheet"` is **iOS-only** —
+Android ignores it and renders the Modal full-screen, so "Sign in" sat on the
+clock and "Done" on the wifi and battery icons. `signin.tsx` and `account.tsx`
+had no safe-area handling at all.
+
+Fixing the header alone would have shipped a half-fix. The inset now lives once
+in `src/theme.ts` as `ANDROID_TOP_INSET` and is imported by all three roots,
+so a fourth full-bleed root cannot quietly miss it.
+
+### The first two
 
 Both were invisible to `tsc`, `eslint` and `expo-doctor`, and both would have
 been in every Play Store screenshot.
