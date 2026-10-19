@@ -1,0 +1,24 @@
+# What Vercel uploads for the Next.js build.
+#
+# Vercel does NOT read .gitignore, so generated native directories and the
+# mobile app's own node_modules were being uploaded: 18,003 files against a
+# 15,000 limit, which failed the deploy outright. None of this is imported by
+# anything under src/.
+
+# The Expo app: its own node_modules (~60k files) plus ios/ and android/,
+# which `expo prebuild` regenerates and which are gitignored already.
+mobile/
+
+# The browser extension — shipped to the Chrome/Firefox stores, not to Vercel.
+extension/
+
+# Reel scripts, renders and the render pipeline.
+marketing/
+
+# Brand source art. The web app serves its own copies from public/brand/.
+Logo/
+design_handoff_repoherald_landing/
+
+# Transcripts, not code.
+session-logs/
+SessionHistory1.txt
