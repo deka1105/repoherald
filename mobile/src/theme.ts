@@ -1,3 +1,23 @@
+import { Platform, StatusBar } from "react-native";
+
+/**
+ * Top inset every full-bleed root has to apply itself on Android.
+ *
+ * Two react-native APIs do nothing on Android and both bit us:
+ *   - `SafeAreaView` applies insets on iOS only; on Android it is a plain View.
+ *   - `Modal`'s `presentationStyle="pageSheet"` is iOS-only, so the sign-in and
+ *     account sheets render full-screen there and draw under the status bar.
+ *
+ * Result was the wordmark sitting on top of the system clock, and "Sign in" /
+ * "Done" on top of the wifi and battery icons. From API 35 Android is
+ * edge-to-edge by default, so this gets worse on new devices, not better.
+ *
+ * iOS needs none of this: it is 0 there, and `StatusBar.currentHeight` is
+ * undefined on iOS anyway.
+ */
+export const ANDROID_TOP_INSET =
+  Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0;
+
 /** The app is dark-only, matching app.json's userInterfaceStyle. */
 export const C = {
   bg: "#0a090c",

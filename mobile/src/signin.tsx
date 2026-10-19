@@ -20,7 +20,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { C } from "./theme";
+import { C, ANDROID_TOP_INSET } from "./theme";
 import { PRIVACY_URL, TERMS_URL } from "./config";
 import { useAuth, type SignInMethod } from "./auth";
 
@@ -114,7 +114,7 @@ export function SignInSheet({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: C.bg, paddingTop: ANDROID_TOP_INSET },
   bar: {
     flexDirection: "row",
     alignItems: "center",

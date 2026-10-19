@@ -25,7 +25,7 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { C } from "./theme";
+import { C, ANDROID_TOP_INSET } from "./theme";
 import { PRIVACY_URL, SUPPORT_URL, TERMS_URL } from "./config";
 import { useAuth } from "./auth";
 
@@ -177,7 +177,7 @@ export function AccountSheet({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: C.bg, paddingTop: ANDROID_TOP_INSET },
   bar: {
     flexDirection: "row",
     alignItems: "center",
