@@ -22,3 +22,7 @@ design_handoff_repoherald_landing/
 # Transcripts, not code.
 session-logs/
 SessionHistory1.txt
+
+# Local build output. Vercel builds on its own side; uploading ours is waste.
+.next/
+tsconfig.tsbuildinfo
