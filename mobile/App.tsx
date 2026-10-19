@@ -23,7 +23,7 @@ import { AuthProvider, useAuth } from "./src/auth";
 import { getFeed, type FeedRepo } from "./src/api";
 import { AccountSheet } from "./src/account";
 import { SignInSheet } from "./src/signin";
-import { C, CONTENT_MAX_WIDTH } from "./src/theme";
+import { C, CONTENT_MAX_WIDTH, ANDROID_TOP_INSET } from "./src/theme";
 import { CLERK_PUBLISHABLE_KEY } from "./src/config";
 
 // Held until the feed's first paint, so the app never shows an empty list that
@@ -177,11 +177,7 @@ const styles = StyleSheet.create({
   // plain View, so the header drew under the status bar and the wordmark
   // collided with the clock. Android needs the inset applied by hand; from
   // API 35 the system is edge-to-edge by default, so this is not optional.
-  root: {
-    flex: 1,
-    backgroundColor: C.bg,
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0,
-  },
+  root: { flex: 1, backgroundColor: C.bg, paddingTop: ANDROID_TOP_INSET },
   centre: { flex: 1, alignItems: "center", justifyContent: "center" },
   // The rule stretches edge to edge on iPad while the content inside it stays
   // in the reading column with the cards.
