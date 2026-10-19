@@ -24,21 +24,21 @@ along, and the server does not record them as page views.
 
 ## Pointing it at a different origin
 
-**Currently set to `https://repoherald.vercel.app`**, because `repoherald.com`
-is registered and attached to Vercel but its DNS still points at registrar
-parking — requests to it would fail.
+**Set to `https://repoherald.com`** since 2026-10-18. It previously pointed at
+`https://repoherald.vercel.app`, because the real domain's DNS was still on
+registrar parking. That is no longer true — `repoherald.com` serves the catalog
+with a 200, and the old hostname now answers **308** redirecting to it.
+
+That redirect is why this had to change rather than merely being tidier. A
+Manifest V3 fetch is permitted against the hosts in `host_permissions`; when the
+response redirects to an origin that is *not* listed, the request is blocked. So
+the catalog fetch failed, the extension never learned which repositories were
+listed, and it silently did nothing.
 
 The origin is defined in **exactly one place**: `host_permissions` in
 `manifest.json`. `background.js`, `content.js`, and `popup.js` all derive it at
-runtime from `runtime.getManifest()`, so switching to the real domain once DNS
-is live means editing that single line:
-
-```json
-"host_permissions": ["https://repoherald.com/*"]
-```
-
-Do that before submitting to either store — listings should point at the real
-domain, not the deployment URL.
+runtime from `runtime.getManifest()`, so pointing the extension somewhere else
+is still a one-line edit.
 
 ## Install (development)
 
