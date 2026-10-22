@@ -28,6 +28,7 @@ import { Image } from "expo-image";
 import { C, ANDROID_TOP_INSET } from "./theme";
 import { PRIVACY_URL, SUPPORT_URL, TERMS_URL } from "./config";
 import { useAuth } from "./auth";
+import { unblockOwner } from "./blocks";
 
 export function AccountSheet({
   visible,
@@ -128,6 +129,37 @@ export function AccountSheet({
             <Text style={styles.blurb}>You are not signed in.</Text>
           )}
 
+          {/* Blocking has to be undoable, or it is a trap rather than a
+              control. This list is the only place a block can be lifted. */}
+          <Text style={styles.heading}>Blocked accounts</Text>
+          {blocked.length === 0 ? (
+            <Text style={styles.blurb}>
+              You haven&rsquo;t blocked anyone. Tap &bull;&bull;&bull; on any
+              repo to report it or block the account that posted it.
+            </Text>
+          ) : (
+            blocked.map((owner) => (
+              <View key={owner} style={styles.row}>
+                <Text style={styles.rowLabel} numberOfLines={1}>
+                  {owner}
+                </Text>
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      onUnblock(await unblockOwner(owner));
+                    } catch {
+                      setError("Couldn't unblock that account.");
+                    }
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Unblock ${owner}`}
+                  hitSlop={10}>
+                  <Text style={styles.unblock}>Unblock</Text>
+                </Pressable>
+              </View>
+            ))
+          )}
+
           <Text style={styles.heading}>About</Text>
           {[
             { label: "Privacy Policy", url: PRIVACY_URL },
@@ -217,6 +249,7 @@ const styles = StyleSheet.create({
   },
   rowLabel: { color: C.body, fontSize: 15 },
   rowValue: { color: C.text, fontSize: 15, fontWeight: "600" },
+  unblock: { color: C.accent, fontSize: 15, fontWeight: "600" },
   heading: {
     color: C.dim,
     fontSize: 12,
