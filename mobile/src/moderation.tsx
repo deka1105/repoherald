@@ -31,7 +31,13 @@ export function ModerationSheet({
 }: {
   repo: FeedRepo | null;
   onClose: () => void;
-  onBlocked: (owner: string) => void;
+  /**
+   * Receives the canonical list straight from the store, not the owner string.
+   * `blockOwner` lower-cases and de-duplicates; passing the raw owner back
+   * instead would put mixed case into the in-memory list, and `isBlocked`
+   * compares against lower-cased names, so the block would silently not apply.
+   */
+  onBlocked: (blocked: string[]) => void;
 }) {
   const [step, setStep] = useState<Step>("menu");
   const [busy, setBusy] = useState(false);
