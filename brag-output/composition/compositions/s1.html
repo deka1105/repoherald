@@ -28,6 +28,8 @@
   </style>
 
   <div id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <!-- Present at frame 0 on purpose: frame 0 is the social thumbnail, and
+         deadpan suits a line that is simply already there. -->
     <h1 id="s1-line-a" class="clip" data-start="0" data-duration="5" data-track-index="0">
       A feed of GitHub repos.
     </h1>
@@ -40,14 +42,8 @@
     window.__timelines = window.__timelines || {};
     const tl = gsap.timeline({ paused: true });
 
-    // Hook: arrives fast, then holds dead still for the rest of the scene.
-    // 4 words at the ~0.3s/word floor = 1.2s minimum; it holds ~4.5s.
-    tl.fromTo(
-      "#s1-line-a",
-      { opacity: 0, y: 18, filter: "blur(10px)" },
-      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.42, ease: "power3.out" },
-      0.25,
-    );
+    // No entrance on the hook. It holds dead still for the full 5s, which is
+    // far past the 1.2s floor for 4 words.
 
     // The understatement lands second, never together with the hook.
     // 5 words = 1.5s floor; it holds ~2.3s.
