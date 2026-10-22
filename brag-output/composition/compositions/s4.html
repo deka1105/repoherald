@@ -33,9 +33,9 @@
       color: #f2f2f0;
       font-size: 60px;
       font-weight: 800;
-      letter-spacing: 13px;
       /* The app renders the wordmark at weight 800, letter-spacing 3 on a
-         14px glyph. Scaled to 60px that ratio is ~13px. */
+         14px glyph. Scaled to 60px, that ratio is ~13px. */
+      letter-spacing: 13px;
       padding-left: 13px;
     }
     #s4-rule {
@@ -52,14 +52,16 @@
   </style>
 
   <div id="root" data-composition-id="s4" data-width="1920" data-height="1080">
-    <!-- Lands in silence: the music has already faded out by 18.6s. -->
-    <p id="s4-line" class="clip" data-start="0" data-duration="2.75" data-track-index="0">
+    <!-- Lands in silence: the bed has already faded out by 18.6s.
+         7 words = 2.6s floor; it holds ~3.0s, alone on screen. -->
+    <p id="s4-line" class="clip" data-start="0" data-duration="3.4" data-track-index="0">
       There is nothing to opt out of.
     </p>
 
-    <div id="s4-end" class="clip" data-start="2.75" data-duration="1.25" data-track-index="1">
+    <!-- The closing card needs 2s minimum; it holds 2.5s to the last frame. -->
+    <div id="s4-end" class="clip" data-start="3.4" data-duration="2.6" data-track-index="1">
       <div id="s4-mark">REPOHERALD</div>
-      <div id="s4-rule"></div>
+      <div id="s4-rule" data-layout-ignore></div>
       <div id="s4-platforms">iOS and Android</div>
     </div>
   </div>
@@ -68,35 +70,24 @@
     window.__timelines = window.__timelines || {};
     const tl = gsap.timeline({ paused: true });
 
-    // 7 words at the ~0.3s/word floor = 2.1s minimum. It holds ~2.3s, alone.
     tl.fromTo(
       "#s4-line",
       { opacity: 0, y: 14 },
       { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" },
       0.18,
     );
-    tl.to("#s4-line", { opacity: 0, duration: 0.3, ease: "power2.in" }, 2.45);
+    tl.to("#s4-line", { opacity: 0, duration: 0.3, ease: "power2.in" }, 3.05);
 
     // The mark is never on screen with the line — one statement at a time.
     tl.fromTo(
       "#s4-mark",
       { opacity: 0, y: 10 },
       { opacity: 1, y: 0, duration: 0.38, ease: "power3.out" },
-      2.82,
+      3.5,
     );
     // The rule draws itself rather than fading: the one performed beat.
-    tl.fromTo(
-      "#s4-rule",
-      { width: 0 },
-      { width: 300, duration: 0.5, ease: "power2.out" },
-      3.0,
-    );
-    tl.fromTo(
-      "#s4-platforms",
-      { opacity: 0 },
-      { opacity: 1, duration: 0.34, ease: "power2.out" },
-      3.18,
-    );
+    tl.fromTo("#s4-rule", { width: 0 }, { width: 300, duration: 0.5, ease: "power2.out" }, 3.7);
+    tl.fromTo("#s4-platforms", { opacity: 0 }, { opacity: 1, duration: 0.34, ease: "power2.out" }, 3.85);
 
     window.__timelines["s4"] = tl;
     tl.seek(0);
