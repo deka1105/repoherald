@@ -1,0 +1,1 @@
+My app's best feature is a number that is zero: no analytics SDK, no crash reporter, no advertising ID. A feed of GitHub repos people actually wanted to show someone. iOS and Android.
