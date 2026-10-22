@@ -200,7 +200,7 @@ function Feed() {
       <ModerationSheet
         repo={moderating}
         onClose={() => setModerating(null)}
-        onBlocked={(owner) => setBlocked((prev) => [...prev, owner])}
+        onBlocked={setBlocked}
       />
     </SafeAreaView>
   );

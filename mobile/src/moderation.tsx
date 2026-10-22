@@ -74,8 +74,7 @@ export function ModerationSheet({
     setBusy(true);
     setError(null);
     try {
-      await blockOwner(owner);
-      onBlocked(owner);
+      onBlocked(await blockOwner(owner));
       setStep("blocked");
     } catch {
       setError("Couldn't block that account. Please try again.");
