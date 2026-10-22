@@ -146,13 +146,26 @@ function Feed() {
               <Text style={styles.credits}>{me.creditBalance} credits</Text>
             </Pressable>
           ) : (
-            <Pressable
-              onPress={() => setShowSignIn(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Sign in"
-              hitSlop={10}>
-              <Text style={styles.signIn}>Sign in</Text>
-            </Pressable>
+            // Signed out still needs a way into Account: blocking works
+            // without an account, so the Blocked accounts list — the only
+            // place a block can be lifted — has to be reachable without one
+            // too. Otherwise blocking is a one-way trap.
+            <View style={styles.barActions}>
+              <Pressable
+                onPress={() => setShowAccount(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Account, blocked accounts and about"
+                hitSlop={10}>
+                <Text style={styles.moreGlyph}>•••</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setShowSignIn(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Sign in"
+                hitSlop={10}>
+                <Text style={styles.signIn}>Sign in</Text>
+              </Pressable>
+            </View>
           )}
         </View>
       </View>
