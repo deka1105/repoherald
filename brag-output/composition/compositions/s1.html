@@ -1,0 +1,65 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #0a090c;
+      font-family: Inter, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 44px;
+    }
+    #s1-line-a {
+      color: #f2f2f0;
+      font-size: 104px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      text-align: center;
+    }
+    #s1-line-b {
+      color: #8e8c95;
+      font-size: 46px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s1" data-width="1920" data-height="1080">
+    <h1 id="s1-line-a" class="clip" data-start="0" data-duration="5" data-track-index="0">
+      A feed of GitHub repos.
+    </h1>
+    <p id="s1-line-b" class="clip" data-start="2.4" data-duration="2.6" data-track-index="1">
+      That is the whole app.
+    </p>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // Hook: arrives fast, then holds dead still for the rest of the scene.
+    // 4 words at the ~0.3s/word floor = 1.2s minimum; it holds ~4.5s.
+    tl.fromTo(
+      "#s1-line-a",
+      { opacity: 0, y: 18, filter: "blur(10px)" },
+      { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.42, ease: "power3.out" },
+      0.25,
+    );
+
+    // The understatement lands second, never together with the hook.
+    // 5 words = 1.5s floor; it holds ~2.3s.
+    tl.fromTo(
+      "#s1-line-b",
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.38, ease: "power3.out" },
+      2.45,
+    );
+
+    // Deadpan: no exit animation. The cut does the work.
+    window.__timelines["s1"] = tl;
+    tl.seek(0);
+  </script>
+</template>
