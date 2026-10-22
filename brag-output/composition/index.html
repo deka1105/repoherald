@@ -5,11 +5,16 @@
     <meta name="viewport" content="width=1920, height=1080" />
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
     <style>
-      /* Placeholders: replace all three with the film's own palette and display face. */
+      /* Palette lifted verbatim from mobile/src/theme.ts — the shipped app. */
       :root {
-        --ground: #6b6b6b;
-        --ink: #ffffff;
-        --font-display: sans-serif;
+        --ground: #0a090c;
+        --card: #141317;
+        --line: #26242b;
+        --ink: #f2f2f0;
+        --body: #b9b7c0;
+        --dim: #8e8c95;
+        --accent: #9d78ff;
+        --font-display: Inter, sans-serif;
       }
       * {
         margin: 0;
@@ -27,16 +32,9 @@
       #root {
         width: 100%;
         height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: relative;
+        background: var(--ground);
         font-family: var(--font-display);
-      }
-      #title {
-        color: var(--ink);
-        font-size: 72px;
-        font-weight: 600;
-        letter-spacing: -0.03em;
       }
     </style>
   </head>
@@ -45,15 +43,123 @@
       id="root"
       data-composition-id="main"
       data-start="0"
-      data-duration="10"
+      data-duration="23"
       data-width="1920"
       data-height="1080"
     >
-      <h1 id="title" class="clip" data-start="0" data-duration="10" data-track-index="0">Title</h1>
+      <div
+        id="s1"
+        data-composition-id="s1"
+        data-composition-src="compositions/s1.html"
+        class="clip"
+        data-start="0"
+        data-duration="5"
+        data-track-index="0"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 1"
+      ></div>
+
+      <div
+        id="s2"
+        data-composition-id="s2"
+        data-composition-src="compositions/s2.html"
+        class="clip"
+        data-start="5"
+        data-duration="7"
+        data-track-index="0"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 2"
+      ></div>
+
+      <div
+        id="s3"
+        data-composition-id="s3"
+        data-composition-src="compositions/s3.html"
+        class="clip"
+        data-start="12"
+        data-duration="7"
+        data-track-index="0"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 3"
+      ></div>
+
+      <div
+        id="s4"
+        data-composition-id="s4"
+        data-composition-src="compositions/s4.html"
+        class="clip"
+        data-start="19"
+        data-duration="4"
+        data-track-index="0"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 4"
+      ></div>
+
+      <!-- Low bed. Fades out entirely by 18.6s so Scene 4's line lands in silence. -->
+      <audio
+        id="music"
+        class="clip"
+        data-start="0"
+        data-duration="18.6"
+        data-track-index="5"
+        data-volume="0.22"
+        data-fade-in="1.4"
+        data-fade-out="2.8"
+        src="assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3"
+      ></audio>
+
+      <!-- One dry tap on the simulated card press. -->
+      <audio
+        id="sfx-tap"
+        class="clip"
+        data-start="9.50"
+        data-duration="0.8"
+        data-track-index="6"
+        data-volume="0.55"
+        src="assets/sfx/click_001.ogg"
+      ></audio>
+
+      <!-- One soft tick per counter. Three takes, not one repeated. -->
+      <audio
+        id="sfx-zero-1"
+        class="clip"
+        data-start="12.65"
+        data-duration="0.8"
+        data-track-index="6"
+        data-volume="0.5"
+        src="assets/sfx/switch_001.ogg"
+      ></audio>
+      <audio
+        id="sfx-zero-2"
+        class="clip"
+        data-start="14.76"
+        data-duration="0.8"
+        data-track-index="6"
+        data-volume="0.5"
+        src="assets/sfx/switch_002.ogg"
+      ></audio>
+      <audio
+        id="sfx-zero-3"
+        class="clip"
+        data-start="16.86"
+        data-duration="0.8"
+        data-track-index="6"
+        data-volume="0.5"
+        src="assets/sfx/switch_004.ogg"
+      ></audio>
     </div>
+
     <script>
+      // The root only hosts scenes and audio; each scene drives its own timeline.
       const tl = gsap.timeline({ paused: true });
-      // Example: tl.fromTo("#title", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" }, 0);
       window.__timelines["main"] = tl;
       tl.seek(0);
     </script>
