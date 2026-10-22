@@ -173,16 +173,33 @@ function Feed() {
             />
           }
           ListEmptyComponent={
-            <Text style={styles.empty}>{error ?? "Nothing listed yet."}</Text>
+            <Text style={styles.empty}>
+              {error ??
+                // Distinguish an empty feed from one the viewer has emptied
+                // themselves, or blocking looks like the app is broken.
+                (items.length
+                  ? "Everything here is from accounts you've blocked."
+                  : "Nothing listed yet.")}
+            </Text>
           }
           ListFooterComponent={
-            error && items.length ? <Text style={styles.empty}>{error}</Text> : null
+            error && visible.length ? <Text style={styles.empty}>{error}</Text> : null
           }
         />
       )}
 
-      <AccountSheet visible={showAccount} onClose={() => setShowAccount(false)} />
+      <AccountSheet
+        visible={showAccount}
+        onClose={() => setShowAccount(false)}
+        blocked={blocked}
+        onUnblock={setBlocked}
+      />
       <SignInSheet visible={showSignIn} onClose={() => setShowSignIn(false)} />
+      <ModerationSheet
+        repo={moderating}
+        onClose={() => setModerating(null)}
+        onBlocked={(owner) => setBlocked((prev) => [...prev, owner])}
+      />
     </SafeAreaView>
   );
 }
