@@ -85,6 +85,20 @@ function Feed() {
   const [error, setError] = useState<string | null>(null);
   const [showAccount, setShowAccount] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
+  // Guideline 1.2: the listing the Options sheet is acting on, and the owners
+  // this device has blocked.
+  const [moderating, setModerating] = useState<FeedRepo | null>(null);
+  const [blocked, setBlocked] = useState<string[]>([]);
+
+  // Blocks are read once at launch; every later change comes back through
+  // onBlocked, so the feed filters without another disk read.
+  useEffect(() => {
+    loadBlocked().then(setBlocked).catch(() => {});
+  }, []);
+
+  // Filtering here rather than in `load` keeps the cursor and the server's
+  // page boundaries untouched — a blocked owner simply never renders.
+  const visible = items.filter((r) => !isBlocked(r.fullName, blocked));
 
   const load = useCallback(async (reset: boolean) => {
     try {
@@ -145,9 +159,9 @@ function Feed() {
         <View style={styles.centre}><ActivityIndicator color={C.accent} /></View>
       ) : (
         <FlatList
-          data={items}
+          data={visible}
           keyExtractor={(r, i) => `${r.id}-${i}`}
-          renderItem={({ item }) => <RepoCard repo={item} />}
+          renderItem={({ item }) => <RepoCard repo={item} onMore={setModerating} />}
           contentContainerStyle={styles.list}
           onEndReachedThreshold={0.6}
           onEndReached={() => { if (cursor) load(false); }}
