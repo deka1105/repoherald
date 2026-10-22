@@ -1,7 +1,7 @@
 {
   "version": 1,
   "historyId": "070f85bd-0b15-4a94-8432-1f8b1a85b3e6",
-  "currentRevision": null,
+  "currentRevision": "8b79f446-cb86-4c3b-b5ce-49c54d11fa4e",
   "pendingChanges": false,
   "files": {
     "AGENTS.md": {
@@ -29,28 +29,28 @@
       "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/54/541c19cc1ab712a9efc5765df602e7d0da09d9cafdd297ce1e19b092289fd62f"
     },
     "compositions/s1.html": {
-      "hash": "61a0769588dc5784e626ca997d96ca7af8cef01074aa23662137e91e48ffc9e4",
-      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/61/61a0769588dc5784e626ca997d96ca7af8cef01074aa23662137e91e48ffc9e4"
+      "hash": "513c4b503161768dd8251007d222f429d064a6e8a2a912ecb28f054fe41d56be",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/51/513c4b503161768dd8251007d222f429d064a6e8a2a912ecb28f054fe41d56be"
     },
     "compositions/s2.html": {
-      "hash": "1317b7e602e1e6ed3959e8ff420c38c24176ca24b3e858373609664478ed07cb",
-      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/13/1317b7e602e1e6ed3959e8ff420c38c24176ca24b3e858373609664478ed07cb"
+      "hash": "a14c311711c8a2480ef1975043067d8369fc197f166ba8a543f0a33a93c1a35e",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/a1/a14c311711c8a2480ef1975043067d8369fc197f166ba8a543f0a33a93c1a35e"
     },
     "compositions/s3.html": {
       "hash": "2a452f322778b99711eea37bf844cddc7966ef7318d360f21f1593940e6c9779",
       "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/2a/2a452f322778b99711eea37bf844cddc7966ef7318d360f21f1593940e6c9779"
     },
     "compositions/s4.html": {
-      "hash": "d82681bf2c8bd55125c3ea51fa937ab740aefbc9fd50647f7894992e48f3ef65",
-      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/d8/d82681bf2c8bd55125c3ea51fa937ab740aefbc9fd50647f7894992e48f3ef65"
+      "hash": "212381045cb01d62d7844a933eea816c2ab207a7c354fa729dbd4a5afd9f4be8",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/21/212381045cb01d62d7844a933eea816c2ab207a7c354fa729dbd4a5afd9f4be8"
     },
     "hyperframes.json": {
       "hash": "53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50",
       "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/53/53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50"
     },
     "index.html": {
-      "hash": "c0a3064d19b56aa3abb2da9e2b884090676a3e8446e774da379626fc96703063",
-      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/c0/c0a3064d19b56aa3abb2da9e2b884090676a3e8446e774da379626fc96703063"
+      "hash": "c736f9a54322b6b856bc1f6e24830a6a878d60632d8a5a7587f3e72d4fcfa3ef",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/c7/c736f9a54322b6b856bc1f6e24830a6a878d60632d8a5a7587f3e72d4fcfa3ef"
     },
     "meta.json": {
       "hash": "855a4bf8c4729c05973bfa1054c3cd2530d74356f35f520f2ae0e43d65bae70c",
@@ -65,13 +65,71 @@
       "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/f5/f5793597e520aa8fa9cce91086816fc1e15e3aac0128bcf375df51ba70c0dc63"
     }
   },
-  "revisions": {},
+  "revisions": {
+    "8b79f446-cb86-4c3b-b5ce-49c54d11fa4e": {
+      "actor": {
+        "kind": "outside",
+        "name": "Outside"
+      },
+      "label": "Changed outside the app",
+      "startedAt": 1792673073822,
+      "endedAt": 1792673073830,
+      "files": {
+        "compositions/s1.html": {
+          "before": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/61/61a0769588dc5784e626ca997d96ca7af8cef01074aa23662137e91e48ffc9e4",
+          "after": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/51/513c4b503161768dd8251007d222f429d064a6e8a2a912ecb28f054fe41d56be"
+        },
+        "compositions/s2.html": {
+          "before": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/13/1317b7e602e1e6ed3959e8ff420c38c24176ca24b3e858373609664478ed07cb",
+          "after": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/a1/a14c311711c8a2480ef1975043067d8369fc197f166ba8a543f0a33a93c1a35e"
+        },
+        "compositions/s4.html": {
+          "before": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/d8/d82681bf2c8bd55125c3ea51fa937ab740aefbc9fd50647f7894992e48f3ef65",
+          "after": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/21/212381045cb01d62d7844a933eea816c2ab207a7c354fa729dbd4a5afd9f4be8"
+        },
+        "index.html": {
+          "before": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/c0/c0a3064d19b56aa3abb2da9e2b884090676a3e8446e774da379626fc96703063",
+          "after": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/c7/c736f9a54322b6b856bc1f6e24830a6a878d60632d8a5a7587f3e72d4fcfa3ef"
+        }
+      }
+    }
+  },
   "checks": {
     "latest": {
-      "revision": null,
-      "id": "e2555e03-ea95-4ec6-a0ca-ea937cfb9906"
+      "revision": "8b79f446-cb86-4c3b-b5ce-49c54d11fa4e",
+      "id": "5ec41968-1782-4c73-9ec2-101f2135adc3"
     },
-    "revisions": {},
+    "revisions": {
+      "8b79f446-cb86-4c3b-b5ce-49c54d11fa4e": [
+        {
+          "id": "5ec41968-1782-4c73-9ec2-101f2135adc3",
+          "scope": "project",
+          "report": "/Users/shubhamarundekatey/ClaudeCode/day23/repoherald/brag-output/composition/.hyperframes/artifacts/checks/5ec41968-1782-4c73-9ec2-101f2135adc3.json",
+          "metadata": {
+            "ok": true,
+            "browserSkipped": false,
+            "options": {
+              "samples": 9,
+              "atTransitions": false,
+              "maxIssues": 80,
+              "collapseStatic": true,
+              "tolerance": 2,
+              "timeout": 3000,
+              "contrast": true,
+              "strict": false,
+              "snapshots": false,
+              "browserGpuMode": "auto"
+            }
+          },
+          "createdAt": 1792673076940,
+          "contentHash": "f28e079d54db88e8af6fb9cc8b69e4900f997bb5d46471358843d4044e836bee",
+          "revision": "8b79f446-cb86-4c3b-b5ce-49c54d11fa4e",
+          "inputFingerprint": "4df369cdfa1ef434b348ce25e3ddca03e1e2b8b0df84c435eb047c2b8b2da8ae",
+          "inputScope": "local-project-files",
+          "attribution": "recorded-revision"
+        }
+      ]
+    },
     "unversioned": [
       {
         "id": "e2555e03-ea95-4ec6-a0ca-ea937cfb9906",
