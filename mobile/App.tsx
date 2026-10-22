@@ -264,6 +264,7 @@ const styles = StyleSheet.create({
   // The report/block affordance. Quiet by default — it is a safety control,
   // not a feature to advertise — but a real target, not just a long-press.
   more: { paddingLeft: 12, paddingVertical: 2 },
+  barActions: { flexDirection: "row", alignItems: "center", gap: 18 },
   moreGlyph: { color: C.dim, fontSize: 13, letterSpacing: 1, fontWeight: "700" },
   owner: { color: C.dim, fontSize: 13, marginTop: 1 },
   stars: { color: C.dim, fontSize: 13 },
