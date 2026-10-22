@@ -56,22 +56,27 @@
     window.__timelines = window.__timelines || {};
     const tl = gsap.timeline({ paused: true });
 
-    // beat-locked: 12.65s — the strongest cue in the window, and the scene's
-    // whole point, so it gets the one hard lock in the film.
-    // beat-grid: rows at 12.65 / 14.76 / 16.86 abs = every 4th beat (~2.11s
-    // apart). Deliberately NOT adjacent beats: 0.52s would outrun reading.
-    // Host starts at 12s, so local times are 0.65 / 2.76 / 4.86.
-    const at = [0.65, 2.76, 4.86];
-    ["#s3-row-1", "#s3-row-2", "#s3-row-3"].forEach((sel, i) => {
-      tl.fromTo(
-        sel,
-        { opacity: 0, x: -26 },
-        { opacity: 1, x: 0, duration: 0.36, ease: "power3.out" },
-        at[i],
-      );
-    });
+    // Row 1 is already on screen when the scene cuts in. An entrance here
+    // left 0.65s of dead black right after the cut, which the review sheet
+    // caught at 12.3s.
+    //
+    // beat-grid: rows 2 and 3 at 14.22s and 16.34s abs — grid beats, spaced
+    // 2.22s and 2.12s. Deliberately NOT adjacent beats: 0.52s apart would
+    // outrun reading. Host starts at 12s, so local 2.22 / 4.34.
+    tl.fromTo(
+      "#s3-row-2",
+      { opacity: 0, x: -26 },
+      { opacity: 1, x: 0, duration: 0.36, ease: "power3.out" },
+      2.22,
+    );
+    tl.fromTo(
+      "#s3-row-3",
+      { opacity: 0, x: -26 },
+      { opacity: 1, x: 0, duration: 0.36, ease: "power3.out" },
+      4.34,
+    );
 
-    // All three stay on screen together for the final ~2.1s. No exit.
+    // All three hold together for the final ~2.3s. No exit.
     window.__timelines["s3"] = tl;
     tl.seek(0);
   </script>
