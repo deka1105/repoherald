@@ -32,9 +32,14 @@ import { useAuth } from "./auth";
 export function AccountSheet({
   visible,
   onClose,
+  blocked,
+  onUnblock,
 }: {
   visible: boolean;
   onClose: () => void;
+  /** Owner logins this device has blocked. Guideline 1.2. */
+  blocked: string[];
+  onUnblock: (next: string[]) => void;
 }) {
   const { me, busy, signOut, deleteAccount } = useAuth();
   const [error, setError] = useState<string | null>(null);
