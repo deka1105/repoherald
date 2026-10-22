@@ -12,15 +12,22 @@ Physical device, latest iOS, starting from launch. Shot list:
 1. Tap the icon on the home screen — show the launch, not a mid-session state.
 2. The feed loads with **no sign-in wall**. Scroll a few cards.
 3. Tap a card → it opens that repository on github.com in Safari. Come back.
-4. Tap the account control → **Sign in** sheet → *Continue with Apple*. Complete it.
-5. Back on the feed, open the account sheet again: show Credits and the balance.
-6. Tap **Delete my account** → the confirm dialog → **Delete permanently**.
-7. Show that the app returns to the signed-out feed, which still works.
+4. **Tap the `...` control on any card** → Options → **Report this repo** → pick a
+   reason → show the confirmation. (Do this while signed out, to show reporting
+   does not require an account.)
+5. Open `...` again → **Block <owner>** → show the card disappearing from the feed.
+6. Tap the account control → **Sign in** sheet → *Continue with Apple*. Complete it.
+7. In the account sheet, show **Blocked accounts** and tap **Unblock** — blocking
+   is reversible.
+8. Show Credits and the balance.
+9. Tap **Delete my account** → the confirm dialog → **Delete permanently**.
+10. Show that the app returns to the signed-out feed, which still works.
 
 Keep it one continuous take if you can. Apple asked for the typical user flow, and
 registration / login / deletion are explicitly required.
 
-**Read the UGC note at the bottom of this file before recording step 2.**
+Build 5 added reporting and blocking; steps 4, 5 and 7 are the Guideline 1.2
+mechanisms Apple asked to see.
 
 ---
 
@@ -97,17 +104,17 @@ code actually lives.
 
 ---
 
-## ⚠ Before you record: the UGC clause
+## User-generated content and moderation (Guideline 1.2)
 
-Apple's item 1 says to show "any user-generated content, **including the required
-content reporting and blocking mechanisms**."
+The feed shows listings submitted by users, so this build ships both controls:
 
-The feed is populated by users (`src/app/actions/repos.ts:66`, `postRepo`), and
-this build has **no reporting and no blocking** — verified: no match for
-report / block / flag / moderat anywhere in `mobile/src` or `mobile/App.tsx`.
+- **Report** — the `...` control on any card, or a long-press, opens Options →
+  Report this repo → a fixed list of reasons. Reports go to the moderation queue
+  that already backs the website. **Reporting works signed out**, because
+  browsing works signed out; requiring an account would mean the people most
+  likely to encounter something objectionable have no way to flag it.
+- **Block** — the same menu offers Block, which hides every listing from that
+  account. Blocks are stored on the device and are reversible from
+  Account → Blocked accounts.
 
-Recording the feed and then having no reporting UI to show is the exact
-condition for a Guideline 1.2 rejection on the next round. This is the gap
-flagged before submission.
-
-There are two honest ways forward — see the reply for the trade-off.
+Builds 1–4 had neither. Build 5, submitted with this reply, adds both.
