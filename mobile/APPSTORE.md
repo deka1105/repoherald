@@ -102,6 +102,37 @@ Answer **None** to every content question. One answer needs thought:
   freely. (If App Review disagrees, the fallback is 17+, which would be
   unfortunate but not fatal.)
 
+## Moderation (Guideline 1.2)
+
+The feed is populated by users (`src/app/actions/repos.ts`, `postRepo`), so the
+app ships both controls Guideline 1.2 asks for. Build 5 added them; builds 1-4
+had neither, which is what the Guideline 2.1 reply had to answer.
+
+**Report** — the `...` control on any card, or a long-press on the card, opens
+Options -> Report this repo -> a fixed list of reasons (spam, malware,
+offensive, misleading, something else). It POSTs to
+`/api/mobile/v1/report` and lands in the existing `reports` table, which the
+admin moderation queue already reads.
+
+- Works **signed out**. Browsing needs no account, so reporting must not either,
+  or the people most likely to see something bad cannot flag it.
+  `reports.reporter_user_id` was already nullable.
+- The reason is a closed set, never free text. A text field would be a new place
+  for a stranger to write anything into the database, and moderators only act on
+  the category.
+- One open report per signed-in person per listing; tapping twice does not deal
+  a moderator two identical rows.
+
+**Block** — the same menu offers "Block <owner>", which hides every listing from
+that account. Blocks are stored **on the device** (`mobile/src/blocks.ts`, via
+`expo-secure-store`) and never sent to the server: there is often no server-side
+"you" to attach them to, and a block list is a record of who someone dislikes,
+which this app should not be collecting. Blocks are undone in Account ->
+Blocked accounts.
+
+If the whole visible feed is blocked, the empty state says so explicitly rather
+than showing "Nothing listed yet.", so blocking never looks like a broken app.
+
 ## App Privacy answers
 
 From the code, the app collects only these three, all linked to identity, none
