@@ -23,6 +23,8 @@ import { AuthProvider, useAuth } from "./src/auth";
 import { getFeed, type FeedRepo } from "./src/api";
 import { AccountSheet } from "./src/account";
 import { SignInSheet } from "./src/signin";
+import { ModerationSheet } from "./src/moderation";
+import { isBlocked, loadBlocked } from "./src/blocks";
 import { C, CONTENT_MAX_WIDTH, ANDROID_TOP_INSET } from "./src/theme";
 import { CLERK_PUBLISHABLE_KEY } from "./src/config";
 
@@ -246,6 +248,10 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: { width: 38, height: 38, borderRadius: 10 },
   repoName: { color: C.text, fontSize: 16, fontWeight: "700" },
+  // The report/block affordance. Quiet by default — it is a safety control,
+  // not a feature to advertise — but a real target, not just a long-press.
+  more: { paddingLeft: 12, paddingVertical: 2 },
+  moreGlyph: { color: C.dim, fontSize: 13, letterSpacing: 1, fontWeight: "700" },
   owner: { color: C.dim, fontSize: 13, marginTop: 1 },
   stars: { color: C.dim, fontSize: 13 },
   desc: { color: C.body, fontSize: 14, lineHeight: 20, marginTop: 12 },
