@@ -55,7 +55,19 @@ export default function PrivacyPage() {
         <li>Repositories you post, lists you create, and comments you write — all public by design.</li>
         <li>Likes, star claims, credit ledger entries, and highlight purchases.</li>
         <li>Support messages you send us, including the email address you give.</li>
+        <li>
+          Reports you file against a listing. We store which listing it was, the
+          category you picked from a fixed list, and — only if you were signed
+          in — that it was you. Reporting from the apps does not require an
+          account, and a report filed signed out is not linked to anyone. There
+          is no free-text field, so a report cannot contain anything you type.
+        </li>
       </ul>
+
+      <p>
+        Accounts you block in the iOS or Android app are stored on your device
+        and never sent to us. We do not know who you have blocked.
+      </p>
 
       <h3>Usage measurement</h3>
       <p>
