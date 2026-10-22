@@ -6,15 +6,15 @@
       background: #0a090c;
       font-family: Inter, sans-serif;
     }
-    /* Phone frame, scaled well past life size so card text clears 26px at 1080p. */
+    /* ~2x life size: card body text clears the 28px phone-readable floor. */
     #s2-phone {
       position: absolute;
       left: 50%;
-      top: 96px;
-      margin-left: -252px;
-      width: 504px;
-      height: 888px;
-      border-radius: 46px;
+      top: 62px;
+      margin-left: -360px;
+      width: 720px;
+      height: 956px;
+      border-radius: 54px;
       border: 2px solid #26242b;
       background: #0a090c;
       overflow: hidden;
@@ -24,54 +24,54 @@
       left: 0;
       top: 0;
       width: 100%;
-      height: 92px;
+      height: 104px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 28px;
+      padding: 0 34px;
       border-bottom: 1px solid #26242b;
       background: #0a090c;
       z-index: 3;
     }
     #s2-wordmark {
       color: #f2f2f0;
-      font-size: 17px;
+      font-size: 22px;
       font-weight: 800;
-      letter-spacing: 3px;
+      letter-spacing: 4px;
     }
     #s2-signin {
       color: #9d78ff;
-      font-size: 17px;
+      font-size: 22px;
       font-weight: 600;
     }
     #s2-stack {
       position: absolute;
       left: 0;
-      top: 92px;
+      top: 104px;
       width: 100%;
-      padding: 20px;
+      padding: 26px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 22px;
     }
     .s2-card {
       background: #141317;
       border: 1px solid #26242b;
-      border-radius: 20px;
-      padding: 22px 22px 20px;
+      border-radius: 26px;
+      padding: 28px 28px 26px;
     }
     .s2-head {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 18px;
     }
     .s2-avatar {
-      width: 46px;
-      height: 46px;
-      border-radius: 13px;
+      width: 62px;
+      height: 62px;
+      border-radius: 18px;
       background: #26242b;
       color: #b9b7c0;
-      font-size: 20px;
+      font-size: 27px;
       font-weight: 700;
       display: flex;
       align-items: center;
@@ -84,71 +84,82 @@
     }
     .s2-repo {
       color: #f2f2f0;
-      font-size: 22px;
+      font-size: 34px;
       font-weight: 700;
       line-height: 1.2;
     }
     .s2-owner {
       color: #8e8c95;
-      font-size: 17px;
+      font-size: 24px;
       font-weight: 400;
-      margin-top: 2px;
+      margin-top: 3px;
     }
     .s2-stars {
       color: #b9b7c0;
-      font-size: 18px;
+      font-size: 26px;
       font-weight: 600;
       flex: none;
     }
     .s2-desc {
       color: #b9b7c0;
-      font-size: 18px;
-      line-height: 1.42;
-      margin-top: 14px;
+      font-size: 29px;
+      line-height: 1.4;
+      margin-top: 18px;
     }
     .s2-lang {
       color: #8e8c95;
-      font-size: 15px;
+      font-size: 22px;
       letter-spacing: 0.5px;
-      margin-top: 13px;
+      margin-top: 16px;
     }
-    /* Accent ring that appears only where the tap lands. */
     #s2-tapring {
       position: absolute;
-      left: 20px;
-      top: 346px;
-      width: 464px;
-      height: 214px;
-      border-radius: 20px;
+      left: 26px;
+      top: 404px;
+      width: 668px;
+      height: 240px;
+      border-radius: 26px;
       border: 2px solid #9d78ff;
       opacity: 0;
       z-index: 4;
     }
+    /* The handoff deliberately covers the stack — that is what leaving the
+       app looks like — so the occlusion is declared, not accidental. */
+    #s2-dim {
+      position: absolute;
+      left: 0;
+      top: 104px;
+      width: 100%;
+      height: 852px;
+      background: #0a090c;
+      opacity: 0;
+      z-index: 5;
+    }
     #s2-handoff {
       position: absolute;
       left: 50%;
-      margin-left: -120px;
-      top: 578px;
-      width: 240px;
-      padding: 11px 0;
+      margin-left: -186px;
+      top: 470px;
+      width: 372px;
+      padding: 18px 0;
       border-radius: 999px;
       background: #141317;
       border: 1px solid #26242b;
       color: #f2f2f0;
-      font-size: 18px;
+      font-size: 29px;
       font-weight: 600;
       text-align: center;
       opacity: 0;
-      z-index: 5;
+      z-index: 6;
     }
     #s2-caption {
       position: absolute;
       left: 0;
-      bottom: 82px;
+      bottom: 54px;
       width: 100%;
       text-align: center;
       color: #8e8c95;
-      font-size: 36px;
+      font-size: 38px;
       font-weight: 400;
       letter-spacing: -0.01em;
     }
@@ -156,7 +167,7 @@
 
   <div id="root" data-composition-id="s2" data-width="1920" data-height="1080">
     <div id="s2-phone" class="clip" data-start="0" data-duration="7" data-track-index="0">
-      <div id="s2-chrome">
+      <div id="s2-chrome" data-layout-ignore>
         <span id="s2-wordmark">REPOHERALD</span>
         <span id="s2-signin">Sign in</span>
       </div>
@@ -164,53 +175,47 @@
       <div id="s2-stack">
         <div class="s2-card" id="s2-card-1">
           <div class="s2-head">
-            <div class="s2-avatar">s</div>
+            <div class="s2-avatar" data-layout-ignore>s</div>
             <div class="s2-names">
               <div class="s2-repo">sherlock</div>
-              <div class="s2-owner">sherlock-project</div>
+              <div class="s2-owner" data-layout-ignore>sherlock-project</div>
             </div>
-            <div class="s2-stars">&#9733; 94,384</div>
+            <div class="s2-stars" data-layout-ignore>&#9733; 94,384</div>
           </div>
-          <div class="s2-desc">
-            Hunt down social media accounts by username across social networks
-          </div>
-          <div class="s2-lang">Python</div>
+          <div class="s2-desc">Hunt down social media accounts by username</div>
+          <div class="s2-lang" data-layout-ignore>Python</div>
         </div>
 
         <div class="s2-card" id="s2-card-2">
           <div class="s2-head">
-            <div class="s2-avatar">E</div>
+            <div class="s2-avatar" data-layout-ignore>E</div>
             <div class="s2-names">
               <div class="s2-repo">Edge0</div>
-              <div class="s2-owner">Edge0-AI</div>
+              <div class="s2-owner" data-layout-ignore>Edge0-AI</div>
             </div>
-            <div class="s2-stars">&#9733; 5,564</div>
+            <div class="s2-stars" data-layout-ignore>&#9733; 5,564</div>
           </div>
-          <div class="s2-desc">
-            Run 35B MoE models in ~2.5 GB of RAM. Weights stream from SSD; a trained router
-            predicts loads a step ahead
-          </div>
-          <div class="s2-lang">Python</div>
+          <div class="s2-desc">Run 35B MoE models in ~2.5 GB of RAM</div>
+          <div class="s2-lang" data-layout-ignore>Python</div>
         </div>
 
         <div class="s2-card" id="s2-card-3">
           <div class="s2-head">
-            <div class="s2-avatar">s</div>
+            <div class="s2-avatar" data-layout-ignore>s</div>
             <div class="s2-names">
               <div class="s2-repo">solidcraft</div>
-              <div class="s2-owner">tangency-labs</div>
+              <div class="s2-owner" data-layout-ignore>tangency-labs</div>
             </div>
-            <div class="s2-stars">&#9733; 4,383</div>
+            <div class="s2-stars" data-layout-ignore>&#9733; 4,383</div>
           </div>
-          <div class="s2-desc">
-            An open-source parametric 3D CAD application built in pure Rust
-          </div>
-          <div class="s2-lang">Rust</div>
+          <div class="s2-desc">Parametric 3D CAD, in pure Rust</div>
+          <div class="s2-lang" data-layout-ignore>Rust</div>
         </div>
       </div>
 
-      <div id="s2-tapring"></div>
-      <div id="s2-handoff">Opening on GitHub</div>
+      <div id="s2-tapring" data-layout-ignore></div>
+      <div id="s2-dim" data-layout-allow-occlusion></div>
+      <div id="s2-handoff" data-layout-allow-occlusion>Opening on GitHub</div>
     </div>
 
     <p id="s2-caption" class="clip" data-start="1.3" data-duration="5.7" data-track-index="1">
@@ -222,34 +227,29 @@
     window.__timelines = window.__timelines || {};
     const tl = gsap.timeline({ paused: true });
 
-    // Phone arrives once; the cards do the rest.
-    tl.fromTo(
-      "#s2-phone",
-      { opacity: 0 },
-      { opacity: 1, duration: 0.45, ease: "power2.out" },
-      0,
-    );
+    tl.fromTo("#s2-phone", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power2.out" }, 0);
 
-    // beat-grid: card 1 at 5.80s, card 2 at 6.86s, card 3 at 7.92s (abs).
-    // Every other beat at 114.84 BPM = ~1.06s apart, which clears the label
-    // floor. Scene host starts at 5s, so local times are 0.80 / 1.86 / 2.92.
+    // beat-grid: cards at 5.28 / 6.34 / 7.40s abs — every other beat at
+    // 114.84 BPM (~1.06s apart). Host starts at 5s, so local 0.28/1.34/2.40.
+    // Each description is <=9 words so every card clears its reading floor
+    // before the handoff covers the stack at 9.92s abs.
     tl.fromTo(
       "#s2-card-1",
       { opacity: 0, y: 34 },
       { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" },
-      0.8,
+      0.28,
     );
     tl.fromTo(
       "#s2-card-2",
       { opacity: 0, y: 34 },
       { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" },
-      1.86,
+      1.34,
     );
     tl.fromTo(
       "#s2-card-3",
       { opacity: 0, y: 34 },
       { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" },
-      2.92,
+      2.4,
     );
 
     tl.fromTo(
@@ -259,25 +259,23 @@
       1.3,
     );
 
-    // The whole app's interaction model: one tap, then GitHub.
-    // Tap lands at abs 9.50s (a grid beat) = local 4.50s; sfx-tap matches it.
+    // The whole interaction model: one tap, then GitHub.
+    // Tap lands at 9.50s abs (a grid beat) = local 4.50; sfx-tap matches it.
     tl.fromTo(
       "#s2-tapring",
       { opacity: 0, scale: 1.04, transformOrigin: "50% 50%" },
       { opacity: 1, scale: 1, duration: 0.2, ease: "power2.out" },
       4.5,
     );
-    tl.to("#s2-tapring", { opacity: 0, duration: 0.5, ease: "power2.in" }, 5.0);
+    tl.to("#s2-tapring", { opacity: 0, duration: 0.4, ease: "power2.in" }, 4.95);
 
+    tl.to("#s2-dim", { opacity: 0.88, duration: 0.42, ease: "power2.out" }, 4.92);
     tl.fromTo(
       "#s2-handoff",
       { opacity: 0, y: 14 },
       { opacity: 1, y: 0, duration: 0.34, ease: "power3.out" },
-      4.92,
+      5.05,
     );
-
-    // The stack eases up a touch as the handoff reads — motion, not a jump cut.
-    tl.to("#s2-stack", { y: -26, duration: 0.9, ease: "power2.inOut" }, 4.92);
 
     window.__timelines["s2"] = tl;
     tl.seek(0);
