@@ -107,3 +107,28 @@ export function deleteAccount() {
     method: "DELETE",
   });
 }
+
+/** The closed set the server accepts. Free text is deliberately not an option. */
+export const REPORT_REASONS = [
+  { key: "spam", label: "Spam or scam" },
+  { key: "malware", label: "Malware or unsafe code" },
+  { key: "offensive", label: "Offensive or abusive" },
+  { key: "misleading", label: "Misleading or impersonation" },
+  { key: "other", label: "Something else" },
+] as const;
+
+export type ReportReason = (typeof REPORT_REASONS)[number]["key"];
+
+/**
+ * Flag a listing for moderation.
+ *
+ * Works signed out on purpose — browsing needs no account, so reporting must
+ * not need one either, or the people most likely to see something bad have no
+ * way to say so. App Store Guideline 1.2.
+ */
+export function reportRepo(repoId: string, reason: ReportReason) {
+  return request<{ reported: boolean }>("/api/mobile/v1/report", {
+    method: "POST",
+    body: JSON.stringify({ repoId, reason }),
+  });
+}
