@@ -1,0 +1,78 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #0a090c;
+      font-family: Inter, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #s3-list {
+      display: flex;
+      flex-direction: column;
+      gap: 56px;
+    }
+    .s3-row {
+      display: flex;
+      align-items: baseline;
+      gap: 40px;
+    }
+    .s3-num {
+      color: #9d78ff;
+      font-size: 132px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      width: 120px;
+      text-align: right;
+      flex: none;
+    }
+    .s3-label {
+      color: #f2f2f0;
+      font-size: 64px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+  </style>
+
+  <div id="root" data-composition-id="s3" data-width="1920" data-height="1080">
+    <div id="s3-list" class="clip" data-start="0" data-duration="7" data-track-index="0">
+      <div class="s3-row" id="s3-row-1">
+        <span class="s3-num">0</span><span class="s3-label">analytics SDKs</span>
+      </div>
+      <div class="s3-row" id="s3-row-2">
+        <span class="s3-num">0</span><span class="s3-label">crash reporters</span>
+      </div>
+      <div class="s3-row" id="s3-row-3">
+        <span class="s3-num">0</span><span class="s3-label">advertising IDs</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    // beat-locked: 12.65s — the strongest cue in the window, and the scene's
+    // whole point, so it gets the one hard lock in the film.
+    // beat-grid: rows at 12.65 / 14.76 / 16.86 abs = every 4th beat (~2.11s
+    // apart). Deliberately NOT adjacent beats: 0.52s would outrun reading.
+    // Host starts at 12s, so local times are 0.65 / 2.76 / 4.86.
+    const at = [0.65, 2.76, 4.86];
+    ["#s3-row-1", "#s3-row-2", "#s3-row-3"].forEach((sel, i) => {
+      tl.fromTo(
+        sel,
+        { opacity: 0, x: -26 },
+        { opacity: 1, x: 0, duration: 0.36, ease: "power3.out" },
+        at[i],
+      );
+    });
+
+    // All three stay on screen together for the final ~2.1s. No exit.
+    window.__timelines["s3"] = tl;
+    tl.seek(0);
+  </script>
+</template>
