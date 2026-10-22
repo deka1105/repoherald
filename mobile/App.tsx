@@ -36,11 +36,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 const repoOwner = (fullName: string) => fullName.split("/")[0] ?? fullName;
 const repoName = (fullName: string) => fullName.split("/")[1] ?? fullName;
 
-function RepoCard({ repo }: { repo: FeedRepo }) {
+function RepoCard({ repo, onMore }: { repo: FeedRepo; onMore: (repo: FeedRepo) => void }) {
   return (
     <Pressable
       style={styles.card}
       onPress={() => Linking.openURL(`https://github.com/${repo.fullName}`)}
+      // Long-press is the gesture people reach for, but it is invisible and
+      // VoiceOver users would never find it — hence the "More" control too.
+      onLongPress={() => onMore(repo)}
       accessibilityRole="link"
       accessibilityLabel={`${repo.fullName} on GitHub`}>
       <View style={styles.cardHead}>
@@ -54,6 +57,14 @@ function RepoCard({ repo }: { repo: FeedRepo }) {
           <Text style={styles.owner} numberOfLines={1}>{repoOwner(repo.fullName)}</Text>
         </View>
         <Text style={styles.stars}>★ {repo.starsCount.toLocaleString()}</Text>
+        <Pressable
+          onPress={() => onMore(repo)}
+          style={styles.more}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={`Report or block ${repoOwner(repo.fullName)}`}>
+          <Text style={styles.moreGlyph}>•••</Text>
+        </Pressable>
       </View>
       {repo.description ? (
         <Text style={styles.desc} numberOfLines={3}>{repo.description}</Text>
