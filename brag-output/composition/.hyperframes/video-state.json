@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "historyId": "070f85bd-0b15-4a94-8432-1f8b1a85b3e6",
+  "currentRevision": null,
+  "pendingChanges": false,
+  "files": {
+    "AGENTS.md": {
+      "hash": "fd0ea55029dfc62c31614321d782f47476d3d5daaaa4116b56318ed501911f1b",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/fd/fd0ea55029dfc62c31614321d782f47476d3d5daaaa4116b56318ed501911f1b"
+    },
+    "CLAUDE.md": {
+      "hash": "fd0ea55029dfc62c31614321d782f47476d3d5daaaa4116b56318ed501911f1b",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/fd/fd0ea55029dfc62c31614321d782f47476d3d5daaaa4116b56318ed501911f1b"
+    },
+    "assets/sfx/click_001.ogg": {
+      "hash": "ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/cc/ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9"
+    },
+    "assets/sfx/switch_001.ogg": {
+      "hash": "3b74efad87f1e69dbd1d05c5ad952ab90859b5a3d11da6ec5bd79b4f03b42afa",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/3b/3b74efad87f1e69dbd1d05c5ad952ab90859b5a3d11da6ec5bd79b4f03b42afa"
+    },
+    "assets/sfx/switch_002.ogg": {
+      "hash": "6fc395be2ad1f99ce318a5d28f98fb76dbeb676d83a0b28239d8c1fb90736180",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/6f/6fc395be2ad1f99ce318a5d28f98fb76dbeb676d83a0b28239d8c1fb90736180"
+    },
+    "assets/sfx/switch_004.ogg": {
+      "hash": "541c19cc1ab712a9efc5765df602e7d0da09d9cafdd297ce1e19b092289fd62f",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/54/541c19cc1ab712a9efc5765df602e7d0da09d9cafdd297ce1e19b092289fd62f"
+    },
+    "compositions/s1.html": {
+      "hash": "61a0769588dc5784e626ca997d96ca7af8cef01074aa23662137e91e48ffc9e4",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/61/61a0769588dc5784e626ca997d96ca7af8cef01074aa23662137e91e48ffc9e4"
+    },
+    "compositions/s2.html": {
+      "hash": "1317b7e602e1e6ed3959e8ff420c38c24176ca24b3e858373609664478ed07cb",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/13/1317b7e602e1e6ed3959e8ff420c38c24176ca24b3e858373609664478ed07cb"
+    },
+    "compositions/s3.html": {
+      "hash": "2a452f322778b99711eea37bf844cddc7966ef7318d360f21f1593940e6c9779",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/2a/2a452f322778b99711eea37bf844cddc7966ef7318d360f21f1593940e6c9779"
+    },
+    "compositions/s4.html": {
+      "hash": "d82681bf2c8bd55125c3ea51fa937ab740aefbc9fd50647f7894992e48f3ef65",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/d8/d82681bf2c8bd55125c3ea51fa937ab740aefbc9fd50647f7894992e48f3ef65"
+    },
+    "hyperframes.json": {
+      "hash": "53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/53/53dbce1e19aa713cbb12ee0bc4d206143b45ab15e6ffbfcaa8f69572d4d24d50"
+    },
+    "index.html": {
+      "hash": "c0a3064d19b56aa3abb2da9e2b884090676a3e8446e774da379626fc96703063",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/c0/c0a3064d19b56aa3abb2da9e2b884090676a3e8446e774da379626fc96703063"
+    },
+    "meta.json": {
+      "hash": "855a4bf8c4729c05973bfa1054c3cd2530d74356f35f520f2ae0e43d65bae70c",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/85/855a4bf8c4729c05973bfa1054c3cd2530d74356f35f520f2ae0e43d65bae70c"
+    },
+    "package.json": {
+      "hash": "7f9b1ebdc3143fcde9dc54f73bd5211d0c18d96b805817baaeabd76281acea5e",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/7f/7f9b1ebdc3143fcde9dc54f73bd5211d0c18d96b805817baaeabd76281acea5e"
+    },
+    "assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3": {
+      "hash": "f5793597e520aa8fa9cce91086816fc1e15e3aac0128bcf375df51ba70c0dc63",
+      "content": "/Users/shubhamarundekatey/.cache/hyperframes/history/070f85bd-0b15-4a94-8432-1f8b1a85b3e6/blobs/f5/f5793597e520aa8fa9cce91086816fc1e15e3aac0128bcf375df51ba70c0dc63"
+    }
+  },
+  "revisions": {},
+  "checks": {
+    "latest": {
+      "revision": null,
+      "id": "e2555e03-ea95-4ec6-a0ca-ea937cfb9906"
+    },
+    "revisions": {},
+    "unversioned": [
+      {
+        "id": "e2555e03-ea95-4ec6-a0ca-ea937cfb9906",
+        "scope": "project",
+        "report": "/Users/shubhamarundekatey/ClaudeCode/day23/repoherald/brag-output/composition/.hyperframes/artifacts/checks/e2555e03-ea95-4ec6-a0ca-ea937cfb9906.json",
+        "metadata": {
+          "ok": false,
+          "browserSkipped": false,
+          "options": {
+            "samples": 9,
+            "atTransitions": false,
+            "maxIssues": 80,
+            "collapseStatic": true,
+            "tolerance": 2,
+            "timeout": 3000,
+            "contrast": true,
+            "strict": false,
+            "snapshots": false,
+            "browserGpuMode": "auto"
+          }
+        },
+        "createdAt": 1792672940604,
+        "contentHash": "ce5fc5221ce07e760d318c38f9b58f8ae3c0d4192bc808d5588012d59e5ec2fe",
+        "revision": null,
+        "inputFingerprint": "571909632d656198982a9f8ed008b6cd5915a7abf4df561cf6f65f3a7bd04c92",
+        "inputScope": "local-project-files",
+        "attribution": "unversioned"
+      }
+    ]
+  },
+  "snapshots": {
+    "latest": null,
+    "revisions": {},
+    "unversioned": []
+  }
+}
