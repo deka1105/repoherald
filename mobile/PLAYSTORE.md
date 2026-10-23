@@ -1,9 +1,15 @@
 # Google Play listing — repoherald Android
 
 Copy-paste fields for the Play Console listing. As with `APPSTORE.md`, this
-describes **this binary only** — no repo lists, no Instagram/TikTok ingest, no
-sponsorship, no buying credits. Play's policy on deceptive store listings is as
+describes **this binary only**. Play's policy on deceptive store listings is as
 strict as Apple's and enforced by automated scanning.
+
+**Rewritten 2026-10-23 for versionCode 4.** The app is no longer a single feed:
+it has six tabs (Explore, Search, Post, Lists, Wallet, Account), so repo lists
+*are* now in the binary and the listing says so. Still **not** in it, and still
+absent from this listing: sponsorship, buying credits, spending credits, and
+Instagram/TikTok ingest (claiming a handle happens on the web; the app only
+shows the lists that ingest fills).
 
 Shares `app.json`, the API and the codebase with iOS. Differences from
 `APPSTORE.md` are called out; where this file is silent, the iOS answer applies.
@@ -13,7 +19,7 @@ Shares `app.json`, the API and the codebase with iOS. Differences from
 | Field | Value | Count |
 |---|---|---|
 | **App name** | `repoherald` | 10 / 30 |
-| **Short description** | `A feed of GitHub projects worth your afternoon.` | 47 / 80 |
+| **Short description** | `Find GitHub projects worth your time, and keep the ones you want again.` | 71 / 80 |
 | **Category** | Developer tools | — |
 | **Tags** | Open source, Developer, Productivity | — |
 | **Contact email** | *your support address* | required, shown publicly |
@@ -24,12 +30,13 @@ Shares `app.json`, the API and the codebase with iOS. Differences from
 
 ```
 repoherald is a feed of GitHub repositories that people have posted because
-they thought someone should see them.
+they thought someone should see them — and a place to keep the ones you want
+to find again.
 
 Open the app and the feed is there. No account, no onboarding, no email wall.
 Each card shows the project, who owns it, what language it is written in, its
-star count and its description. Tap one and it opens on GitHub, where the code
-actually lives.
+star count and its description. Tap one to read more, or open it on GitHub
+where the code actually lives.
 
 WHAT IT IS FOR
 
@@ -38,15 +45,30 @@ whatever is already enormous, and social feeds reward whoever already has an
 audience. repoherald is smaller than both and tries to do something simpler:
 show you projects a human being chose to put in front of other people.
 
-Pull to refresh. Scroll for more. That is the whole app.
+The other half of the problem is what happens next. You find something good,
+you save it somewhere, and three weeks later it is gone — no title, no note,
+no search. Lists are the answer to that: private pages of repos with a line
+about why each one is there.
+
+WHAT YOU CAN DO
+
+- Browse the feed and sort it by what people have backed.
+- Search the feed, and your own lists at the same time.
+- Open any repo for its description, language, stars, categories and comments.
+- Comment, and read what other people made of a project.
+- Keep repos in lists, with a note on why you kept them.
+- Post a repo you own, or one from an organisation you belong to.
+- Star a repo on GitHub, claim it here, and earn a credit.
+- Report anything that should not be here, or block the account behind it —
+  both without an account.
 
 IF YOU SIGN IN
 
-Signing in is optional and changes nothing about browsing. It exists so you can
-earn credits by starring repositories you genuinely like — the star is a real
-GitHub action on your own account, and we verify it with read-only permissions.
-We cannot write to your repositories, cannot star anything on your behalf, and
-cannot see your private code.
+Signing in is optional and changes nothing about browsing. It adds posting,
+lists, comments and credits. Credits are earned by starring repositories you
+genuinely like — the star is a real GitHub action on your own account, and we
+verify it with read-only permissions. We cannot write to your repositories,
+cannot star anything on your behalf, and cannot see your private code.
 
 You can sign in with Google or GitHub.
 
@@ -54,9 +76,9 @@ Credits can only be earned in this app. Nothing is sold here.
 
 YOUR ACCOUNT, YOUR DECISION
 
-You can delete your account from inside the app at any time — Credits, then
-Delete my account. It removes your account and the data attached to it. There
-is no email to send and no form to fill in.
+You can delete your account from inside the app at any time — the Account tab,
+then Delete my account. It removes your account and the data attached to it.
+There is no email to send and no form to fill in.
 
 The app ships no analytics SDK and no crash reporter. It does not track you
 across apps or websites, and there is nothing to opt out of.
@@ -67,7 +89,7 @@ It is not a GitHub client. You cannot open issues, review pull requests or read
 code here. When you want any of that, the app hands you to GitHub, which is
 better at it.
 ```
-~1,620 / 4000. **Note the one deliberate difference from the iOS description:**
+~2,450 / 4000. **Note the one deliberate difference from the iOS description:**
 it says "Google or GitHub", not Apple — `src/signin.tsx` only offers Apple on
 iOS, and naming an unavailable method in the listing is a policy violation.
 
