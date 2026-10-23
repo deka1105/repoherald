@@ -29,7 +29,7 @@ export async function GET(
 
   const { list } = row;
   const isStaff = user?.role === "admin" || user?.role === "moderator";
-  const isOwner = Boolean(user) && user!.id === list.ownerUserId;
+  const isOwner = user?.id === list.ownerUserId;
   if (list.status === "removed" && !isStaff) return notFound("List not found");
   if (list.visibility === "private" && !isOwner && !isStaff) {
     return notFound("List not found");
