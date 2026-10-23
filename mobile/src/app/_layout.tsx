@@ -43,8 +43,15 @@ function Navigator() {
         contentStyle: { backgroundColor: NAV_THEME.colors.background },
       }}>
       {/* The tab bar is the app's chrome; a stack header above it would be a
-          second title bar saying the same thing. */}
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          second title bar saying the same thing. The title is still needed:
+          a pushed screen's back button takes its label from the screen it came
+          from, and without one the button reads "(tabs)" — the route group's
+          folder name, leaking into the UI on every repo, list and support
+          screen. */}
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false, title: "Back" }}
+      />
       <Stack.Screen name="repo/[id]" options={{ title: "Repo" }} />
       <Stack.Screen name="list/[slug]" options={{ title: "List" }} />
       <Stack.Screen name="support" options={{ title: "Support" }} />
