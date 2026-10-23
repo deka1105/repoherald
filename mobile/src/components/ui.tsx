@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
+  type RefreshControlProps,
   ScrollView,
   StyleSheet,
   Text,
@@ -39,7 +40,7 @@ export function Screen({
 }: {
   children: React.ReactNode;
   scroll?: boolean;
-  refreshControl?: React.ReactElement;
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }) {
   if (!scroll) {
     return <View style={styles.screen}>{children}</View>;
