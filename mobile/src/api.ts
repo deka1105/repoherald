@@ -100,7 +100,7 @@ export type RepoDetail = {
     isOwn: boolean;
     claimsToday: number;
     claimsThisWeek: number;
-    listsMissingRepo: { id: string; title: string }[];
+    listsMissingRepo: { id: string; slug: string; title: string }[];
   } | null;
   limits: {
     dailyMintCap: number;

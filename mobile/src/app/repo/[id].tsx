@@ -140,10 +140,7 @@ export default function RepoScreen() {
         ...lists.slice(0, 3).map((l) => ({
           text: l.title,
           onPress: () => {
-            // The slug isn't in this payload, and the list endpoint is keyed
-            // on it — so the add goes through the list's own id-free route by
-            // reloading afterwards rather than guessing a slug here.
-            addToList(l.id, { repoId: repo.id })
+            addToList(l.slug, { repoId: repo.id })
               .then(() => {
                 setNotice(`Added to ${l.title}.`);
                 load();
