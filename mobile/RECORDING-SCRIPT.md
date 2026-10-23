@@ -1,15 +1,22 @@
 # Screen recording script — Guideline 2.1 reply
 
-Physical device, latest iOS, one continuous take if you can. Target 75–95s.
+Physical device, latest iOS, one continuous take if you can. Target 110–130s.
 Every label below is the exact string in the build, so you can follow it live.
 
+**Rewritten 2026-10-23** for the six-tab build. The previous script was written
+when the app was a single feed: it told you to tap `•••` *in the header* and
+said a card tap opens Safari. Neither is true any more — Account is a tab, and
+a card opens the repo screen.
+
 **Before you start**
-- Install the build from TestFlight (build 6 or later — build 5 is missing the
-  signed-out route into Account).
+- Install **build 9 or later** from TestFlight. Anything earlier is the
+  single-screen app and does not match this script or the listing.
 - Sign out if you are signed in. The recording must start signed out, because
-  that is the point of steps 3–6.
+  that is the point of steps 3–5.
+- Make sure the demo account has **one list with two or three repos in it**,
+  so steps 7–8 are not empty screens. Do that before you start recording.
 - If you have blocked anyone during testing, unblock them first so the feed is
-  full: `•••` in the header → Blocked accounts → Unblock.
+  full: **Account** tab → Blocked accounts → Unblock.
 - Silence notifications. Do not start from the app already open.
 
 ---
@@ -24,14 +31,19 @@ populated and nothing asked you to sign in.
 
 > Shows: no registration wall, no onboarding, no email gate.
 
-## 2 · Browse and open a repo — 15s
+## 2 · Browse, open a repo, go to GitHub — 18s
 
 Scroll down two or three cards at reading speed, then back up.
 
-Tap any card. Safari opens that repository on github.com. Wait until the page
-has visibly loaded, then return to the app with the back affordance.
+Tap any card. **The repo screen opens** — description, stars, language, who
+posted it, categories, comments.
 
-> Shows: the core loop — the app hands you to GitHub, it is not a GitHub client.
+Tap **View on GitHub**. Safari opens that repository. Wait until the page has
+visibly loaded, then return to the app, and use the back arrow to return to
+Explore.
+
+> Shows: the core loop, and that the app is native throughout — not a WebView —
+> while still handing you to GitHub for the code itself.
 
 ## 3 · Report, while still signed out — 20s
 
@@ -70,41 +82,71 @@ This is the proof the block took effect, so do not rush past it.
 
 ## 5 · Unblock — 12s
 
-Tap `•••` in the **header**, to the left of Sign in.
+Tap the **Account** tab (rightmost, person icon).
 
-The Account sheet opens. Scroll to **Blocked accounts** — the owner you just
-blocked is listed.
+Scroll to **Blocked accounts** — the owner you just blocked is listed.
 
 Tap **Unblock** next to it. The row disappears.
 
-Tap **Done**, and let the feed show the card is back.
+Go back to **Explore** and let the feed show the card is back.
 
 > Shows: blocking is reversible, not a trap, and reachable without an account.
 
 ## 6 · Sign in — 15s
 
-Tap **Sign in** in the header.
+Back on the **Account** tab, tap **Sign in**.
 
 Tap **Continue with Apple**. Complete the Apple sheet.
 
-You land back on the feed with a credit balance where Sign in used to be.
+You land back on Account with your name, handle and a credit balance.
 
 > Shows: registration/login. Apple's item 1 asks for this explicitly.
 
-## 7 · Account and deletion — 15s
+## 7 · Search, including your own lists — 15s
 
-Tap the credit balance to open Account.
+Tap the **Search** tab. Type a word that matches something in your list
+(for example part of a repo name you saved).
 
-Let **Credits** and **Can earn credits** be visible for a second.
+Hold two seconds on the results: the **In your lists** heading above your own
+saved repos, and **On repoherald** below it.
 
-Scroll to **Danger zone**. Tap **Delete my account**.
+> Shows: the app's second purpose — finding something you already saved — and
+> that signed-in search is more than the public feed.
 
-On the confirm dialog, tap **Delete permanently**.
+## 8 · Lists — 12s
+
+Tap the **Lists** tab. Tap your list.
+
+Scroll it once. Tap one repo to open it, then come back.
+
+> Shows: user-generated organisation, and that the list screens are real.
+
+## 9 · Comment — 12s
+
+From the repo screen, scroll to the comment box. Type a short sentence and tap
+**Post comment**. Let it appear in the list below.
+
+> Shows: user-generated *content*, which is what Guideline 1.2 is really about.
+> Having shown reporting and blocking in steps 3–5, this closes the loop.
+
+## 10 · Wallet — 8s
+
+Tap the **Wallet** tab. Hold two seconds on the balance, the claim counters
+and the history rows.
+
+> Shows: credits are earned, tracked and visible. **Nothing is for sale here —
+> there is no purchase control anywhere in the app.**
+
+## 11 · Account deletion — 15s
+
+Tap the **Account** tab. Scroll to **Danger zone**.
+
+Tap **Delete my account**. On the confirm dialog, tap **Delete permanently**.
 
 > Shows: account deletion from inside the app, Guideline 5.1.1(v).
 > Apple requires this whenever an app supports account creation.
 
-## 8 · Land signed out — 5s
+## 12 · Land signed out — 5s
 
 The app returns to the feed, signed out, still working.
 
@@ -117,10 +159,10 @@ End the recording here.
 | Apple asked for | Step |
 |---|---|
 | Begins with launching the app | 1 |
-| Typical user flow | 1–2 |
+| Typical user flow | 1–2, 7–10 |
 | Account registration and login | 6 |
-| Account deletion | 7 |
-| User-generated content | 2 |
+| Account deletion | 11 |
+| User-generated content | 2, 8, 9 |
 | Content reporting mechanism | 3 |
 | Blocking mechanism | 4–5 |
 | Accessing paid content | n/a — nothing is sold in the app |
@@ -134,3 +176,5 @@ End the recording here.
   is not visible, blocking is not demonstrated.
 - **Do not record on a simulator.** Apple asked for a physical device and can
   tell.
+- **Do not record step 11 before step 10.** Deleting the account signs you out,
+  and the Wallet goes with it.
