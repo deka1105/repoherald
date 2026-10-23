@@ -62,10 +62,14 @@ Signing in is entirely optional and changes nothing about browsing. It adds
 posting, lists, comments, and earning credits by starring repositories on your
 own GitHub account.
 
-We cannot supply a fixed demo account because sign-in is delegated entirely to
-Apple, GitHub and Google; there are no app-specific passwords to issue. To test
-the signed-in state, please use **Continue with Apple** with any Apple ID — that
-path requires nothing from us and creates the account on first use.
+A demo account is supplied in the App Review Information section. **Please sign
+in with "Continue with GitHub"** — the demo account is a GitHub account, and the
+GitHub button is the one that accepts it. Sign in with Apple and Google are also
+offered, but the demo credentials will not work on those.
+
+GitHub is also the connection the app needs for two of its features: posting a
+repo verifies on GitHub that you own it, and claiming a credit verifies that you
+starred it. Those two can only be exercised from a GitHub-connected account.
 
 Account deletion (required, and present in this build): the **Account** tab →
 **Delete my account** → confirm **Delete permanently**. It deletes the profile
