@@ -265,21 +265,25 @@ npx eas-cli@latest submit --platform android --profile production
 
 ### Blockers, in order
 
+**Re-checked 2026-10-23.** Three of the five below were done between 10-18 and
+10-23 and are struck out; only the first is still open.
+
 1. **`mobile/play-service-account.json` is absent.** `eas.json` expects it and
-   it is gitignored. Create a service account in Google Cloud for the Play
-   Developer API, grant it release permissions in Play Console, download the
-   JSON and put it there. This is the Android equivalent of the missing
-   `AuthKey_*.p8`.
-2. **No EAS project linked** — the same `eas init` step that blocks iOS
-   (`SUBMISSION.md` step 3). One `init` covers both platforms.
-3. **`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for the production environment** — the
-   same `pk_live_` key, same blocker as iOS. Clerk's **Native applications**
-   entry must also allowlist the Android package `com.dekisuki05.repoherald`
-   and the `repoherald://sso-callback` redirect.
-4. **Deploy the web app.** Identical to iOS: `DELETE /api/mobile/v1/me` is 405
-   in production and `/session` still expects a GitHub token, so sign-in and
-   deletion are both broken against live. Play's review is lighter than
-   Apple's, but shipping a broken sign-in is still shipping a broken sign-in.
+   it is gitignored, so `eas submit --platform android` cannot run. Create a
+   service account in Google Cloud for the Play Developer API, grant it release
+   permissions in Play Console, download the JSON and put it at
+   `mobile/play-service-account.json`. This is the Android equivalent of the
+   `AuthKey_*.p8`, which **is** present. Until it exists, the `.aab` has to be
+   uploaded to the internal track by hand from the EAS build page.
+2. ~~No EAS project linked.~~ Done — project `7590d365-7da9-4a57-a134-c9b7fce48cf4`,
+   owner `aryasoftech`, and Android builds are running (versionCode 4).
+3. ~~`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for the production environment.~~ Done
+   — the EAS `production` environment holds the `pk_live_` key. **Still worth
+   confirming by hand:** Clerk's *Native applications* entry must allowlist the
+   Android package `com.dekisuki05.repoherald` and the `repoherald://sso-callback`
+   redirect, or Google/GitHub sign-in fails on Android only.
+4. ~~Deploy the web app.~~ Done — the full `/api/mobile/v1` surface is live on
+   repoherald.com and the web build is green.
 5. **Play App Signing** — accept it when prompted. It is effectively mandatory
    for new apps and lets Google re-sign; EAS handles the upload key.
 
