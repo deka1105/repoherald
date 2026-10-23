@@ -1,4 +1,5 @@
 import { Platform, StatusBar } from "react-native";
+import { DarkTheme } from "expo-router";
 
 /**
  * Top inset every full-bleed root has to apply itself on Android.
@@ -38,3 +39,26 @@ export const C = {
  * runs to a single 1300px line, which reads as an unconverted phone app.
  */
 export const CONTENT_MAX_WIDTH = 720;
+
+/**
+ * The navigator theme.
+ *
+ * Supplied explicitly rather than left to default: React Navigation's default
+ * is light, and the flash of a white screen behind a dark app during a push
+ * transition is the single most common complaint about this setup. Built on
+ * DarkTheme so a field added to the theme shape in a later SDK still has a
+ * sensible value here.
+ */
+export const NAV_THEME: ReactNavigation.Theme = {
+  ...DarkTheme,
+  dark: true,
+  colors: {
+    ...DarkTheme.colors,
+    primary: C.accent,
+    background: C.bg,
+    card: C.bg,
+    text: C.text,
+    border: C.line,
+    notification: C.danger,
+  },
+};
