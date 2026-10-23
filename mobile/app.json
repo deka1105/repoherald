@@ -101,7 +101,8 @@
           "imageWidth": 200
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-font"
     ],
     "extra": {
       "eas": {
