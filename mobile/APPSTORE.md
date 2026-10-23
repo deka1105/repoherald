@@ -204,8 +204,32 @@ if you change one, change both.
 
 ## Screenshots
 
-Required sets: **iPhone 6.9"** (1320 × 2868) and **iPad 13"** (2064 × 2752).
-Apple revises these; confirm in App Store Connect before uploading.
+### Sizes — get these right or every upload fails
+
+**Required: iPhone 6.7" at 1290 × 2796, and iPad 12.9" at 2048 × 2732.**
+
+This file previously said 6.9" (1320 × 2868) and 13" (2064 × 2752). **Both are
+wrong for this app**, and uploading them gets "File dimensions are invalid" with
+no indication of what the right size is. Established 2026-10-23 by asking the
+API for its own enum: the valid iPhone display types are
+
+    APP_IPHONE_35 / _40 / _47 / _55 / _58 / _61 / _65 / _67 / _DUO
+
+and the valid iPad types are
+
+    APP_IPAD_97 / _105 / _PRO_129 / _PRO_3GEN_11 / _PRO_3GEN_129
+
+There is **no 6.9" iPhone type and no 13" iPad type**. `APP_IPHONE_67` is the
+largest iPhone slot and `APP_IPAD_PRO_3GEN_129` the largest iPad slot.
+
+An iPhone 17 Pro Max simulator shoots 1320 × 2868 and an iPad Pro 13-inch
+shoots 2064 × 2752, so **neither device's native screenshot is uploadable**.
+Either shoot on an iPhone 15/14 Pro Max (1290 × 2796) and an iPad Pro 12.9-inch
+(2048 × 2732), or resize afterwards — a Lanczos downscale of 2.3% is invisible
+and is what the shots currently in the listing went through.
+
+Also **strip the alpha channel**. Simulator PNGs are RGBA; flatten to RGB
+(`Image.open(f).convert("RGB")`) before uploading.
 
 Shot list, in order — the first two are what most people ever see:
 
