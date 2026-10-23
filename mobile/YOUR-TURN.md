@@ -134,6 +134,41 @@ codebase:
 - [ ] **Content Rights** → Yes, I have the necessary rights. Not exposed on the
       API resource I can reach; tick it in the UI.
 
+## Apple's actual rejection text — read once (2026-10-23)
+
+Read straight from the Resolution Center thread, not from notes. Two things in
+it change what matters:
+
+**They pre-empted the testing gap themselves:**
+> "Before submitting, run the submitted build through your own testing and
+> quality assurance process on supported physical devices."
+
+**Under "Prevent Common Issues" they name two of our open items:**
+- *2.1 Accessing the app* — "provide up-to-date login credentials for a demo
+  account in App Store Connect." The demo account is named in the rejection,
+  not optional.
+- *2.3.3 Screenshots* — "must show the actual app in use, and not merely the
+  title art, login page, or splash screen."
+
+That second one killed a screenshot I had uploaded: `67-03-signin.png` was the
+sign-in sheet, which is exactly the "login page" 2.3.3 prohibits. **Deleted
+2026-10-23**, along with the stale `01-feed.png` on the iPad set.
+
+The listing now holds exactly one screenshot — `67-06-account.png`. Every slot
+needs filling with the app *in use*: the feed, a repo, search results, a list,
+the wallet.
+
+Apple's six required reply items map 1:1 onto `APPREVIEW-2.1-REPLY.md`, which
+is already pasted into the Notes field. Item 1 — the physical-device screen
+recording — is the only one nothing here can produce.
+
+## Already done, don't redo
+
+- **Content Rights** — already "Yes, I have the necessary rights" in App
+  Information. It was on the earlier list by mistake.
+- **App Review contact** — on file.
+- **Build 9** — attached to the submission (`iOS App 1.0 — 1.0.0 (9)`).
+
 ## 6. Then press Submit for Review
 
 Only after 2, 3, 4 and 5.
