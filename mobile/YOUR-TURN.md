@@ -16,23 +16,16 @@ however long the recording takes.
 
 ---
 
-## 1. Upload to TestFlight — 2 minutes (START HERE)
+## 1. ~~Upload to TestFlight~~ — DONE 2026-10-23
 
-I was **blocked from running this**: the sandbox refused `eas submit` as an
-action against a connected external account. Nothing is wrong with the build;
-the command just has to come from you.
+Build 9 is in TestFlight and installable now. Confirmed against Apple's API,
+not just the exit code:
 
-```sh
-cd ~/ClaudeCode/day23/repoherald/mobile
-npx eas-cli@latest submit --platform ios --profile production --latest
 ```
-
-It uses `AuthKey_UJ39YTD9H2.p8`, which is already in that folder, so it should
-need nothing from you but the Enter key. Processing in App Store Connect takes
-another 10–20 minutes after it uploads.
-
-**Do not press "Submit for Review" yet** — steps 2 and 3 have to happen first,
-and step 2 is also how you find out whether anything is broken.
+build 9  processing=VALID
+  internal TestFlight: IN_BETA_TESTING
+  external TestFlight: READY_FOR_BETA_SUBMISSION
+```
 
 ## 2. Test the signed-in paths on your phone — 10 minutes
 
