@@ -224,11 +224,35 @@ Capture from a **Release** build on iPhone 17 Pro Max and iPad Pro 13-inch
 (M5), status bar overridden to 9:41 / full bars:
 
 ```sh
-xcrun simctl io "iPhone 17 Pro Max" screenshot shot.png
+xcrun simctl status_bar "$DEV" override --time 9:41 --cellularBars 4 \
+  --wifiBars 3 --batteryState charged --batteryLevel 100
+xcrun simctl io "$DEV" screenshot shot.png
 ```
 
-Everything past shot 1 needs taps, which cannot be driven from a shell —
-`simctl` has no tap verb and `idb` is not installed here.
+### Shot 1 is automatable. Shots 2–6 are not. (Established 2026-10-23.)
+
+**Shot 1 is done** — `screenshots/iphone-6.9/01-explore.png` and
+`screenshots/ipad-13/01-explore.png`, captured from the build-9 Release binary
+at the correct 1320×2868 and 2064×2752. The app launches on Explore, so it
+needs no interaction.
+
+**Everything after it needs a tap, and there is no way to tap from a shell
+here.** Both obvious routes are closed:
+
+- `simctl` has **no tap verb**, and `idb` / `cliclick` are not installed.
+- Deep links do not substitute for tapping. `xcrun simctl openurl` with the
+  `repoherald://` scheme makes iOS raise an **"Open in 'repoherald'?"**
+  confirmation — on the app if it is foregrounded, on the home screen if it is
+  not — and that modal blocks every subsequent command. Two automated runs
+  produced six byte-identical screenshots of that dialog before anyone looked
+  at them. `simctl openurl` has no flag to suppress it.
+
+So shots 2–6 are a manual pass on a simulator or a device: open the app, tap,
+`xcrun simctl io <device> screenshot`. Shots 3, 4 and 5 need a **signed-in
+account with a populated list** regardless, so they were never automatable.
+
+If this becomes a recurring chore, the fix is Maestro or `idb` — not more
+`simctl`.
 
 **Before you shoot the feed again, check what is in it.** On 2026-10-18 the
 third card in production was `simplifaisoul/osiris`, whose description ends in

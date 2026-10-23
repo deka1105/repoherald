@@ -72,14 +72,47 @@ longer exists. Physical device, one continuous take, about two minutes.
 Before you start, make sure the demo account has **one list with two or three
 repos in it**, or steps 7–8 are empty screens.
 
-## 4. Screenshots — 15 minutes
+## 4. Screenshots — 15 minutes (1 of 6 is done)
 
-Shot list is in `mobile/APPSTORE.md` under **Screenshots** — six shots, iPhone
-6.9" and iPad 13". The first two matter most.
+**Done, and verified by looking at them:**
 
-**Check the feed before you shoot it.** On 2026-10-18 the third card in
-production was `simplifaisoul/osiris`, whose description ends in a pump.fun
-token address. Moderate or hide that listing first.
+- `screenshots/iphone-6.9/01-explore.png` — 1320×2868
+- `screenshots/ipad-13/01-explore.png` — 2064×2752
+
+Both are the real build-9 Release binary on the real feed, status bar at 9:41,
+six-tab bar visible. The iPad one confirms the reading column holds and the
+cards don't stretch.
+
+**Blocked before you do one thing — see below.**
+
+**The other five need your hands.** `simctl` has no tap verb, `idb` isn't
+installed, and deep links don't substitute: `simctl openurl` on the
+`repoherald://` scheme makes iOS raise an "Open in 'repoherald'?" modal that
+blocks all further automation. I burned two runs on that before looking at the
+output. Shots 3, 4 and 5 need a signed-in account with a populated list anyway,
+so they were never going to be automatable.
+
+Open the app on a simulator, tap, and run
+`xcrun simctl io "iPhone 17 Pro Max" screenshot shot.png`. The shot list is in
+`APPSTORE.md`.
+
+**Two stale files are still sitting there:** `01-feed.png` in both folders, and
+all three in `playstore/phone/`. They are the *old* single-feed app — no tab
+bar, a header control that no longer exists. Uploading one is a Guideline 2.3.3
+rejection. I left them rather than delete your assets; delete them yourself, or
+say the word.
+
+### ⚠ Deal with `simplifaisoul/osiris` first
+
+It is card 3 of the live feed and its description ends in a pump.fun token
+address, `2nZNHm3Lr9umG3DVrzYwHgktwkuKuJRXqqRqs3ewpump`. It is **plainly legible
+in both finished screenshots** — truncated on iPhone, complete on iPad.
+
+This is not only a screenshot problem. A reviewer scrolling the feed sees it
+too, and a crypto token address in a listing invites a Guideline 3.1.1
+conversation about the app itself. Moderating someone else's listing is your
+call, not mine, so I have not touched it — but every Explore screenshot will
+contain it until you do, and shot 1 will have to be retaken afterwards.
 
 ## 5. Paste the metadata into App Store Connect — 10 minutes
 
