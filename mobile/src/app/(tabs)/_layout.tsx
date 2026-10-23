@@ -13,15 +13,19 @@
  * remounts the navigator and resets everyone's scroll position.
  */
 import React from "react";
+import { type ColorValue } from "react-native";
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "@/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
+// The navigator hands the icon a ColorValue, which is wider than the string
+// @expo/vector-icons takes — the extra members are platform-opaque colours the
+// tab bar never produces, so this narrows rather than converts.
 function icon(name: IoniconName) {
-  return ({ color, size }: { color: string; size: number }) => (
-    <Ionicons name={name} color={color} size={size} />
+  return ({ color, size }: { color: ColorValue; size: number }) => (
+    <Ionicons name={name} color={color as string} size={size} />
   );
 }
 
