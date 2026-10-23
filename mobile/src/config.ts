@@ -38,7 +38,18 @@ if (!CLERK_PUBLISHABLE_KEY) {
  *  the entry allowlisted under Native applications in the Clerk dashboard. */
 export const SSO_REDIRECT_PATH = "sso-callback";
 
-/** Policy pages, opened in the system browser from the account screen. */
+/**
+ * Policy pages, opened in an in-app browser from the account screen.
+ *
+ * They are not rebuilt as native screens: every factual claim in them is
+ * derived from the server's code and they have to change in the same commit
+ * as the behaviour they describe (see the repo's AGENTS.md). A copy shipped
+ * inside a binary could not — it would be whatever was true on the day the
+ * build was signed, which for a privacy policy is the one thing it must not
+ * be.
+ */
 export const PRIVACY_URL = `${API_BASE}/privacy`;
 export const TERMS_URL = `${API_BASE}/terms`;
+export const COOKIES_URL = `${API_BASE}/cookies`;
+export const REFUNDS_URL = `${API_BASE}/refunds`;
 export const SUPPORT_URL = `${API_BASE}/support`;
