@@ -1,16 +1,9 @@
 "use server";
 
 import { auth } from "@/auth";
-import { db } from "@/db";
-import { supportTickets, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { writeAudit } from "@/lib/audit";
-import { log } from "@/lib/log";
-import { notifySupportTicket } from "@/lib/notify";
+import { createSupportTicket, type SupportResult } from "@/lib/support-ticket";
 
-export type SupportState = { error?: string; success?: string };
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export type SupportState = SupportResult;
 
 export async function submitSupportTicket(
   _prev: SupportState,
@@ -18,59 +11,10 @@ export async function submitSupportTicket(
 ): Promise<SupportState> {
   const session = await auth();
 
-  // Prefer the account email for logged-in users; fall back to the field.
-  let userId: string | null = null;
-  let email = String(formData.get("email") ?? "").trim();
-  if (session?.user?.id) {
-    userId = session.user.id;
-    const acct = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
-      columns: { email: true },
-    });
-    if (acct?.email) email = acct.email;
-  }
-
-  if (!EMAIL_RE.test(email)) {
-    return { error: "Enter a valid email so we can reply." };
-  }
-
-  const subject = String(formData.get("subject") ?? "").trim().slice(0, 150);
-  const message = String(formData.get("message") ?? "").trim();
-  if (message.length < 10) {
-    return { error: "Please describe your question in a bit more detail." };
-  }
-
-  const [inserted] = await db
-    .insert(supportTickets)
-    .values({
-      userId,
-      email,
-      subject: subject || null,
-      message: message.slice(0, 5000),
-    })
-    .returning({ id: supportTickets.id });
-
-  await writeAudit(db, {
-    actorUserId: userId,
-    actorType: "user",
-    action: "support.submit",
-    entityType: "support_ticket",
-    entityId: inserted.id,
+  return createSupportTicket({
+    userId: session?.user?.id ?? null,
+    email: String(formData.get("email") ?? ""),
+    subject: String(formData.get("subject") ?? ""),
+    message: String(formData.get("message") ?? ""),
   });
-  log.info("support.submitted", { ticketId: inserted.id, userId });
-
-  // Awaited, not fired and forgotten: on serverless the function can be frozen
-  // the moment this action returns, and a dangling promise is simply dropped.
-  // notifySupportTicket swallows its own failures, so this cannot fail the
-  // submission the person has already been told succeeded.
-  await notifySupportTicket({
-    ticketId: inserted.id,
-    fromEmail: email,
-    subject: subject || null,
-    message,
-  });
-
-  return {
-    success: "Thanks — your message is in. We'll reply by email.",
-  };
 }
