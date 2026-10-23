@@ -15,7 +15,10 @@
 import React from "react";
 import { type ColorValue } from "react-native";
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+// Imported from its own entry point, not the package root: the root re-exports
+// every icon set, and Metro then bundles all ~3MB of font files into the app
+// for the sake of six glyphs.
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { C } from "@/theme";
 
 type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
