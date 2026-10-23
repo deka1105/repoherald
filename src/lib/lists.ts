@@ -101,10 +101,11 @@ export async function getUserLists(userId: string) {
 }
 
 /** Lists the user owns that don't already contain this repo — the options
- * behind "Add to list" on a repo page. */
+ * behind "Add to list" on a repo page. The slug comes back because the mobile
+ * API addresses lists by slug, not id. */
 export async function getListsMissingRepo(userId: string, repoId: string) {
   return db
-    .select({ id: repoLists.id, title: repoLists.title })
+    .select({ id: repoLists.id, slug: repoLists.slug, title: repoLists.title })
     .from(repoLists)
     .where(
       and(
