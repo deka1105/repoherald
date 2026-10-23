@@ -1,0 +1,33 @@
+A screen recording made on a physical device is attached: it begins at launch and covers the typical user flow, sign-in, account deletion, user-generated content, and the reporting and blocking mechanisms. The information below is also in the Notes field.
+
+2. PURPOSE AND TARGET AUDIENCE
+
+repoherald is a feed of public GitHub repositories that people post because they think someone else should see them, and a place to keep the ones you want to find again. The audience is software developers.
+
+Finding a useful repository is mostly luck: trending pages reward what is already enormous, social feeds reward whoever has an audience. The second half of the problem is what happens next - you save something, and weeks later it is gone, with no title, no note, no search. Lists solve that: private pages of repos with a line on why each is there, searchable alongside the public feed.
+
+3. SETUP AND ACCESS
+
+No account is needed for the core of the app: launch it and the feed loads immediately. Browsing, searching public listings, opening a repo, reporting content and blocking an account all work signed out.
+
+A demo account is supplied in App Review Information. Please sign in with "Continue with GitHub" - the demo account is a GitHub account and that is the button that accepts it. Apple and Google sign-in are also offered, but the demo credentials will not work on those.
+
+Signing in adds posting, lists, comments and credits. GitHub is required for two of these: posting a repo verifies on GitHub that you own it, and claiming a credit verifies that you starred it. Both use read-only scopes (read:user, user:email); we cannot write to repositories or star anything on a user's behalf.
+
+Account deletion is in the app: Account tab, "Delete my account", confirm "Delete permanently". No email, no web form.
+
+4. EXTERNAL SERVICES
+
+Clerk (clerk.com) for identity. Neon (neon.tech) for the database. Vercel (vercel.com) hosts repoherald.com, which serves the app's API. The GitHub REST API supplies repository metadata and verifies stars.
+
+The app contains no advertising SDK, no analytics SDK, no crash or diagnostics reporter and no AI service. It requests no advertising identifier, and NSPrivacyTracking is false in the shipped privacy manifest.
+
+No payment processor is reachable from the app. Credits are only earned, by starring a repository on GitHub and claiming it. They cannot be bought or spent in the app, the Wallet screen is read-only, and the app links to no purchase page.
+
+5. REGIONAL DIFFERENCES
+
+None. The app behaves identically everywhere: no geo-gating, no region-specific content or pricing, no locale-dependent behaviour. English only.
+
+6. REGULATED INDUSTRY / THIRD-PARTY MATERIAL
+
+Not a regulated industry. All content shown is public metadata about public GitHub repositories - name, owner, description, language, star count, avatar - via GitHub's public REST API under GitHub's Terms of Service. The app does not host, mirror, modify or redistribute source code.
