@@ -18,7 +18,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { REPORT_REASONS, reportRepo, type FeedRepo, type ReportReason } from "./api";
+import { REPORT_REASONS, reportRepo, type RepoSummary, type ReportReason } from "./api";
 import { blockOwner } from "./blocks";
 import { C, ANDROID_TOP_INSET } from "./theme";
 
@@ -29,7 +29,7 @@ export function ModerationSheet({
   onClose,
   onBlocked,
 }: {
-  repo: FeedRepo | null;
+  repo: RepoSummary | null;
   onClose: () => void;
   /**
    * Receives the canonical list straight from the store, not the owner string.
