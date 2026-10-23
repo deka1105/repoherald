@@ -100,7 +100,8 @@
           "backgroundColor": "#0a090c",
           "imageWidth": 200
         }
-      ]
+      ],
+      "expo-router"
     ],
     "extra": {
       "eas": {
