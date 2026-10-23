@@ -56,7 +56,7 @@ export async function GET(req: Request) {
       .limit(LEDGER_PAGE),
     getClaimUsage(user.id),
     db
-      .select({ repoId: starMints.repoId, createdAt: starMints.createdAt })
+      .select({ status: starMints.status })
       .from(starMints)
       .where(eq(starMints.userId, user.id)),
     db
@@ -74,7 +74,10 @@ export async function GET(req: Request) {
       thisWeek: usage.week,
       dailyCap: DAILY_MINT_CAP,
       weeklyCap: WEEKLY_MINT_CAP,
-      total: claimed.length,
+      // Revoked mints stay in the table forever (the unique index is what
+      // blocks re-minting), so "stars claimed" has to exclude them or the
+      // number only ever goes up.
+      total: claimed.filter((m) => m.status === "minted").length,
     },
     entries: entries.map((e) => ({
       id: e.id,
