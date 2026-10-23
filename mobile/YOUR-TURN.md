@@ -114,24 +114,32 @@ conversation about the app itself. Moderating someone else's listing is your
 call, not mine, so I have not touched it — but every Explore screenshot will
 contain it until you do, and shot 1 will have to be retaken afterwards.
 
-## 5. Paste the metadata into App Store Connect — 10 minutes
+## 5. ~~Paste the metadata into App Store Connect~~ — DONE 2026-10-23
 
-All the copy is written and under the character limits. From `mobile/APPSTORE.md`:
-subtitle, keywords, promotional text, description, and the App Privacy answers.
+Pushed through the App Store Connect API and read back to confirm:
 
-Four fields need a decision only you can make — each has a recommended answer
-in the table at the bottom of that file:
+- **Build 9 attached** to version 1.0 (was build 4). This also moved the
+  version out of `REJECTED` into `PREPARE_FOR_SUBMISSION`.
+- **Description** — 2,634 chars, now describing search, lists, posting and
+  comments instead of a feed-only app.
+- **Subtitle** — "Find and keep GitHub repos" (the field was empty).
+- **Keywords** — now include `lists`, `saved`, `tools`.
+- **Promotional text** — set.
+- **Review notes** — 3,963 chars, the build-9 reply (items 2–6 of
+  `APPREVIEW-2.1-REPLY.md`), replacing the build-5 text.
 
-- [ ] **App Review contact** — a phone number you will actually answer.
-- [ ] **Demo account** — make a throwaway Google or GitHub account, sign in
-      once, and give it a list with two repos. Review needs it for sign-in,
-      lists, posting and deletion.
-- [ ] **Content Rights** → **Yes, I have the necessary rights** (the feed shows
-      GitHub avatars and descriptions; answering No is the common rejection).
-- [ ] **Sign-in required?** → **No**.
+Two fields in that section still need you, because they cannot come from a
+codebase:
 
-Then paste `mobile/APPREVIEW-2.1-REPLY.md` items 2–6 into **both** the reply and
-the App Review Information notes, as Apple asked.
+- [ ] **Demo account** — still `demoAccountRequired: false` with an empty name.
+      This mattered less when browsing was the whole app; build 9 has posting,
+      lists and comments behind sign-in, so review cannot test half of it
+      without one. Make a throwaway Google or GitHub account, sign in once,
+      give it a list with two repos, then tell me the credentials and I will
+      set the fields — or type them into App Store Connect yourself.
+- [x] **App Review contact** — already on file (Parag Dekate, 5512477990).
+- [ ] **Content Rights** → Yes, I have the necessary rights. Not exposed on the
+      API resource I can reach; tick it in the UI.
 
 ## 6. Then press Submit for Review
 
