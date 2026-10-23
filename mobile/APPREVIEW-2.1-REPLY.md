@@ -3,38 +3,37 @@
 Paste items 2–6 into **both** the App Store Connect reply **and** the Notes field
 of App Review Information, as Apple asked. Item 1 is a recording only you can make.
 
+**Rewritten 2026-10-23 for build 9**, which is a much larger app than the one
+Apple saw: six tabs (Explore, Search, Post, Lists, Wallet, Account) instead of
+a single feed. The shot list and the "setup and access" section below were both
+wrong for it and have been replaced. See `RECORDING-SCRIPT.md` for the full
+timed version of item 1.
+
 ---
 
 ## 1. Screen recording
 
-Physical device, latest iOS, starting from launch. Shot list:
+Physical device, latest iOS, starting from launch. **The timed shot list lives
+in `RECORDING-SCRIPT.md`** — follow that file, not a summary here, because
+every label in it is the exact string in build 9.
 
-1. Tap the icon on the home screen — show the launch, not a mid-session state.
-2. The feed loads with **no sign-in wall**. Scroll a few cards.
-3. Tap a card → it opens that repository on github.com in Safari. Come back.
-4. **Tap the `...` control on any card** → Options → **Report this repo** → pick a
-   reason → show the confirmation. (Do this while signed out, to show reporting
-   does not require an account.)
-5. Open `...` again → **Block <owner>** → show the card disappearing from the feed.
-6. Tap the account control → **Sign in** sheet → *Continue with Apple*. Complete it.
-7. In the account sheet, show **Blocked accounts** and tap **Unblock** — blocking
-   is reversible.
-8. Show Credits and the balance.
-9. Tap **Delete my account** → the confirm dialog → **Delete permanently**.
-10. Show that the app returns to the signed-out feed, which still works.
+In outline: launch with no sign-in wall → open a repo → report it signed out →
+block its owner → unblock from the Account tab → sign in with Apple → search,
+which also searches your own lists → open a list → post a comment → Wallet →
+delete the account → land back on the working signed-out feed.
 
-Keep it one continuous take if you can. Apple asked for the typical user flow, and
-registration / login / deletion are explicitly required.
+Keep it one continuous take if you can. Apple asked for the typical user flow,
+and registration / login / deletion are explicitly required.
 
-Build 5 added reporting and blocking; steps 4, 5 and 7 are the Guideline 1.2
-mechanisms Apple asked to see.
-
----
+Build 5 added reporting and blocking. Build 9 adds search, posting, lists,
+comments and the wallet, so the "typical user flow" is now genuinely longer
+than three taps — which is the point of the longer recording.
 
 ## 2. Purpose and target audience
 
-repoherald is a read-only feed of public GitHub repositories that people have
-posted because they thought someone else should see them.
+repoherald is a feed of public GitHub repositories that people have posted
+because they thought someone else should see them — and a place to keep the
+ones you want to find again.
 
 The audience is software developers and technically-minded readers who want to
 find open-source projects worth their time.
@@ -44,8 +43,14 @@ GitHub's trending page rewards what is already enormous, and social feeds reward
 whoever already has an audience. repoherald is smaller than both and shows
 projects a person deliberately chose to put in front of other people.
 
-The value: a short, human-curated feed that requires no account to read, applies
-no ranking algorithm, and collects no usage data.
+The second half of the problem is what happens after you find something. People
+save a repo somewhere, and weeks later it is gone — no title, no note, no
+working search. Lists are the answer to that: private, link-shareable pages of
+repos with a line about why each one is there, searchable alongside the public
+feed.
+
+The value: a small human-curated feed that requires no account to read, applies
+no ranking algorithm, collects no usage data — and keeps what you found.
 
 ## 3. Setup and access instructions
 
@@ -53,19 +58,23 @@ no ranking algorithm, and collects no usage data.
 immediately — there is no onboarding, no registration wall and no email gate.
 Tap any card to open that repository on github.com.
 
-Signing in is entirely optional and changes nothing about browsing. It exists so
-a signed-in user can earn credits by starring repositories on their own GitHub
-account.
+Signing in is entirely optional and changes nothing about browsing. It adds
+posting, lists, comments, and earning credits by starring repositories on your
+own GitHub account.
 
 We cannot supply a fixed demo account because sign-in is delegated entirely to
 Apple, GitHub and Google; there are no app-specific passwords to issue. To test
 the signed-in state, please use **Continue with Apple** with any Apple ID — that
 path requires nothing from us and creates the account on first use.
 
-Account deletion (required, and present in this build): account control in the
-top right → **Delete my account** → confirm **Delete permanently**. It deletes
-the profile and the GitHub connection and hides the user's posts. There is no
-email to send and no web form to fill in.
+Account deletion (required, and present in this build): the **Account** tab →
+**Delete my account** → confirm **Delete permanently**. It deletes the profile
+and the GitHub connection and hides the user's posts. There is no email to send
+and no web form to fill in.
+
+**What needs an account:** posting a repo, lists, comments and credits. Explore,
+Search (public results), opening a repo, reporting and blocking all work signed
+out.
 
 ## 4. External services used to deliver core functionality
 
@@ -81,8 +90,11 @@ diagnostics reporter, and **no** AI service. It requests no advertising
 identifier — `com.google.android.gms.permission.AD_ID` has no iOS equivalent in
 this build, and `NSPrivacyTracking` is `false` in the shipped privacy manifest.
 
-No payment processor is reachable from the iOS app. Credits can only be earned,
-never purchased, inside the app, and the app does not link to any purchase flow.
+No payment processor is reachable from the iOS app. Credits can only be
+**earned** inside the app — by starring a repository on GitHub and claiming it
+— never purchased and never spent. The Wallet screen is read-only. There is no
+sponsorship or promotion flow in the binary, and the app does not link to any
+purchase page on the website.
 
 ## 5. Regional differences
 
@@ -114,7 +126,13 @@ The feed shows listings submitted by users, so this build ships both controls:
   browsing works signed out; requiring an account would mean the people most
   likely to encounter something objectionable have no way to flag it.
 - **Block** — the same menu offers Block, which hides every listing from that
-  account. Blocks are stored on the device and are reversible from
-  Account → Blocked accounts.
+  account, across the feed, search results and lists. Blocks are stored on the
+  device and are reversible from the **Account tab → Blocked accounts**, which
+  is reachable signed out because blocking is.
+- **Comments** are user content too. Authors delete their own from the repo
+  screen; moderators delete anyone's, and the row is soft-deleted so it stays
+  auditable and restorable.
 
-Builds 1–4 had neither. Build 5, submitted with this reply, adds both.
+Builds 1–4 had neither control. Build 5 added report and block. Build 9, the
+one submitted with this reply, adds comments — and with them the author and
+moderator delete paths above.
