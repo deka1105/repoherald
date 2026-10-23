@@ -24,9 +24,13 @@ type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 // @expo/vector-icons takes — the extra members are platform-opaque colours the
 // tab bar never produces, so this narrows rather than converts.
 function icon(name: IoniconName) {
-  return ({ color, size }: { color: ColorValue; size: number }) => (
+  const TabIcon = ({ color, size }: { color: ColorValue; size: number }) => (
     <Ionicons name={name} color={color as string} size={size} />
   );
+  // Named, so React DevTools and the lint rule both see a component rather
+  // than an anonymous arrow in a prop.
+  TabIcon.displayName = `TabIcon(${name})`;
+  return TabIcon;
 }
 
 export default function TabsLayout() {
