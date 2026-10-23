@@ -1,8 +1,34 @@
 # iOS submission checklist
 
-State as of 2026-10-18. Everything under **Done** is in the repo and verified;
-everything under **Owner actions** needs an account, a key or a human decision
-and cannot be done from the codebase.
+State as of **2026-10-23 (build 9)**. Everything under **Done** is in the repo
+and verified; everything under **Owner actions** needs an account, a key or a
+human decision and cannot be done from the codebase.
+
+## 2026-10-23 — the app caught up with the website
+
+Build 6 and earlier were a single feed screen. Build 9 is the website's phone
+experience, native throughout:
+
+| Area | What changed |
+|---|---|
+| Navigation | Converted to **Expo Router**, as `mobile/AGENTS.md` has always prescribed. Routes under `mobile/src/app/`; six tabs — Explore, Search, Post, Lists, Wallet, Account — plus pushed screens for a repo, a list and support. `App.tsx` and `index.ts` are gone; `main` is `expo-router/entry`. |
+| Search | `/api/mobile/v1/search`. Public listings plus repos in the caller's **own** lists, which is how a repo filed from a DM is findable by the person who sent it and nobody else. |
+| Repo screen | `/api/mobile/v1/repos/[id]` returns the whole screen in one round trip: metadata, categories, view counts, like state, comments, claim state and caps. Plus like, comment, delete-own-comment, claim-a-star and add-to-list. |
+| Posting | `/api/mobile/v1/repos` (POST), over the **shared** `src/lib/post-repo.ts` the web form now also calls — so the owner/org check cannot differ between clients. |
+| Lists | Create, read, add by URL or id, remove an item, delete a list. Instagram/TikTok lists are labelled as such. |
+| Wallet | Read-only: balance, eligibility, claim caps, your listings, the last 100 ledger entries. No spend, no purchase. |
+| Support | `/api/mobile/v1/support`, open signed out, over the shared `src/lib/support-ticket.ts`. |
+| Legal | Privacy, Terms, Cookies and Refunds open in an **in-app** browser from Account, rather than handing the person to Safari. |
+| Shared server logic | `claimStar`, `postRepo` and `submitSupportTicket` were extracted into `src/lib/claim.ts`, `src/lib/post-repo.ts` and `src/lib/support-ticket.ts`. The web actions are now thin wrappers over the same functions, so web and mobile cannot drift on the rules that matter. |
+| Build reliability | `mobile/AGENTS.md` now records the npm 10 lockfile trap that failed builds 7 and 8 — see that file before touching dependencies. |
+
+Verified for build 9: `expo-doctor` 18/18, `tsc --noEmit` clean (app and
+server), `expo lint` clean, `expo export` bundles iOS and Android, web
+`npm run build` green, and the EAS production build for iOS finished.
+
+**Still not verified:** the signed-in happy path on a device. Same caveat as
+below — it needs a real account and, for deletion, a row you are willing to
+destroy. Do it in TestFlight.
 
 ## Done
 
@@ -130,8 +156,9 @@ pixel sizes in App Store Connect, since Apple revises them.
 
 **Review notes** — draft, edit before sending:
 
-> repoherald is a discovery feed for GitHub repositories. Browsing needs no
-> account; tap "Sign in" only to earn credits.
+> repoherald is a discovery feed for GitHub repositories, and a place to keep
+> the ones you want to find again. Browsing, searching and reporting need no
+> account; sign in to post a repo, keep lists, comment, or earn credits.
 >
 > Sign in with Apple is offered alongside GitHub and Google. GitHub is relevant
 > because the app's purpose is crediting people for starring repositories, which
@@ -139,11 +166,12 @@ pixel sizes in App Store Connect, since Apple revises them.
 > `user:email`); we cannot write to repositories or star anything on a user's
 > behalf.
 >
-> Credits can only be *earned* in the app. Nothing is sold in the app and the
-> app does not link to a purchase flow.
+> Credits can only be *earned* in the app — never purchased and never spent.
+> The Wallet screen is read-only, there is no sponsorship or promotion screen
+> in the binary, and the app does not link to any purchase flow.
 >
-> To delete an account: sign in, tap the credits button top-right, then
-> "Delete my account" under Danger zone.
+> To delete an account: sign in, open the **Account** tab, then
+> "Delete my account" under Danger zone, and confirm "Delete permanently".
 
 ## Open items, not blockers
 
@@ -154,9 +182,17 @@ pixel sizes in App Store Connect, since Apple revises them.
   so this migration changed nothing — but the web gap is real and is a credit
   economy decision, so it was left alone. One line in `provisionFromClerk`
   would close it.
-- **`mobile/AGENTS.md` prescribes Expo Router with routes in `src/app/`**, which
-  this app has never used — it is a single `App.tsx` with modal sheets, and the
-  account and sign-in screens follow that existing shape. Worth reconciling the
-  doc with the code, or the code with the doc, before the app grows.
+- ~~`mobile/AGENTS.md` prescribes Expo Router with routes in `src/app/`, which
+  this app has never used.~~ **Resolved 2026-10-23** — the app is on Expo
+  Router, routes live in `mobile/src/app/`, and the sign-in and moderation
+  sheets are mounted once at the root (`mobile/src/app-state.tsx`) rather than
+  per screen.
+- **Donating credits to highlight a repo is on the web only.** Spending was
+  left out of the app along with buying, so the Wallet has one honest job. If
+  spending ever lands in the app, re-read Guideline 3.1.1 first: earned credits
+  are defensible, but a screen that mixes earned and purchased balance into one
+  spend flow is the conversation worth avoiding.
+- **Reporting an upstream GitHub issue for credit** (`/wallet` on the web) is
+  not in the app — it needs an issue URL nobody is typing on a phone.
 - `upsertGithubUser` is now dead code, marked `@deprecated` rather than deleted
   because it documents how the pre-Clerk rows were made.
