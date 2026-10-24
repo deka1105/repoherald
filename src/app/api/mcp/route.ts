@@ -141,10 +141,34 @@ const handler = createMcpHandler(
           const applied = Object.entries(filters)
             .map(([k, v]) => `${k}=${v}`)
             .join(", ");
+          // "No results" has two very different causes, and saying the wrong one
+          // sends the model down the wrong path: a slug that doesn't exist is a
+          // mistake to correct, an empty category is a fact to report. Check
+          // which it was rather than guessing in the copy.
+          const unknown = (
+            await Promise.all(
+              ([
+                ["useCase", "use_case", useCase],
+                ["sector", "sector", sector],
+              ] as const).map(async ([arg, kind, slug]) => {
+                if (!slug) return null;
+                const hit = await db.query.categories.findFirst({
+                  where: and(eq(categories.kind, kind), eq(categories.slug, slug)),
+                });
+                return hit ? null : `${arg}="${slug}"`;
+              })
+            )
+          ).filter((s): s is string => s !== null);
+
           return text(
             `No repositories match${applied ? ` (${applied})` : ""}.\n\n` +
-              `If a useCase or sector slug was guessed rather than taken from ` +
-              `list_categories, that is the likely cause.`
+              (unknown.length
+                ? `${unknown.join(" and ")} ${
+                    unknown.length > 1 ? "are not" : "is not"
+                  } a known slug — call list_categories for the valid set.`
+                : `Those filters are valid; the catalogue simply has nothing ` +
+                  `under them yet. Widening or dropping a filter will help more ` +
+                  `than rewording it.`)
           );
         }
 
