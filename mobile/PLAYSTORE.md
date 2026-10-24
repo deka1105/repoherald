@@ -172,6 +172,39 @@ controlled substances, gambling, horror. Two that need thought:
 
 Expected outcome: **Everyone / PEGI 3**.
 
+## Submitted to Google 2026-10-23
+
+All of the above was entered into Play Console and sent for review as one
+submission of seven changes (closed-testing release 5, three store-listing
+fields, content rating, target audience, data safety).
+
+Three things in Play Console did **not** match this document and were corrected:
+
+| Declaration | Was in Play Console | Now |
+|---|---|---|
+| Data safety | "App doesn't collect or share data" / "Data isn't encrypted" | Personal info + App activity declared, encrypted in transit |
+| Target audience | included **9-12**, triggering the Families policy | 13+ |
+| Content rating | "users interact or exchange content" = No → Everyone/3+ | Yes → **12+**, "Users Interact" |
+
+The first two were wrong for *every* version ever shipped, not just for
+versionCode 5, and Play's App content page still read "You're all caught up"
+the whole time. A green checkmark in Play Console means *answered*, never
+*answered correctly* — read the actual stored answers before trusting it.
+
+Content rating answers that needed judgement, recorded so they can be revisited:
+
+- *"Is shared, user-generated content the primary source of content?"* → **Yes.**
+  Arguable, since repo metadata comes from GitHub's API rather than being
+  authored in the app. Answered Yes because the feed exists only because users
+  submit listings, and under-declaring is the costlier error.
+- *"Does the app include chat moderation?"* → **No.** There is no chat. Report
+  and block exist (`src/moderation.tsx`) and are declared separately.
+- *"Cash rewards, play-to-earn, convertible cryptocurrency or transferable
+  digital assets?"* → **No.** Credits buy highlight time and cannot be cashed
+  out, converted or transferred off-platform.
+- AI asset declaration → **Don't label.** Screenshots are real device captures;
+  the icon and feature graphic are script-composed from the brand mark.
+
 ## Other declarations
 
 | Declaration | Answer |
