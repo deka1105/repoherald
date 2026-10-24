@@ -12,7 +12,7 @@ however long the recording takes.
 | | Build | Artifact |
 |---|---|---|
 | **iOS** | 9 (v1.0.0) | https://expo.dev/accounts/aryasoftech/projects/repoherald/builds/edf5f0ff-62df-4bd0-b857-82538c3a907e |
-| **Android** | versionCode 4 | https://expo.dev/accounts/aryasoftech/projects/repoherald/builds/19afe259-cd29-4933-a440-8bfcb59ba8e2 |
+| **Android** | versionCode 5 (built, **not uploaded to Play**) | https://expo.dev/accounts/aryasoftech/projects/repoherald/builds |
 
 ---
 
@@ -175,22 +175,71 @@ Only after 2, 3, 4 and 5.
 
 ---
 
-## Android — one thing is genuinely missing
+## Android — Play is still serving the OLD app
 
-`mobile/play-service-account.json` **does not exist**, so
-`eas submit --platform android` cannot run at all. Two options:
+**Checked in Play Console 2026-10-23.** The latest app bundle uploaded is
+**versionCode 2**, from Oct 19. Both Closed testing (Alpha) and Internal
+testing are on it, at full rollout. versionCode 4 and 5 were built on EAS and
+**never uploaded**. So anyone testing on Android today is testing the
+single-feed app — the exact thing this whole rebuild replaced.
 
-- **Quick:** download the `.aab` from the build page above and upload it to the
-  Play Console internal track by hand.
-- **Proper (do this once):** create a service account in Google Cloud for the
-  Play Developer API, grant it release permissions in Play Console, download
-  the JSON to `mobile/play-service-account.json`, then
+versionCode 5 is code-identical to iOS build 10: EAS built it from commit
+`3e7dae43`, which is after both the back-button fix (`16d76c5`) and the
+splash-icon fix (`3e7dae4`). No rebuild needed.
+
+### 1. Upload versionCode 5 — needs you
+
+The `.aab` is sitting at `~/Downloads/repoherald-v5-versionCode5.aab` (74 MB).
+I cannot upload it myself: the browser file-upload tool caps at 10 MB, and
+`eas submit --platform android` needs `mobile/play-service-account.json`, which
+does not exist. So either:
+
+- **Quick:** drag that file into Play Console → Testing → Closed testing →
+  Create new release.
+- **Proper (do this once, then I can do it next time):** create a service
+  account in Google Cloud for the Play Developer API, grant it release
+  permissions in Play Console, download the JSON to
+  `mobile/play-service-account.json`, then
   `npx eas-cli@latest submit --platform android --profile production --latest`.
 
-Also worth one check: Clerk's **Native applications** entry must allowlist the
-Android package `com.dekisuki05.repoherald` and the `repoherald://sso-callback`
-redirect, or sign-in fails on Android only. Play listing copy is in
-`mobile/PLAYSTORE.md`, rewritten for this build.
+### 2. Re-answer Data safety and Content rating — needs you
+
+Play currently shows "You're all caught up", but those answers were given for
+versionCode 2 and are **wrong for versionCode 5**. The old listing says the app
+is read-only; the new binary writes comments (`postComment`), posts listings
+(`postRepo`), creates lists (`createList`) and files reports (`reportRepo`). So:
+
+- Content rating → *"Does the app allow users to interact or exchange
+  content?"* must become **Yes**.
+- Data safety → add **App activity → Other user-generated content**.
+
+An inaccurate Data safety declaration is one of the more common causes of Play
+enforcement, so do this before v5 reaches testers. The corrected answers, with
+reasoning, are in `PLAYSTORE.md`. Google's UGC policy then requires in-app
+report + block, which `src/moderation.tsx` already provides.
+
+### 3. The real timeline blocker: 12 testers, 14 days
+
+Production access is gated. Play's own checklist on the dashboard reads:
+publish a closed testing release ✓, **have at least 12 testers opted in — 0
+currently opted in**, and run the closed test with 12+ testers for 14 days.
+That clock has not started. Recruiting those testers is the long pole on any
+Android launch, not the build.
+
+### Clerk needs nothing for Android — verified
+
+Earlier drafts of this file told you to check Clerk's *Native applications*
+entry. I checked it against the production instance instead of guessing:
+`repoherald://sso-callback` is allowlisted (`ru_3Ktjc1Rb…`), GitHub and Google
+are enabled with custom credentials, `allowed_origins` is unset, and the
+versionCode 5 bundle carries the `pk_live_` key. The redirect URL is
+byte-identical on iOS and Android, so there was never a per-platform entry.
+
+One *iOS* gap did surface while looking: `connection_oauth_apple.bundle_id` is
+empty on production, and native Sign in with Apple needs it. "Continue with
+Apple" is the top button on iOS and what satisfies Guideline 4.8. Fix:
+Clerk → Configure → Native applications → add the iOS app (App ID Prefix
+`4LX3D498MB`, Bundle ID `com.dekisuki05.repoherald`).
 
 ---
 
