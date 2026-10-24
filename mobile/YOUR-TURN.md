@@ -214,6 +214,30 @@ true of versionCode 2 and false from 5 on. Answering it honestly moved the
 rating from Everyone/3+ to **12+** with "Users Interact", which is the correct
 outcome and consistent with the 13+ audience.
 
+### Live right now: Internal testing
+
+versionCode 5 was published to **Internal testing** on 2026-10-24 and is
+installable immediately — that track needs no review and no production access.
+The `InternalTest` email list has **2 users**; the cap is 100, and there is a
+join-on-the-web link on the track's Testers tab.
+
+**Open testing is NOT an option.** It is locked behind the same gate:
+
+> "Open testing is available when you have production access."
+
+So the only ungated distribution is Internal testing, and **internal testers do
+not satisfy the 12-tester requirement** — Google's rule names testers opted in
+to the *closed* test specifically. Use the alpha track for those 12.
+
+### The 12-tester gate cannot be overridden
+
+Checked on the dashboard: the **Apply for production** button is disabled by
+Google until the criteria are met. There is no setting, no appeal path in the
+console, and no exception based on what the app does. The documented way around
+it is an **organization** developer account (D-U-N-S number, 2-4 weeks
+verification) — but that exemption is asserted by third-party sources, not by
+Google's own help page, so verify before restructuring the account.
+
 ### Still yours — I cannot do these
 
 1. **Recruit 12 testers.** 0 are opted in. Production access needs 12 testers
