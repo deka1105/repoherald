@@ -131,9 +131,10 @@ const handler = createMcpHandler(
         }),
       },
       async ({ query }) => {
-        // null userId: the private half of search reads the caller's own lists,
-        // and this server has no caller. Public listings only.
-        const hits = await searchRepos(query, null);
+        // null userId inside searchCached: the private half of search reads the
+        // caller's own lists, and this server has no caller. Public listings
+        // only — which is also what makes the result safe to share in a cache.
+        const hits = await searchCached(query);
         if (!hits.length) {
           return text(
             `No repositories on repoherald match "${query}".\n\n` +
@@ -241,23 +242,9 @@ const handler = createMcpHandler(
         }),
       },
       async ({ id }) => {
-        const repo = await db.query.repos.findFirst({ where: eq(repos.id, id) });
-        // `removed` is a moderation decision and must not be readable here, the
-        // same rule the mobile route applies. `hidden` is excluded too: it means
-        // the listing is reachable only by someone holding its link, and an
-        // unauthenticated tool is not that someone.
-        if (!repo || repo.status !== "active") {
-          return text(`No active repository with id ${id}.`);
-        }
-
-        const [poster, cats] = await Promise.all([
-          db.query.users.findFirst({ where: eq(users.id, repo.postedByUserId) }),
-          db
-            .select({ label: categories.label, kind: categories.kind })
-            .from(repoCategories)
-            .innerJoin(categories, eq(repoCategories.categoryId, categories.id))
-            .where(eq(repoCategories.repoId, repo.id)),
-        ]);
+        const found = await repoDetailCached(id);
+        if (!found) return text(`No active repository with id ${id}.`);
+        const { repo, posterLogin, cats } = found;
 
         const useCases = cats.filter((c) => c.kind === "use_case").map((c) => c.label);
         const sectors = cats.filter((c) => c.kind === "sector").map((c) => c.label);
@@ -273,8 +260,8 @@ const handler = createMcpHandler(
             repo.isArchived ? "Archived:  yes" : null,
             useCases.length ? `Use cases: ${useCases.join(", ")}` : null,
             sectors.length ? `Sectors:   ${sectors.join(", ")}` : null,
-            `Posted:    ${repo.createdAt.toISOString().slice(0, 10)}${
-              poster?.githubLogin ? ` by ${poster.githubLogin}` : ""
+            `Posted:    ${repo.createdAt.slice(0, 10)}${
+              posterLogin ? ` by ${posterLogin}` : ""
             }`,
             "",
             `${SITE}/repo/${repo.id}`,
