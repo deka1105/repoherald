@@ -164,8 +164,8 @@ const handler = createMcpHandler(
             `No repositories match${applied ? ` (${applied})` : ""}.\n\n` +
               (unknown.length
                 ? `${unknown.join(" and ")} ${
-                    unknown.length > 1 ? "are not" : "is not"
-                  } a known slug — call list_categories for the valid set.`
+                    unknown.length > 1 ? "are not known slugs" : "is not a known slug"
+                  } — call list_categories for the valid set.`
                 : `Those filters are valid; the catalogue simply has nothing ` +
                   `under them yet. Widening or dropping a filter will help more ` +
                   `than rewording it.`)
