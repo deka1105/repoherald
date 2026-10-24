@@ -103,8 +103,12 @@ iOS, and naming an unavailable method in the listing is a policy violation.
 | 7" tablet | optional but recommended | — |
 | 10" tablet | optional but recommended | reuse the iPad composition |
 
-**Captured 2026-10-18**, Pixel 8 emulator, 1080 x 2400 — `playstore/phone/`:
-`01-feed.png`, `02-feed-scrolled.png`, `03-signin.png`. Play accepts these as-is.
+**Superseded.** The 2026-10-18 set (`01-feed.png`, `02-feed-scrolled.png`,
+`03-signin.png`, Pixel 8 emulator, 1080 x 2400) is of the *single-feed* app —
+versionCode 2, before the six-tab rewrite — so it no longer shows what the
+binary does. Shipping it would be the Play equivalent of the 2.3.3 problem
+Apple raised. `03-signin.png` is a login screen and should not come back in any
+case. Recapture against versionCode 5.
 
 Two capture notes worth keeping:
 
@@ -288,10 +292,16 @@ npx eas-cli@latest submit --platform android --profile production
 2. ~~No EAS project linked.~~ Done — project `7590d365-7da9-4a57-a134-c9b7fce48cf4`,
    owner `aryasoftech`, and Android builds are running (versionCode 4).
 3. ~~`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for the production environment.~~ Done
-   — the EAS `production` environment holds the `pk_live_` key. **Still worth
-   confirming by hand:** Clerk's *Native applications* entry must allowlist the
-   Android package `com.dekisuki05.repoherald` and the `repoherald://sso-callback`
-   redirect, or Google/GitHub sign-in fails on Android only.
+   — the EAS `production` environment holds the `pk_live_` key, and the
+   versionCode 5 bundle really does carry `pk_live_Y2xlcmsucmVwb2hlcmFsZC5jb20k`
+   (checked with `strings` on `base/assets/index.android.bundle`, which is Hermes
+   bytecode but keeps its string table greppable). **Clerk needs nothing for
+   Android** — verified 2026-10-23 against the production instance: the redirect
+   `repoherald://sso-callback` is allowlisted (`ru_3Ktjc1Rb…`), GitHub and Google
+   are enabled with custom credentials, and `allowed_origins` is unset. The
+   redirect URL is byte-identical on both platforms, so there was never a
+   per-platform entry to add. One *iOS* gap did turn up: `connection_oauth_apple
+   .bundle_id` is empty, which native Sign in with Apple needs — see APPSTORE.md.
 4. ~~Deploy the web app.~~ Done — the full `/api/mobile/v1` surface is live on
    repoherald.com and the web build is green.
 5. **Play App Signing** — accept it when prompted. It is effectively mandatory
