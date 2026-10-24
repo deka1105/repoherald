@@ -175,67 +175,82 @@ Only after 2, 3, 4 and 5.
 
 ---
 
-## Android — Play is still serving the OLD app
+## Android — submitted for review 2026-10-23
 
-**Checked in Play Console 2026-10-23.** The latest app bundle uploaded is
-**versionCode 2**, from Oct 19. Both Closed testing (Alpha) and Internal
-testing are on it, at full rollout. versionCode 4 and 5 were built on EAS and
-**never uploaded**. So anyone testing on Android today is testing the
-single-feed app — the exact thing this whole rebuild replaced.
+Seven changes went to Google in one submission. Reviews usually complete within
+7 days. Play runs ~14 minutes of automated checks first, then sends them.
 
-versionCode 5 is code-identical to iOS build 10: EAS built it from commit
-`3e7dae43`, which is after both the back-button fix (`16d76c5`) and the
-splash-icon fix (`3e7dae4`). No rebuild needed.
+| Change | What it does |
+|---|---|
+| Closed testing – Alpha | versionCode 5 (1.0.0), **Start full rollout** |
+| Store listing | new short description |
+| Store listing | new full description (2,625 chars, covers all six tabs) |
+| Store listing | 7 new phone screenshots, old 3 removed |
+| Content rating | new IARC questionnaire → **12+** |
+| Target audience | **13+** (9-12 removed) |
+| Data safety | corrected collection + encryption answers |
 
-### 1. Upload versionCode 5 — needs you
+### The two declarations were wrong, not just stale
 
-The `.aab` is sitting at `~/Downloads/repoherald-v5-versionCode5.aab` (74 MB).
-I cannot upload it myself: the browser file-upload tool caps at 10 MB, and
-`eas submit --platform android` needs `mobile/play-service-account.json`, which
-does not exist. So either:
+Worth recording because the failure was silent. Play showed "You're all caught
+up", and the live Data safety declaration said:
 
-- **Quick:** drag that file into Play Console → Testing → Closed testing →
-  Create new release.
-- **Proper (do this once, then I can do it next time):** create a service
-  account in Google Cloud for the Play Developer API, grant it release
-  permissions in Play Console, download the JSON to
-  `mobile/play-service-account.json`, then
-  `npx eas-cli@latest submit --platform android --profile production --latest`.
+> Data sharing: **App doesn't collect or share data**
+> Security practices: **Data isn't encrypted**
 
-### 2. Re-answer Data safety and Content rating — needs you
+Both false for every version ever shipped — the app has always collected email,
+name and user ID through Clerk, and every API call has always been HTTPS. It
+now declares: Personal info (Name, Email address, User IDs) and App activity
+(Other user-generated content), all *collected, not shared*, optional,
+not processed ephemerally, purposes App functionality + Account management,
+encrypted in transit, with `https://repoherald.com/account` as the deletion URL.
 
-Play currently shows "You're all caught up", but those answers were given for
-versionCode 2 and are **wrong for versionCode 5**. The old listing says the app
-is read-only; the new binary writes comments (`postComment`), posts listings
-(`postRepo`), creates lists (`createList`) and files reports (`reportRepo`). So:
+**Target audience included the 9-12 age group**, which silently put the app
+under the Google Play Families policy — a policy a developer-tools app with
+user-generated content and outbound links to GitHub does not meet. Now 13+.
 
-- Content rating → *"Does the app allow users to interact or exchange
-  content?"* must become **Yes**.
-- Data safety → add **App activity → Other user-generated content**.
+**Content rating** had answered *No* to "users interact or exchange content",
+true of versionCode 2 and false from 5 on. Answering it honestly moved the
+rating from Everyone/3+ to **12+** with "Users Interact", which is the correct
+outcome and consistent with the 13+ audience.
 
-An inaccurate Data safety declaration is one of the more common causes of Play
-enforcement, so do this before v5 reaches testers. The corrected answers, with
-reasoning, are in `PLAYSTORE.md`. Google's UGC policy then requires in-app
-report + block, which `src/moderation.tsx` already provides.
+### Still yours — I cannot do these
 
-### 3. The real timeline blocker: 12 testers, 14 days
+1. **Recruit 12 testers.** 0 are opted in. Production access needs 12 testers
+   running the closed test for 14 continuous days, and the clock has not
+   started. This is the long pole on any Android launch, not the build.
+2. **`mobile/play-service-account.json`.** Still absent. Creating it needs
+   Google Cloud + a Play Console permission grant. Without it
+   `eas submit --platform android` cannot run, so releases are manual. Note
+   the 74 MB upload blocker turned out not to matter: versionCode 5 was already
+   in the bundle library, so **Add from library** attached it without an upload.
+3. **Feature graphic tagline.** `playstore/feature-graphic.png` still reads
+   "A feed of GitHub projects worth your afternoon." Not wrong, but narrower
+   than the app now is. There is no generator script for it, so regenerating
+   means rebuilding the brand composition — left alone deliberately rather than
+   half-edited.
+4. **Test sign-in on a real device.** Clerk is verified *configured* for
+   Android (`repoherald://sso-callback` allowlisted, GitHub and Google enabled,
+   `pk_live_` key in the bundle, intent filter present in the manifest) but the
+   OAuth round-trip has never been exercised end to end.
 
-Production access is gated. Play's own checklist on the dashboard reads:
-publish a closed testing release ✓, **have at least 12 testers opted in — 0
-currently opted in**, and run the closed test with 12+ testers for 14 days.
-That clock has not started. Recruiting those testers is the long pole on any
-Android launch, not the build.
+### Two non-blocking warnings Play raised on the release
+
+- App size grew 9.89 MB (26.4 MB for new installs). Expected: one feed became
+  six tabs.
+- No deobfuscation file, and DEX optimisation is at 1% against a 25% threshold.
+  Play's stated deadline is **Feb 2027**. Enabling R8/proguard would address
+  both, and would shrink the download.
 
 ### Clerk needs nothing for Android — verified
 
-Earlier drafts of this file told you to check Clerk's *Native applications*
-entry. I checked it against the production instance instead of guessing:
+Checked against the production instance rather than guessed:
 `repoherald://sso-callback` is allowlisted (`ru_3Ktjc1Rb…`), GitHub and Google
-are enabled with custom credentials, `allowed_origins` is unset, and the
-versionCode 5 bundle carries the `pk_live_` key. The redirect URL is
-byte-identical on iOS and Android, so there was never a per-platform entry.
+are enabled with custom credentials, `allowed_origins` is unset. The redirect
+URL is byte-identical on both platforms, so there was never a per-platform
+entry to add.
 
-One *iOS* gap did surface while looking: `connection_oauth_apple.bundle_id` is
+One *iOS* gap surfaced while looking: `connection_oauth_apple.bundle_id` is
 empty on production, and native Sign in with Apple needs it. "Continue with
 Apple" is the top button on iOS and what satisfies Guideline 4.8. Fix:
 Clerk → Configure → Native applications → add the iOS app (App ID Prefix
