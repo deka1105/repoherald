@@ -132,7 +132,8 @@ encrypted in transit and deletable. Answers from the code:
 | Question | Answer |
 |---|---|
 | Does your app collect or share any of the required user data types? | **Yes** |
-| Data types collected | **Personal info → Email address, Name**; **App activity → none**; **Device or other IDs → none** |
+| Data types collected | **Personal info → Email address, Name, User IDs**; **App activity → Other user-generated content**; **Device or other IDs → none** |
+| What the user-generated content is | Comments on listings, list titles and descriptions, and the repo listings themselves — all written from inside the app |
 | Is a User ID collected? | **Yes** — Personal info → User IDs |
 | Is any of it *shared* with third parties? | **No** |
 | Is data encrypted in transit? | **Yes** — all API calls are HTTPS to `repoherald.com` |
@@ -140,6 +141,7 @@ encrypted in transit and deletable. Answers from the code:
 | Account deletion URL | `https://repoherald.com/account` |
 | Is data collection optional? | **Yes** — the feed works fully signed-out |
 | Purpose for each type | **App functionality** only |
+| Is the user-generated content publicly visible? | **Yes** — comments, lists and listings are public on repoherald.com. Declare it as collected, not shared: Play counts "shared" as transfer to a *third party*, which this is not. |
 
 Play also requires a **publicly reachable account-deletion path for users who
 have uninstalled the app**. The in-app route satisfies the in-app half; make
@@ -151,8 +153,16 @@ it.
 Answer **No** to every content category — violence, sexuality, language,
 controlled substances, gambling, horror. Two that need thought:
 
-- **"Does the app allow users to interact or exchange content?"** — **No.** The
-  app is read-only; comments and lists exist on the website, not in this binary.
+- **"Does the app allow users to interact or exchange content?"** — **Yes.**
+  This changed with the six-tab rewrite and is the single answer most likely to
+  be wrong on an existing listing. The binary writes comments (`postComment`),
+  posts listings (`postRepo`), creates lists (`createList`) and files reports
+  (`reportRepo`). Answering **No** here — correct for versionCode 2, false from
+  versionCode 5 on — is an inaccurate declaration, which Play enforces against.
+  Because the answer is Yes, Play's user-generated content policy also requires
+  an in-app way to report content and block users: `src/moderation.tsx` provides
+  both (report with reasons, plus an on-device owner block), so the requirement
+  is already met — do not remove it.
 - **"Does the app share the user's location?"** — **No.**
 - **"Does the app allow purchases?"** — **No.** Credits are earned only.
 
