@@ -1,0 +1,258 @@
+/**
+ * The repoherald MCP server.
+ *
+ * Model Context Protocol endpoint, so an assistant can query the catalogue
+ * mid-conversation instead of the user tabbing to the site and pasting results
+ * back. Mounted at /api/mcp; clients are given that full URL.
+ *
+ * Read-only and unauthenticated, deliberately. Everything exposed here is
+ * already public on the web and already served unauthenticated by
+ * `/api/mobile/v1/feed` and `/search`, so there is no new surface — the same
+ * rows, a different envelope. Anything that writes, or that reads a particular
+ * person's lists, needs the OAuth flow in the MCP spec and is not in this file.
+ *
+ * The tools call `src/lib/*` directly rather than fetching our own HTTP routes.
+ * A self-request would cost a second function invocation and a TLS handshake to
+ * reach code already loaded in this process, and would make the MCP server's
+ * behaviour depend on the public API staying reachable from inside the VPC.
+ *
+ * Output is prose, not JSON. The consumer is a language model: `tokio-rs/axum
+ * — Rust — ★21400` costs a fraction of the tokens of the equivalent object and
+ * needs no explanation. Every repo line carries its `id` because that is the
+ * argument `get_repo` takes, and a result the model cannot follow up on is a
+ * dead end.
+ */
+import { asc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+import { createMcpHandler } from "mcp-handler";
+import { db } from "@/db";
+import { categories, repoCategories, repos, users } from "@/db/schema";
+import { getFeed, type FeedFilters, type FeedRepo } from "@/lib/feed";
+import { searchRepos } from "@/lib/search";
+
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
+const SITE = "https://repoherald.com";
+
+/** Trimmed so one repo is one line plus its blurb, not a wall. */
+function line(r: {
+  id: string;
+  fullName: string;
+  description: string | null;
+  primaryLanguage: string | null;
+  starsCount: number;
+  isArchived: boolean;
+}): string {
+  const facts = [r.primaryLanguage, `★${r.starsCount.toLocaleString("en-US")}`]
+    .filter(Boolean)
+    .join(" — ");
+  return [
+    `${r.fullName} — ${facts}${r.isArchived ? " — ARCHIVED" : ""}`,
+    r.description ? `  ${r.description}` : null,
+    `  id: ${r.id} · ${SITE}/repo/${r.id} · https://github.com/${r.fullName}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function feedLine(r: FeedRepo): string {
+  const tags = r.categoryLabels.length ? `\n  tags: ${r.categoryLabels.join(", ")}` : "";
+  return line(r) + tags;
+}
+
+const text = (s: string) => ({ content: [{ type: "text" as const, text: s }] });
+
+const handler = createMcpHandler(
+  (server) => {
+    server.registerTool(
+      "search_repos",
+      {
+        title: "Search repoherald",
+        description:
+          "Full-text search over every repository posted to repoherald, matching " +
+          "name, owner and description. Use this when the user names a specific " +
+          "project or types a keyword. For open-ended discovery ('a good Rust web " +
+          "framework') prefer browse_feed with filters, which ranks by community " +
+          "signal rather than string match.",
+        inputSchema: z.object({
+          query: z
+            .string()
+            .min(2, "at least two characters")
+            .describe("Search text, e.g. 'axum' or 'vector database'"),
+        }),
+      },
+      async ({ query }) => {
+        // null userId: the private half of search reads the caller's own lists,
+        // and this server has no caller. Public listings only.
+        const hits = await searchRepos(query, null);
+        if (!hits.length) {
+          return text(
+            `No repositories on repoherald match "${query}".\n\n` +
+              `The catalogue is human-curated and far smaller than GitHub's, so ` +
+              `a miss here means nobody has posted it — not that it doesn't exist.`
+          );
+        }
+        return text(
+          `${hits.length} result${hits.length === 1 ? "" : "s"} for "${query}":\n\n` +
+            hits.map((h) => line(h.repo)).join("\n\n")
+        );
+      }
+    );
+
+    server.registerTool(
+      "browse_feed",
+      {
+        title: "Browse repoherald",
+        description:
+          "The ranked repoherald feed, optionally narrowed by language, use case " +
+          "or sector. This is the tool for discovery: it answers 'what are good " +
+          "options for X' in a way GitHub search cannot, because the catalogue is " +
+          "posted and categorised by people. Call list_categories first to get " +
+          "valid useCase and sector slugs — a wrong slug silently returns nothing.",
+        inputSchema: z.object({
+          language: z
+            .string()
+            .optional()
+            .describe("Exact language name as GitHub reports it, e.g. 'TypeScript'"),
+          useCase: z.string().optional().describe("Use-case slug from list_categories"),
+          sector: z.string().optional().describe("Sector slug from list_categories"),
+          query: z.string().optional().describe("Extra text filter applied to the feed"),
+          cursor: z
+            .string()
+            .optional()
+            .describe("nextCursor from a previous call, to page further"),
+        }),
+      },
+      async ({ language, useCase, sector, query, cursor }) => {
+        const filters: FeedFilters = {};
+        if (language) filters.language = language;
+        if (useCase) filters.useCase = useCase;
+        if (sector) filters.sector = sector;
+        if (query) filters.q = query;
+
+        const { items, pinned, nextCursor } = await getFeed({ cursor, filters });
+        // Pinned entries are sponsored placements. They are merged into the list
+        // the website renders, so leaving them out here would mean the tool and
+        // the site disagree about what is on the feed.
+        const all = [...pinned, ...items];
+
+        if (!all.length) {
+          const applied = Object.entries(filters)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(", ");
+          return text(
+            `No repositories match${applied ? ` (${applied})` : ""}.\n\n` +
+              `If a useCase or sector slug was guessed rather than taken from ` +
+              `list_categories, that is the likely cause.`
+          );
+        }
+
+        return text(
+          `${all.length} repositor${all.length === 1 ? "y" : "ies"}:\n\n` +
+            all.map(feedLine).join("\n\n") +
+            (nextCursor ? `\n\nMore available — pass cursor: ${nextCursor}` : "")
+        );
+      }
+    );
+
+    server.registerTool(
+      "get_repo",
+      {
+        title: "Repository detail",
+        description:
+          "Full detail for one repository: description, language list, categories, " +
+          "who posted it and when. Takes the id printed by search_repos or " +
+          "browse_feed.",
+        inputSchema: z.object({
+          id: z.string().uuid().describe("Repository id from a search or feed result"),
+        }),
+      },
+      async ({ id }) => {
+        const repo = await db.query.repos.findFirst({ where: eq(repos.id, id) });
+        // `removed` is a moderation decision and must not be readable here, the
+        // same rule the mobile route applies. `hidden` is excluded too: it means
+        // the listing is reachable only by someone holding its link, and an
+        // unauthenticated tool is not that someone.
+        if (!repo || repo.status !== "active") {
+          return text(`No active repository with id ${id}.`);
+        }
+
+        const [poster, cats] = await Promise.all([
+          db.query.users.findFirst({ where: eq(users.id, repo.postedByUserId) }),
+          db
+            .select({ label: categories.label, kind: categories.kind })
+            .from(repoCategories)
+            .innerJoin(categories, eq(repoCategories.categoryId, categories.id))
+            .where(eq(repoCategories.repoId, repo.id)),
+        ]);
+
+        const useCases = cats.filter((c) => c.kind === "use_case").map((c) => c.label);
+        const sectors = cats.filter((c) => c.kind === "sector").map((c) => c.label);
+
+        return text(
+          [
+            repo.fullName,
+            repo.description ?? "(no description)",
+            "",
+            `Language:  ${repo.primaryLanguage ?? "unknown"}`,
+            repo.languages.length ? `Languages: ${repo.languages.join(", ")}` : null,
+            `Stars:     ${repo.starsCount.toLocaleString("en-US")}`,
+            repo.isArchived ? "Archived:  yes" : null,
+            useCases.length ? `Use cases: ${useCases.join(", ")}` : null,
+            sectors.length ? `Sectors:   ${sectors.join(", ")}` : null,
+            `Posted:    ${repo.createdAt.toISOString().slice(0, 10)}${
+              poster?.githubLogin ? ` by ${poster.githubLogin}` : ""
+            }`,
+            "",
+            `${SITE}/repo/${repo.id}`,
+            `https://github.com/${repo.fullName}`,
+          ]
+            .filter((l) => l !== null)
+            .join("\n")
+        );
+      }
+    );
+
+    server.registerTool(
+      "list_categories",
+      {
+        title: "Category vocabulary",
+        description:
+          "The use-case and sector slugs browse_feed accepts, with their labels. " +
+          "Call this before filtering: the slugs are repoherald's own vocabulary " +
+          "and cannot be guessed reliably.",
+        inputSchema: z.object({}),
+      },
+      async () => {
+        const rows = await db
+          .select({ kind: categories.kind, slug: categories.slug, label: categories.label })
+          .from(categories)
+          .where(eq(categories.isActive, true))
+          .orderBy(asc(categories.kind), asc(categories.label));
+
+        const fmt = (kind: "use_case" | "sector") =>
+          rows
+            .filter((r) => r.kind === kind)
+            .map((r) => `  ${r.slug} — ${r.label}`)
+            .join("\n") || "  (none)";
+
+        return text(
+          `Use cases (pass as useCase):\n${fmt("use_case")}\n\n` +
+            `Sectors (pass as sector):\n${fmt("sector")}`
+        );
+      }
+    );
+  },
+  {
+    serverInfo: { name: "repoherald", version: "1.0.0" },
+    instructions:
+      "repoherald is a human-curated catalogue of GitHub repositories, " +
+      "categorised by use case and sector. It is much smaller than GitHub and " +
+      "deliberately so: every entry was posted by a person. Use it when the " +
+      "user wants a recommendation or wants to know what others are using, not " +
+      "as a general GitHub index.",
+  }
+);
+
+export { handler as GET, handler as POST };
