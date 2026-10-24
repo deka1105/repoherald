@@ -22,7 +22,7 @@
  * argument `get_repo` takes, and a result the model cannot follow up on is a
  * dead end.
  */
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createMcpHandler } from "mcp-handler";
 import { db } from "@/db";
