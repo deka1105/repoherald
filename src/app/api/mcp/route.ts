@@ -23,6 +23,7 @@
  * dead end.
  */
 import { and, asc, eq } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 import { z } from "zod";
 import { createMcpHandler } from "mcp-handler";
 import { db } from "@/db";
@@ -34,6 +35,53 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 const SITE = "https://repoherald.com";
+
+/**
+ * `getFeed` caches itself. These two do not, and an unauthenticated endpoint
+ * an agent can call in a loop is the wrong place to run an uncached ILIKE.
+ * Same mechanism the feed uses, and the same reason it isn't "use cache":
+ * Cache Components is off, and enabling it is an app-wide decision.
+ *
+ * Five minutes. The catalogue changes when somebody posts a repo, which is
+ * rare enough that a stale search result is not a thing anyone will notice.
+ */
+const CACHE_SECONDS = 300;
+
+const searchCached = unstable_cache(
+  (query: string) => searchRepos(query, null),
+  ["mcp-search"],
+  { revalidate: CACHE_SECONDS, tags: ["repos"] }
+);
+
+const repoDetailCached = unstable_cache(
+  async (id: string) => {
+    const repo = await db.query.repos.findFirst({ where: eq(repos.id, id) });
+    // `removed` is a moderation decision and must not be readable here, the
+    // same rule the mobile route applies. `hidden` is excluded too: it means
+    // the listing is reachable only by someone holding its link, and an
+    // unauthenticated tool is not that someone.
+    if (!repo || repo.status !== "active") return null;
+
+    const [poster, cats] = await Promise.all([
+      db.query.users.findFirst({ where: eq(users.id, repo.postedByUserId) }),
+      db
+        .select({ label: categories.label, kind: categories.kind })
+        .from(repoCategories)
+        .innerJoin(categories, eq(repoCategories.categoryId, categories.id))
+        .where(eq(repoCategories.repoId, repo.id)),
+    ]);
+
+    // `createdAt` is a Date here but a string on a cache hit, because
+    // unstable_cache round-trips through JSON. Normalise before it leaves.
+    return {
+      repo: { ...repo, createdAt: repo.createdAt.toISOString() },
+      posterLogin: poster?.githubLogin ?? null,
+      cats,
+    };
+  },
+  ["mcp-repo"],
+  { revalidate: CACHE_SECONDS, tags: ["repos"] }
+);
 
 /** Trimmed so one repo is one line plus its blurb, not a wall. */
 function line(r: {
