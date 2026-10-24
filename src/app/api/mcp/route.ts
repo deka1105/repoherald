@@ -314,4 +314,70 @@ const handler = createMcpHandler(
   }
 );
 
-export { handler as GET, handler as POST };
+/**
+ * A speed bump, not a wall.
+ *
+ * Each serverless instance keeps its own counter, so the real ceiling is this
+ * number times however many instances are warm — which makes it useless against
+ * a distributed flood and effective against the thing that will actually
+ * happen: one client, or one agent in a retry loop, calling in a tight circle.
+ * A wall belongs at the edge (Vercel Firewall), where it can be enforced once
+ * rather than per instance, and where it costs no function invocation.
+ *
+ * Paired with the caches above this is enough that a hot caller mostly hits
+ * memory rather than Neon.
+ */
+const WINDOW_MS = 60_000;
+const MAX_PER_WINDOW = 60;
+/** Bounded so a spray of unique IPs cannot grow the map without limit. */
+const MAX_TRACKED = 10_000;
+
+const seen = new Map<string, { count: number; resetAt: number }>();
+
+function overLimit(req: Request): number | null {
+  const now = Date.now();
+
+  // Pruning here rather than on a timer: there is no process to own a timer on
+  // a serverless instance, and an expired entry costs nothing until it's read.
+  if (seen.size > MAX_TRACKED) {
+    for (const [k, v] of seen) if (v.resetAt <= now) seen.delete(k);
+    // Still oversized means the window is full of live callers, not garbage.
+    // Drop everything rather than grow: the cost is one forgiven window.
+    if (seen.size > MAX_TRACKED) seen.clear();
+  }
+
+  // Vercel sets x-forwarded-for; the left-most entry is the client. Absent it,
+  // everyone shares one bucket, which fails closed rather than open.
+  const ip = (req.headers.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
+
+  const entry = seen.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    seen.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return null;
+  }
+  entry.count += 1;
+  return entry.count > MAX_PER_WINDOW ? Math.ceil((entry.resetAt - now) / 1000) : null;
+}
+
+async function guarded(req: Request): Promise<Response> {
+  const retryAfter = overLimit(req);
+  if (retryAfter !== null) {
+    return new Response(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        error: { code: -32029, message: `Rate limited. Retry in ${retryAfter}s.` },
+        id: null,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(retryAfter),
+        },
+      }
+    );
+  }
+  return handler(req);
+}
+
+export { guarded as GET, guarded as POST };
