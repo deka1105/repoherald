@@ -18,6 +18,7 @@ import {
   getListBySlug,
   getListItems,
 } from "@/lib/lists";
+import { getRepoSources, type RepoSource } from "@/lib/ingest-source";
 import { AddRepoForm } from "./add-repo-form";
 
 export async function generateMetadata({
@@ -69,6 +70,22 @@ export default async function ListPage({
     getListItems(list.id),
     getListViewStats(list.slug),
   ]);
+  // Source posts are shown to the owner and staff only, never to a visitor
+  // holding a link.
+  //
+  // The lists these repos actually land in are `visibility: "private"`, so for
+  // them this gate is belt-and-braces. It matters for the other case: nothing
+  // stops someone adding one of these hidden repos to an *unlisted* list,
+  // which is readable by anyone with the URL, and that would publish a third
+  // party's post link — the one thing the landing page promises we never do.
+  // Skipping the query entirely also spares a visitor's page load a join.
+  //
+  // One query for the whole page rather than one per card. Needs the item ids,
+  // so it cannot join the Promise.all above.
+  const sources =
+    isOwner || isStaff
+      ? await getRepoSources(items.map((i) => i.repo.id))
+      : new Map<string, RepoSource>();
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -142,6 +159,7 @@ export default async function ListPage({
                       starsCount: item.repo.starsCount,
                       avatarUrl: item.repo.avatarUrl,
                       isArchived: item.repo.isArchived,
+                      source: sources.get(item.repo.id),
                     }}
                   />
                   <p className="mt-1 px-1 text-xs text-muted-foreground">

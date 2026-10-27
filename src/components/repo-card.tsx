@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Gift, Heart, MessageCircle, Star } from "lucide-react";
+import { ExternalLink, Gift, Heart, MessageCircle, Star } from "lucide-react";
 import { cn, timeAgo } from "@/lib/utils";
+import type { RepoSource } from "@/lib/ingest-source";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +23,12 @@ export type RepoCardData = {
   postedAt?: string;
   likeCount?: number;
   commentCount?: number;
+  /**
+   * The post this listing was spotted in, when it came from a sweep rather
+   * than from its owner. Absent for owner-posted repos, and the card renders
+   * nothing for them rather than implying a source that does not exist.
+   */
+  source?: RepoSource;
 };
 
 /** Engagement counts. These are read-only on cards — liking and commenting
@@ -72,6 +79,64 @@ function Byline({
   );
 }
 
+const PLATFORM_LABEL: Record<RepoSource["platform"], string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  x: "X",
+  reddit: "Reddit",
+  facebook: "Facebook",
+};
+
+// Keyed loosely because the column is not constrained in the database and
+// carries values beyond the three the schema names. An unrecognised one simply
+// gets no hint, which is better than asserting something untrue about it.
+const FOUND_IN_LABEL: Record<string, string> = {
+  caption: "the caption",
+  "caption-cue": "the caption",
+  screen: "on-screen text",
+  narration: "the narration",
+};
+
+/** "Instagram reel", "TikTok post" — the noun comes from the URL, so a reel is
+ *  not announced as a post. */
+function sourceLabel(source: RepoSource): string {
+  const noun = /\/reels?\//.test(source.postUrl) ? "reel" : "post";
+  return `${PLATFORM_LABEL[source.platform]} ${noun}`;
+}
+
+/**
+ * Link out to the post a listing was rescued from.
+ *
+ * `nofollow ugc` because the destination is third-party content nobody here
+ * vetted, and `noreferrer` so the social platform is not told which page of
+ * ours someone came from.
+ */
+function SourceLink({
+  source,
+  className,
+}: {
+  source: RepoSource;
+  className?: string;
+}) {
+  const label = sourceLabel(source);
+  const foundIn = source.foundIn ? FOUND_IN_LABEL[source.foundIn] : undefined;
+  return (
+    <a
+      href={source.postUrl}
+      target="_blank"
+      rel="noopener noreferrer nofollow ugc"
+      title={foundIn ? `Repo named in ${foundIn} of this ${label}` : undefined}
+      className={cn(
+        "inline-flex items-center gap-1 hover:text-foreground hover:underline",
+        className
+      )}
+    >
+      <ExternalLink className="size-3 shrink-0" aria-hidden />
+      <span className="truncate">Source: {label}</span>
+    </a>
+  );
+}
+
 /** Compact square tile used by the "tiles" and "hybrid" feed layouts. */
 function TileCard({ repo }: { repo: RepoCardData }) {
   const featured = Boolean(repo.highlighted || repo.sponsored);
@@ -119,6 +184,9 @@ function TileCard({ repo }: { repo: RepoCardData }) {
             <Badge className="bg-amber-500 px-1.5 py-0 text-[10px] text-white hover:bg-amber-500">
               Highlighted
             </Badge>
+          )}
+          {repo.source && (
+            <SourceLink source={repo.source} className="max-w-full" />
           )}
           <Engagement repo={repo} size="xs" />
           <ShareRepo
@@ -185,6 +253,7 @@ function BannerCard({ repo }: { repo: RepoCardData }) {
                 {label}
               </Badge>
             ))}
+            {repo.source && <SourceLink source={repo.source} />}
             <Engagement repo={repo} size="sm" />
             <ShareRepo
               repoId={repo.id}
