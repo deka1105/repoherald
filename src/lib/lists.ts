@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { repoListItems, repoLists, repos, users } from "@/db/schema";
 
@@ -10,6 +10,32 @@ export const MAX_ITEMS_PER_LIST = 200;
 export const TITLE_MAX = 80;
 export const DESCRIPTION_MAX = 300;
 export const NOTE_MAX = 140;
+
+/**
+ * How a list's items can be ordered.
+ *
+ * `added` is first because it is the existing behaviour and stays the default:
+ * a curated list reads in the order its owner built it. The others exist
+ * because a list of 200 saved repos is not something you read, it is something
+ * you look through.
+ */
+export const LIST_SORTS = ["added", "recent", "stars", "name"] as const;
+export type ListSort = (typeof LIST_SORTS)[number];
+
+export const LIST_SORT_LABELS: Record<ListSort, string> = {
+  added: "Order added",
+  recent: "Recently added",
+  stars: "Most stars",
+  name: "Name (A–Z)",
+};
+
+/** Same floor as the site search: one character matches most of a list. */
+export const LIST_SEARCH_MIN = 2;
+
+/** Narrow an untrusted `?sort=` to a known column ordering. */
+export function parseListSort(raw: string | undefined): ListSort {
+  return LIST_SORTS.includes(raw as ListSort) ? (raw as ListSort) : "added";
+}
 
 /** Share-link slug: readable stem + random suffix, so lists can't be found by
  * guessing titles and two lists named "AI tools" never collide. */
@@ -44,7 +70,43 @@ export async function getListBySlug(slug: string) {
   return row ?? null;
 }
 
-export async function getListItems(listId: string) {
+/**
+ * The items on a list, optionally filtered and reordered.
+ *
+ * Both options are omitted by callers that want the whole list in its curated
+ * order — the mobile API does — so the default behaviour is exactly what it
+ * was before searching existed.
+ *
+ * The note is searched alongside the repo's own fields on purpose. "A line on
+ * why each is there" is the thing a saved-posts folder does not have, so it is
+ * the most likely thing someone actually remembers: not the repo's name, but
+ * what they said about it.
+ */
+export async function getListItems(
+  listId: string,
+  opts: { q?: string; sort?: ListSort } = {}
+) {
+  const q = opts.q?.trim() ?? "";
+  const searching = q.length >= LIST_SEARCH_MIN;
+
+  // Escape LIKE wildcards, or a query of "%" quietly matches every row.
+  const term = `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+  // Every ordering gets createdAt as a tiebreaker so equal stars or duplicate
+  // names cannot shuffle between requests — a list that reorders itself on
+  // refresh reads as a bug.
+  const order = {
+    added: [asc(repoListItems.createdAt)],
+    recent: [desc(repoListItems.createdAt)],
+    stars: [desc(repos.starsCount), asc(repoListItems.createdAt)],
+    // lower() because this database's collation is C.UTF-8, which is byte
+    // order: a plain ASC puts every capitalised name ahead of every lowercase
+    // one, so "zod" and "axios" would sit below "Zebra". Nobody reads that as
+    // A-Z. The index on full_name goes unused, which is irrelevant at the
+    // 200-item cap.
+    name: [asc(sql`lower(${repos.fullName})`), asc(repoListItems.createdAt)],
+  }[opts.sort ?? "added"];
+
   return db
     .select({
       itemId: repoListItems.id,
@@ -58,8 +120,22 @@ export async function getListItems(listId: string) {
     .innerJoin(repos, eq(repoListItems.repoId, repos.id))
     .innerJoin(users, eq(repoListItems.addedByUserId, users.id))
     // Removed listings stay out of every list without needing a cleanup job.
-    .where(and(eq(repoListItems.listId, listId), sql`${repos.status} <> 'removed'`))
-    .orderBy(asc(repoListItems.createdAt));
+    .where(
+      and(
+        eq(repoListItems.listId, listId),
+        sql`${repos.status} <> 'removed'`,
+        searching
+          ? or(
+              ilike(repos.fullName, term),
+              ilike(repos.description, term),
+              ilike(repos.primaryLanguage, term),
+              ilike(repos.ownerLogin, term),
+              ilike(repoListItems.note, term)
+            )
+          : undefined
+      )
+    )
+    .orderBy(...order);
 }
 
 /** A user's own lists, newest first, with live item counts. */

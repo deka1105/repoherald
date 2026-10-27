@@ -14,9 +14,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   DESCRIPTION_MAX,
+  LIST_SEARCH_MIN,
+  LIST_SORTS,
+  LIST_SORT_LABELS,
   TITLE_MAX,
   getListBySlug,
   getListItems,
+  parseListSort,
 } from "@/lib/lists";
 import { getRepoSources, type RepoSource } from "@/lib/ingest-source";
 import { AddRepoForm } from "./add-repo-form";
@@ -45,10 +49,20 @@ export default async function ListPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ msg?: string; err?: string }>;
+  searchParams: Promise<{
+    msg?: string;
+    err?: string;
+    q?: string;
+    sort?: string;
+  }>;
 }) {
   const { slug } = await params;
-  const { msg, err } = await searchParams;
+  const { msg, err, q: qRaw, sort: sortRaw } = await searchParams;
+  const query = (qRaw ?? "").trim();
+  const sort = parseListSort(sortRaw);
+  // Below the floor the query is ignored rather than refused: a stray single
+  // character should show the list, not an error.
+  const searching = query.length >= LIST_SEARCH_MIN;
   const session = await auth();
 
   const row = await getListBySlug(slug);
@@ -67,7 +81,7 @@ export default async function ListPage({
 
   const canAdd = Boolean(session?.user) && (list.contributions === "open" || isOwner);
   const [items, views] = await Promise.all([
-    getListItems(list.id),
+    getListItems(list.id, { q: query, sort }),
     getListViewStats(list.slug),
   ]);
   // Source posts are shown to the owner and staff only, never to a visitor
@@ -138,10 +152,62 @@ export default async function ListPage({
         </p>
       )}
 
+      {/* Shown once there is something to look through, and whenever a search
+          is active so a no-match query can be cleared. A plain GET form, like
+          /search: the query and the ordering live in the URL, so "my rust
+          tools, most stars first" is a link you can bookmark. The submit
+          button means it needs no JavaScript to work. */}
+      {(items.length > 0 || searching) && (
+        <form
+          action={`/lists/${list.slug}`}
+          className="flex flex-wrap items-center gap-2"
+        >
+          <Input
+            name="q"
+            defaultValue={query}
+            placeholder="Search this list — name, language, or your note…"
+            autoComplete="off"
+            aria-label="Search this list"
+            className="min-w-0 flex-1 basis-56"
+          />
+          <select
+            name="sort"
+            defaultValue={sort}
+            aria-label="Sort this list"
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            {LIST_SORTS.map((s) => (
+              <option key={s} value={s}>
+                {LIST_SORT_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" size="sm">
+            Apply
+          </Button>
+          {searching && (
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/lists/${list.slug}${sort === "added" ? "" : `?sort=${sort}`}`}>
+                Clear
+              </Link>
+            </Button>
+          )}
+        </form>
+      )}
+
+      {searching && (
+        <p className="text-sm text-muted-foreground">
+          {items.length} {items.length === 1 ? "match" : "matches"} for{" "}
+          <strong>{query}</strong>
+        </p>
+      )}
+
       <div className="space-y-3">
         {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Nothing here yet — this list is waiting for its first repo.
+            {searching
+              ? "Nothing on this list matches that."
+              : "Nothing here yet — this list is waiting for its first repo."}
           </p>
         ) : (
           items.map((item) => {
