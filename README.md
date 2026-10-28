@@ -146,10 +146,53 @@ scrubbed out. Five entries were dropped because their names (`ui`, `You`,
 0% without search, by construction, anything resolved there is attributable to
 Tavily alone.
 
-Without that line, "72% correct" is unreadable — excellent against a 25%
+Without that line, "91% correct" is unreadable — excellent against a 25%
 baseline, embarrassing against a 70% one. Three quarters of this corpus is
 unreachable without a model, and no regex reconstructs
 `ertasselli slash openterminal`.
+
+Measured on 28 Oct 2026 against the live endpoint, 320,029 tokens over 277
+model calls (Super on the fast tier, Ultra on the deep tier):
+
+| mode | no model | with Nemotron |
+|---|---|---|
+| `caption_url` | 98.2% | 98.2% |
+| `caption_plain` | 0% | **98.2%** |
+| `screen` (OCR) | 0% | **71.9%** |
+| `narration` (Whisper) | 0% | **96.5%** |
+| **228 cases** | **24.6%** | **91.2%**, 0 wrong |
+
+1.03 model calls per case, because rung 1 resolves a quarter of the corpus for
+nothing and the deep tier only runs on what the fast tier got wrong. Narration
+beating OCR by 25 points is the result worth staring at: a dropped hyphen is a
+*consistent* transformation, so the model can learn to undo it, while `5`-for-`S`
+glyph damage is noise and there is nothing to undo.
+
+### The failure this surfaced, which validation could not catch
+
+`described_only` is reported separately above because it behaved differently
+and badly. With no name anywhere in the text, the model stopped reconstructing
+and started free-associating to whatever well-known project owns the niche —
+returning a **real** repository that was not the right one in 14.6% of cases:
+
+```
+chrisgreg/boop            → binwiederhier/ntfy
+projectdiscovery/katana   → apify/crawlee
+xevrion/breakscale        → jepsen-io/jepsen
+```
+
+Every one of those exists, so `fetchPublicRepo` confirmed all of them. **The
+GitHub check proves a repository is real; it cannot prove it is the one the
+post was about.** "Nemotron proposes, GitHub decides" quietly assumed those
+were the same thing.
+
+`isGrounded` in `src/lib/resolve-repo.ts` is the fix: a candidate from a model
+rung must have one side of `owner/repo` survive as a run of characters in the
+post once case, spacing and punctuation are discarded. `vimax` survives
+`HKUD5/ViMax` and `ytdlp` survives "yt dlp slash yt dlp", so real damage still
+repairs — but a name that appears nowhere is refused before GitHub is asked.
+It applies to the model rungs only; the search rung's evidence comes from the
+web, which is the whole reason that rung exists.
 
 Running it also found two repositories in the catalogue that have since been
 renamed and one that was deleted — caught by validating against GitHub rather
