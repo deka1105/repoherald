@@ -148,7 +148,7 @@ export async function POST(request: Request) {
       modelCalls: result.modelCalls,
       tokens: result.tokens,
       ms: Date.now() - started,
-      degraded,
+      degraded: unconfigured || Boolean(result.modelUnavailable),
     });
   } catch (err) {
     // The visitor gets a flat message; the detail goes to the logs. A model

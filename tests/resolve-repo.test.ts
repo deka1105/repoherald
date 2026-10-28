@@ -176,6 +176,63 @@ async function main() {
   ok("web search confidence stays modest", r.confidence < 0.9);
 }
 
+// ── the model being unreachable (an exhausted balance, a revoked key, an outage)
+
+{
+  const dead: Completer = async () => {
+    throw new Error("Nebius Token Factory returned 402: balance exhausted");
+  };
+  const r = await resolveRepo(
+    { caption: `the tool is at https://github.com/${target}` },
+    lookup,
+    { complete: dead },
+  );
+  ok("a literal link still resolves with the model dead", r.repo?.full_name === target);
+  ok("rung 1 never touches the model, so nothing is flagged", r.modelUnavailable === undefined);
+}
+
+{
+  const dead: Completer = async () => {
+    throw new Error("Nebius Token Factory returned 402: balance exhausted");
+  };
+  const r = await resolveRepo({ transcript: "ertasselli slash openterminal" }, lookup, {
+    complete: dead,
+  });
+  ok("an unreachable model does not throw out of the ladder", r.repo === null);
+  ok("it reports why it degraded", /balance exhausted/.test(r.modelUnavailable ?? ""));
+  ok("it says plainly that the repair rungs did not run", /could not be reached/i.test(r.reasoning));
+  ok("a failed call is not counted as a call", r.modelCalls === 0);
+}
+
+{
+  // The deep tier shares the balance, so one failure stops the asking.
+  let calls = 0;
+  const diesOnSecond: Completer = async () => {
+    calls++;
+    if (calls === 1) return { text: '{"candidates":[{"full_name":"no/such-repo","source":"caption","confidence":0.9}]}', model: "stub" };
+    throw new Error("402 balance exhausted");
+  };
+  const r = await resolveRepo({ transcript: "mangled" }, lookup, { complete: diesOnSecond });
+  ok("a mid-ladder failure stops further model calls", calls === 2);
+  ok("the partial work is still reported", r.attempts.some((a) => a.fullName === "no/such-repo"));
+  ok("and it is still flagged as degraded", Boolean(r.modelUnavailable));
+}
+
+{
+  // Search can still run with the model down: its query has a model-free
+  // fallback and its ranking already degrades to reading links.
+  const dead: Completer = async () => {
+    throw new Error("402 balance exhausted");
+  };
+  const r = await resolveRepo(
+    { transcript: "a self hosted parametric cad application written in pure rust" },
+    lookup,
+    { complete: dead, search: async () => [`https://github.com/${target}`] },
+  );
+  ok("the search rung survives the model being down", r.repo?.full_name === target);
+  ok("the degradation is still reported alongside the hit", Boolean(r.modelUnavailable));
+}
+
 // ── the search rung
 
 {

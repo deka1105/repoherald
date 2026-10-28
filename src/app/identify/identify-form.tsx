@@ -218,10 +218,10 @@ export function IdentifyForm() {
                   </div>
                 ) : result.degraded ? (
                   <p className="text-sm text-muted-foreground">
-                    No literal github.com link in that text, and this deployment has no model
-                    configured — so the rungs that reconstruct a mangled or spoken name never
-                    ran. This is the honest &ldquo;before&rdquo; state: it is exactly what the
-                    pipeline could do when a person had to do the rest.
+                    No literal github.com link in that text, and the rungs that reconstruct a
+                    mangled or spoken name did not run — so this is the honest
+                    &ldquo;before&rdquo; state, exactly what the pipeline could manage when a
+                    person had to do the rest. A literal link still resolves.
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
