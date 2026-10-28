@@ -362,7 +362,11 @@ export async function resolveRepo(
   // description is the only remaining route to an answer.
   if (opts.search) {
     const query = searchQuery || naiveQuery(body);
-    const results = await opts.search(query);
+
+    // A post that is nothing but hashtags and "link in bio" leaves no query
+    // once the furniture is stripped. Searching for an empty string spends a
+    // Tavily call to learn nothing, so don't.
+    const results = query.length >= 12 ? await opts.search(query) : [];
 
     if (results.length) {
       // Ask the model which result is the project, rather than taking the

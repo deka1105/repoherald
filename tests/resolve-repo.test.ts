@@ -205,7 +205,11 @@ async function main() {
   const queries: string[] = [];
   const model = stub(['{"candidates":[]}', '{"candidates":[]}', '{"candidates":[]}']);
   await resolveRepo(
-    { caption: "stop paying for this 🔥 save this #devtools #opensource https://example.com link in bio" },
+    {
+      caption:
+        "stop paying for this 🔥 save this #devtools #opensource https://example.com link in bio",
+      transcript: "a self hosted parametric CAD application written in pure rust",
+    },
     lookup,
     { complete: model, search: async (q) => { queries.push(q); return []; } },
   );
@@ -213,7 +217,24 @@ async function main() {
   ok("fallback query drops hashtags", !q.includes("#"));
   ok("fallback query drops urls", !q.includes("example.com"));
   ok("fallback query drops calls to action", !/link in bio|save this/i.test(q));
-  ok("fallback query keeps something to search for", q.trim().length > 0);
+  ok("fallback query keeps the descriptive part", /parametric cad/i.test(q));
+}
+
+{
+  // Furniture only: nothing left to search for, so nothing should be searched.
+  let searched = false;
+  await resolveRepo(
+    { caption: "save this 🔥 #devtools link in bio" },
+    lookup,
+    {
+      complete: stub(['{"candidates":[]}', '{"candidates":[]}']),
+      search: async () => {
+        searched = true;
+        return [];
+      },
+    },
+  );
+  ok("an empty query never reaches Tavily", searched === false);
 }
 
 {
