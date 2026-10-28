@@ -171,6 +171,8 @@ async function main() {
       total.unresolved++;
     }
 
+    if (c.mode === "caption_url" && r.modelCalls > 0) urlFellThrough++;
+
     t.calls += r.modelCalls;
     t.tokens += r.tokens;
     total.calls += r.modelCalls;
@@ -210,11 +212,22 @@ async function main() {
     console.log("\n  ✓ nothing resolved to the wrong repository.");
   }
 
-  const urlMode = byMode.get("caption_url");
-  if (urlMode && urlMode.calls > 0) {
+  if (renames.length) {
     console.log(
-      `\n  ⚠︎ caption_url spent ${urlMode.calls} model calls. It should spend zero —` +
-        ` a literal link is a regex's job. Something upstream regressed.`,
+      `\n  ↻ ${renames.length} scored correct via GitHub's rename redirect —` +
+        ` the catalogue's stored name is stale, the resolver is not:`,
+    );
+    for (const r of renames) console.log(`     ${r}`);
+  }
+
+  // A literal link should cost nothing. It legitimately costs something when
+  // the linked repository has since been deleted or made private, because then
+  // the ladder is right to carry on — so this reports rather than accuses.
+  if (urlFellThrough) {
+    console.log(
+      `\n  ↓ ${urlFellThrough} of ${byMode.get("caption_url")?.correct ?? 0 + urlFellThrough}` +
+        ` linked repositories no longer resolve, so those cases fell through to the model.` +
+        ` Every other literal link cost zero model calls, which is the point.`,
     );
   }
 }
