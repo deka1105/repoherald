@@ -75,7 +75,17 @@ GitHub confirms:
    it repairs instead of repeating itself. This is the rung that undoes spoken
    punctuation.
 4. **Tavily** — only when the post describes a project and never names it. No
-   amount of re-reading recovers a name that was never there.
+   amount of re-reading recovers a name that was never there, so search is the
+   only remaining route. Nemotron writes the search query *in the same
+   completion that returned the candidates*, so a post that turns out to name
+   nothing has already paid for its query. Two searches run: one restricted to
+   github.com for the repository page itself, one unrestricted for the
+   listicle or thread that names it — a reel and a README rarely describe a
+   tool the same way, while an article about it describes it the way people
+   talk. Nemotron then picks which result is the project, because searching
+   "open source photo editor in Rust" returns the right owner's *other*
+   project just as readily, and taking the first link would be picking by
+   result order rather than by evidence.
 
 Two tiers because the work is two-speed: most posts name the repo plainly and
 want the cheap pass, while a minority are mangled and want real reasoning.
@@ -103,8 +113,16 @@ so only rung 1 can resolve anything, and that is the bar Nemotron has to clear:
   caption_plain    57  correct   0.0%   wrong  0.0%   unresolved 100.0%
   screen           57  correct   0.0%   wrong  0.0%   unresolved 100.0%
   narration        57  correct   0.0%   wrong  0.0%   unresolved 100.0%
-  ALL             228  correct  24.6%   wrong  0.0%   unresolved  75.4%
+  described_only   41  correct   0.0%   wrong  0.0%   unresolved 100.0%
 ```
+
+`described_only` is the search rung's corpus, and it is the one set of inputs
+here that is **not** synthetic: those are the real GitHub descriptions of
+catalogued repositories with every mention of the owner and repository name
+scrubbed out. Five entries were dropped because their names (`ui`, `You`,
+`JOB`) are substrings of ordinary English and so cannot be proved absent. At
+0% without search, by construction, anything resolved there is attributable to
+Tavily alone.
 
 Without that line, "72% correct" is unreadable — excellent against a 25%
 baseline, embarrassing against a 70% one. Three quarters of this corpus is
