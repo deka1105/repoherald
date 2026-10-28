@@ -72,6 +72,14 @@ export type Resolution = {
   attempts: Attempt[];
   modelCalls: number;
   tokens: number;
+  /**
+   * Set when a model call failed and the ladder carried on without it — an
+   * exhausted credit balance, a revoked key, an outage. The caller should
+   * report this as degraded service rather than as an error, because rung 1
+   * still works and a visitor getting a literal link resolved is a better
+   * outcome than a 502.
+   */
+  modelUnavailable?: string;
 };
 
 const SYSTEM = `You identify which GitHub repository a social media post is about.
@@ -304,6 +312,7 @@ export async function resolveRepo(
 
   let reasoning = "";
   let searchQuery: string | undefined;
+  let modelUnavailable: string | undefined;
 
   // ── 2 & 3. the model, fast then deep
   for (const tier of ["fast", "deep"] as const) {
