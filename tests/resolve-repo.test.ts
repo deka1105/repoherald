@@ -57,7 +57,7 @@ function stub(replies: string[]): Completer & { prompts: string[] } {
 }
 
 const target = names[0];
-const [tOwner, tName] = target.split("/");
+const [tOwner] = target.split("/");
 
 // ── url extraction
 

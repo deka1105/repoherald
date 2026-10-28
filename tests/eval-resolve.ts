@@ -107,11 +107,17 @@ async function main() {
     const hit = got?.toLowerCase() === c.fullName.toLowerCase();
     const outcome = got === null ? "unresolved" : hit ? "correct" : "WRONG";
 
-    if (outcome === "correct") t.correct++, total.correct++;
-    else if (outcome === "WRONG") {
-      t.wrong++, total.wrong++;
+    if (outcome === "correct") {
+      t.correct++;
+      total.correct++;
+    } else if (outcome === "WRONG") {
+      t.wrong++;
+      total.wrong++;
       wrongExamples.push(`${c.mode}: expected ${c.fullName}, got ${got}`);
-    } else t.unresolved++, total.unresolved++;
+    } else {
+      t.unresolved++;
+      total.unresolved++;
+    }
 
     t.calls += r.modelCalls;
     t.tokens += r.tokens;
