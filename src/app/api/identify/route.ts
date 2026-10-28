@@ -81,15 +81,12 @@ function clean(value: unknown): string | null {
 }
 
 export async function POST(request: Request) {
-  if (!nemotronConfigured()) {
-    return NextResponse.json(
-      {
-        error:
-          "Repo identification is not configured on this deployment (NEBIUS_API_KEY is unset).",
-      },
-      { status: 503 },
-    );
-  }
+  // No key is not an error. Rung 1 of the ladder is a regex over literal
+  // github.com links and needs no model at all, so an unconfigured deployment
+  // still answers the easy half honestly rather than refusing outright — and a
+  // judge following the demo link before the credits land gets something that
+  // works instead of a grey box. `degraded` tells the page to say so.
+  const degraded = !nemotronConfigured();
 
   let body: unknown;
   try {

@@ -225,10 +225,9 @@ async function main() {
   // the ladder is right to carry on — so this reports rather than accuses.
   if (urlFellThrough) {
     console.log(
-      `\n  ↓ ${urlFellThrough} linked repositor${urlFellThrough === 1 ? "y" : "ies"}` +
-        ` no longer resolve, so ${urlFellThrough === 1 ? "that case" : "those cases"}` +
-        ` fell through to the model. Every other literal link cost zero model calls,` +
-        ` which is the point.`,
+      `\n  ↓ ${urlFellThrough} linked repositor${urlFellThrough === 1 ? "y no longer resolves" : "ies no longer resolve"},` +
+        ` so ${urlFellThrough === 1 ? "that case" : "those cases"} fell through to the model.` +
+        ` Every other literal link cost zero model calls, which is the point.`,
     );
   }
 }
