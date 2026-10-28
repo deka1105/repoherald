@@ -426,7 +426,9 @@ async function main() {
   // fabricated repository genuinely exists.
   const everythingExists = async (owner: string, name: string): Promise<GithubRepo> => ({
     id: 1,
+    name,
     full_name: `${owner}/${name}`,
+    private: false,
     description: null,
     language: null,
     stargazers_count: 0,
