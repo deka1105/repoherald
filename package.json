@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:mobile-auth": "tsx tests/mobile-auth.test.ts"
+    "test:mobile-auth": "tsx tests/mobile-auth.test.ts",
+    "test:resolve": "tsx tests/resolve-repo.test.ts",
+    "eval:resolve": "tsx tests/eval-resolve.ts",
+    "nemotron:doctor": "tsx scripts/nemotron-doctor.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
