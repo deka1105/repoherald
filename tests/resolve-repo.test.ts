@@ -9,7 +9,7 @@
  */
 
 import type { GithubRepo } from "@/lib/github";
-import { resolveRepo, urlsIn, type Completer } from "@/lib/resolve-repo";
+import { isGrounded, resolveRepo, urlsIn, type Completer } from "@/lib/resolve-repo";
 import { buildCases, buildDescribedCases } from "./corrupt";
 import names from "./fixtures/repo-names.json";
 import descriptions from "./fixtures/repo-descriptions.json";
@@ -360,6 +360,95 @@ async function main() {
     "the corpus is deterministic",
     JSON.stringify(buildCases(names)) === JSON.stringify(buildCases(names)),
   );
+}
+
+// ── grounding: the model may repair a name, not invent one
+//
+// The eval found this the expensive way: on 41 descriptions with the name
+// scrubbed out, the model returned a real-but-wrong repository 14.6% of the
+// time, and GitHub validation cannot catch that because the repository exists.
+
+{
+  ok(
+    "a mangled OCR name is grounded by its surviving half",
+    isGrounded("HKUDS/ViMax", "FREE ALTERNATIVE\nHKUD5/ViMax\ngithub\nSAVE THIS"),
+  );
+  ok(
+    "spoken punctuation does not break grounding",
+    isGrounded("yt-dlp/yt-dlp", "number one is yt dlp slash yt dlp, link in bio"),
+  );
+  ok(
+    "case and separators are ignored",
+    isGrounded("ErTasselli/OpenTerminal", "it is ertasselli slash openterminal honestly"),
+  );
+  ok(
+    "a name that appears nowhere is refused",
+    !isGrounded(
+      "binwiederhier/ntfy",
+      "the open source tool that sends push notifications from a shell script",
+    ),
+  );
+  ok(
+    "the real described_only failures are all refused",
+    [
+      ["jepsen-io/jepsen", "a library for testing distributed systems for consistency"],
+      ["apify/crawlee", "a fast crawler and scraper for discovery and reconnaissance"],
+      ["TabbyML/tabby", "a self hosted coding assistant you can run on your own gpu"],
+      ["CadQuery/CQ-editor", "parametric modelling of physical parts from a script"],
+    ].every(([full, post]) => !isGrounded(full, post)),
+  );
+  ok(
+    "a token shorter than the floor cannot ground a candidate",
+    !isGrounded("shadcn-ui/ui", "a guide to building an intuitive user interface"),
+  );
+  ok("empty text grounds nothing", !isGrounded("owner/repo", ""));
+
+  // And the behaviour through the whole ladder: a plausible, real, existing
+  // repository that the post never mentions must not come back.
+  const fabricates: Completer = async () => ({
+    text: '{"candidates":[{"full_name":"jepsen-io/jepsen","source":"caption","confidence":1.0,"why":"it is obviously this"}],"reasoning":"confident"}',
+    model: "stub",
+    truncated: false,
+  });
+  // A lookup that says yes to everything, which is the real situation: the
+  // fabricated repository genuinely exists.
+  const everythingExists = async (owner: string, name: string): Promise<GithubRepo> => ({
+    id: 1,
+    full_name: `${owner}/${name}`,
+    description: null,
+    language: null,
+    stargazers_count: 0,
+    archived: false,
+    owner: { login: owner, avatar_url: "" },
+  });
+
+  const r = await resolveRepo(
+    { caption: "a library for testing distributed systems for consistency" },
+    everythingExists,
+    { complete: fabricates, search: async () => [] },
+  );
+  ok("an ungrounded candidate is not returned even though GitHub confirms it", r.repo === null);
+  ok(
+    "the ungrounded candidate is still reported, flagged",
+    r.attempts.some((a) => a.fullName === "jepsen-io/jepsen" && a.ungrounded === true),
+  );
+  ok(
+    "and GitHub was never asked about it",
+    r.attempts.filter((a) => a.fullName === "jepsen-io/jepsen" && !a.ungrounded).length === 0,
+  );
+
+  // The guard must not break the case it was built around: a grounded but
+  // mangled name still resolves.
+  const repairs: Completer = async () => ({
+    text: '{"candidates":[{"full_name":"HKUDS/ViMax","source":"screen","confidence":0.8}]}',
+    model: "stub",
+    truncated: false,
+  });
+  const r2 = await resolveRepo({ stillsText: "HKUD5/ViMax" }, everythingExists, {
+    complete: repairs,
+    search: async () => [],
+  });
+  ok("a grounded repair still resolves", r2.repo?.full_name === "HKUDS/ViMax");
 }
 
 }
