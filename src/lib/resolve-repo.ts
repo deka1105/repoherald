@@ -327,7 +327,18 @@ export async function resolveRepo(
             .map((r) => `- ${r}`)
             .join("\n")}\n\nThey are wrong. Reconstruct the repository name differently — pay particular attention to punctuation a speaker would pronounce aloud (a spoken "slash", "dot" or "dash") and to hyphens that are never pronounced at all.`;
 
-    const out = await ask({ tier, system: SYSTEM, user: prompt });
+    let out: Awaited<ReturnType<Completer>>;
+    try {
+      out = await ask({ tier, system: SYSTEM, user: prompt });
+    } catch (err) {
+      // Both tiers sit behind the same endpoint and the same balance, so if one
+      // call fails for anything other than its own content, the other will too.
+      // Stop asking and fall through to the search rung, which can still work:
+      // its query has a model-free fallback and its ranking already degrades to
+      // reading links out of the results.
+      modelUnavailable = err instanceof Error ? err.message : "model call failed";
+      break;
+    }
     modelCalls++;
     tokens += (out.promptTokens ?? 0) + (out.completionTokens ?? 0);
 
