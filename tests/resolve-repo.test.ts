@@ -10,8 +10,9 @@
 
 import type { GithubRepo } from "@/lib/github";
 import { resolveRepo, urlsIn, type Completer } from "@/lib/resolve-repo";
-import { buildCases } from "./corrupt";
+import { buildCases, buildDescribedCases } from "./corrupt";
 import names from "./fixtures/repo-names.json";
+import descriptions from "./fixtures/repo-descriptions.json";
 
 let pass = 0,
   fail = 0;
@@ -175,7 +176,86 @@ async function main() {
   ok("web search confidence stays modest", r.confidence < 0.9);
 }
 
+// ── the search rung
+
+{
+  // The query must come from the model when it offered one, because the raw
+  // post text is a terrible search query.
+  const queries: string[] = [];
+  const model = stub([
+    JSON.stringify({ candidates: [], search_query: "open source photo editor written in rust" }),
+    JSON.stringify({ candidates: [] }),
+    JSON.stringify({ candidates: [{ full_name: target, confidence: 0.8 }] }),
+  ]);
+  const r = await resolveRepo({ caption: "stop paying for this 🔥 #devtools link in bio" }, lookup, {
+    complete: model,
+    search: async (q) => {
+      queries.push(q);
+      return [`GitHub - ${target}: a thing`, "GitHub - someone/unrelated: other"];
+    },
+  });
+  ok("search uses the model's query, not the raw post", queries[0] === "open source photo editor written in rust");
+  ok("the ranked result resolves", r.repo?.full_name === target);
+  ok("a ranked hit scores above an unranked one", r.confidence === 0.65);
+  ok("ranking costs a third model call", r.modelCalls === 3);
+}
+
+{
+  // With no search_query offered, the fallback must strip social furniture.
+  const queries: string[] = [];
+  const model = stub(['{"candidates":[]}', '{"candidates":[]}', '{"candidates":[]}']);
+  await resolveRepo(
+    { caption: "stop paying for this 🔥 save this #devtools #opensource https://example.com link in bio" },
+    lookup,
+    { complete: model, search: async (q) => { queries.push(q); return []; } },
+  );
+  const q = queries[0] ?? "";
+  ok("fallback query drops hashtags", !q.includes("#"));
+  ok("fallback query drops urls", !q.includes("example.com"));
+  ok("fallback query drops calls to action", !/link in bio|save this/i.test(q));
+  ok("fallback query keeps something to search for", q.trim().length > 0);
+}
+
+{
+  // If ranking throws, the rung still works off the raw links.
+  let calls = 0;
+  const flaky: Completer = async (opts) => {
+    calls++;
+    if (opts.system.startsWith("You are given a social media post")) throw new Error("ranking down");
+    return { text: '{"candidates":[]}', model: "stub", promptTokens: 1, completionTokens: 1 };
+  };
+  const r = await resolveRepo({ caption: "a described thing" }, lookup, {
+    complete: flaky,
+    search: async () => [`https://github.com/${target}`],
+  });
+  ok("a ranking failure falls back to link extraction", r.repo?.full_name === target);
+  ok("an unranked hit scores lower", r.confidence === 0.5);
+  ok("the ranking call was attempted", calls === 3);
+}
+
 // ── the corpus
+
+{
+  const described = buildDescribedCases(descriptions);
+  ok("the described corpus is non-trivial", described.length >= 40);
+  ok(
+    "no described case leaks the repo name it is testing for",
+    described.every((c) => {
+      const haystack = `${c.caption ?? ""} ${c.transcript ?? ""} ${c.stillsText ?? ""}`.toLowerCase();
+      const [owner, name] = c.fullName.toLowerCase().split("/");
+      return !haystack.includes(c.fullName.toLowerCase()) && !haystack.includes(name) && !haystack.includes(owner);
+    }),
+  );
+  ok(
+    "no described case contains a github link",
+    described.every((c) => urlsIn(`${c.caption ?? ""} ${c.transcript ?? ""}`).length === 0),
+  );
+  ok(
+    "the described corpus is deterministic",
+    JSON.stringify(buildDescribedCases(descriptions)) ===
+      JSON.stringify(buildDescribedCases(descriptions)),
+  );
+}
 
 {
   const cases = buildCases(names);

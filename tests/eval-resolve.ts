@@ -95,7 +95,7 @@ async function main() {
     return cache.get(key)!;
   };
 
-  let cases = buildCases(names);
+  let cases = [...buildCases(names), ...buildDescribedCases(descriptions)];
   if (onlyMode) cases = cases.filter((c) => c.mode === onlyMode);
   if (limit) cases = cases.slice(0, limit);
 
@@ -198,7 +198,13 @@ async function main() {
 
   console.log("  mode            n   outcome");
   console.log("  " + "─".repeat(86));
-  for (const mode of ["caption_url", "caption_plain", "screen", "narration"] as Mode[]) {
+  for (const mode of [
+    "caption_url",
+    "caption_plain",
+    "screen",
+    "narration",
+    "described_only",
+  ] as Mode[]) {
     const t = byMode.get(mode);
     if (t) row(mode, t);
   }
