@@ -69,8 +69,11 @@ function githubToken(): string | null {
 }
 
 async function main() {
-  if (!nemotronConfigured()) {
-    console.error("NEBIUS_API_KEY is not set. Run `npm run nemotron:doctor` first.");
+  if (!baselineOnly && !nemotronConfigured()) {
+    console.error(
+      "NEBIUS_API_KEY is not set. Run `npm run nemotron:doctor` first,\n" +
+        "or measure the no-model baseline now with `npm run eval:resolve -- --baseline`.",
+    );
     process.exit(1);
   }
   const token = githubToken();
@@ -95,10 +98,23 @@ async function main() {
   if (onlyMode) cases = cases.filter((c) => c.mode === onlyMode);
   if (limit) cases = cases.slice(0, limit);
 
-  console.log(`Nemotron repo identification — ${cases.length} cases`);
-  console.log(`  fast: ${MODELS.fast}`);
-  console.log(`  deep: ${MODELS.deep}`);
-  console.log(`  tavily: ${tavilyConfigured() ? "on" : "off"}\n`);
+  if (baselineOnly) {
+    console.log(`BASELINE — no model, literal github.com links only — ${cases.length} cases`);
+    console.log("  this is the bar Nemotron has to clear\n");
+  } else {
+    console.log(`Nemotron repo identification — ${cases.length} cases`);
+    console.log(`  fast: ${MODELS.fast}`);
+    console.log(`  deep: ${MODELS.deep}`);
+    console.log(`  tavily: ${tavilyConfigured() ? "on" : "off"}\n`);
+  }
+
+  /** A model that proposes nothing, so only rung 1 can resolve. */
+  const noModel: Completer = async () => ({
+    text: '{"candidates":[],"reasoning":"baseline: no model consulted"}',
+    model: "baseline",
+    promptTokens: 0,
+    completionTokens: 0,
+  });
 
   type Tally = { correct: number; wrong: number; unresolved: number; calls: number; tokens: number };
   const blank = (): Tally => ({ correct: 0, wrong: 0, unresolved: 0, calls: 0, tokens: 0 });
