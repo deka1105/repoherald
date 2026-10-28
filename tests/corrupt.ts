@@ -17,7 +17,12 @@
  * moves every time it is quoted.
  */
 
-export type Mode = "caption_url" | "caption_plain" | "screen" | "narration";
+export type Mode =
+  | "caption_url"
+  | "caption_plain"
+  | "screen"
+  | "narration"
+  | "described_only";
 
 export type Case = {
   fullName: string;
@@ -26,6 +31,42 @@ export type Case = {
   stillsText?: string;
   transcript?: string;
 };
+
+/**
+ * The "named nowhere" corpus, for the search rung.
+ *
+ * Unlike the four modes below, these inputs are **not** synthetic: they are the
+ * real GitHub descriptions of repositories repoherald has catalogued, with
+ * every occurrence of the owner and repository name scrubbed out
+ * (`fixtures/repo-descriptions.json`). That makes them exactly the case the
+ * other rungs cannot touch — a post that says what a tool does and never says
+ * what it is called. Reconstructing a name that was never present is
+ * impossible by definition, so anything resolved here is attributable to
+ * search and nothing else.
+ */
+export function buildDescribedCases(
+  entries: { fullName: string; description: string }[],
+  seed = 20261028,
+): Case[] {
+  const rand = rng(seed);
+  return entries.map(({ fullName, description }) => {
+    const frame = DESCRIBED_FRAMES[Math.floor(rand() * DESCRIBED_FRAMES.length)];
+    return {
+      fullName,
+      mode: "described_only" as const,
+      ...frame(description),
+    };
+  });
+}
+
+const DESCRIBED_FRAMES: ((d: string) => Partial<Case>)[] = [
+  (d) => ({ caption: `the open source tool nobody is talking about 👇\n\n${d}\n\nsave this #opensource` }),
+  (d) => ({ transcript: `okay so this one is completely free and open source, ${d.toLowerCase()}, link is in my bio` }),
+  (d) => ({
+    caption: "stop paying for this one 🔥 #devtools #opensource",
+    transcript: `it is open source and self hosted, ${d.toLowerCase()}`,
+  }),
+];
 
 /** Mulberry32 — small, seedable, and good enough to shuffle text with. */
 function rng(seed: number): () => number {
