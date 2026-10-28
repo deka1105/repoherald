@@ -372,6 +372,10 @@ export async function resolveRepo(
   let reasoning = "";
   let searchQuery: string | undefined;
   let modelUnavailable: string | undefined;
+  // Did the post turn out to contain a repository name at all? Set when a
+  // model rung proposes a candidate that survives `isGrounded`, whatever
+  // GitHub then says about it. This is what rung 4 is gated on — see there.
+  let namePresent = false;
 
   // ── 2 & 3. the model, fast then deep
   for (const tier of ["fast", "deep"] as const) {
@@ -424,6 +428,7 @@ export async function resolveRepo(
         });
         continue;
       }
+      namePresent = true;
       const repo = await check(
         fullName,
         candidate.source,
@@ -453,7 +458,22 @@ export async function resolveRepo(
   // the text. When a reel shows a tool, says what it does, and never once says
   // what it is called, there is nothing to reconstruct — searching for the
   // description is the only remaining route to an answer.
-  if (opts.search) {
+  //
+  // Gated on the post not naming anything, which is not the same as the rungs
+  // above having failed. Measured with the gate missing, `screen` went to
+  // 89.5% correct and **10.5% wrong**: search always returns something, the
+  // ranking always picks one of them, and when the right answer is an obscure
+  // repository that search cannot reach, the pick is a famous near-miss. An
+  // OCR dump of `deka1105/ColdEmails` came back as
+  // `dancolta/trustpilot-outreach-automation`.
+  //
+  // The distinction that matters: if a grounded candidate was proposed, the
+  // post *does* contain a name and we merely failed to repair it. The honest
+  // answer then is "I don't know" — which routes the post to the review queue
+  // — not a project that happens to do something similar. Searching on a
+  // half-read name is how you get a confident wrong answer, and a wrong
+  // repository filed against someone's saved post is worse than no answer.
+  if (opts.search && !namePresent) {
     const query = searchQuery || naiveQuery(body);
 
     // A post that is nothing but hashtags and "link in bio" leaves no query

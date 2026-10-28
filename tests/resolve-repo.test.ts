@@ -451,6 +451,52 @@ async function main() {
     r.attempts.filter((a) => a.fullName === "jepsen-io/jepsen" && !a.ungrounded).length === 0,
   );
 
+  // ── rung 4 is for posts that name nothing, not for posts we failed to read
+  //
+  // Measured with this gate missing, `screen` hit 10.5% wrong: search always
+  // returns something and the ranking always picks one, so a half-read name
+  // becomes a confident wrong answer.
+  {
+    let searched = 0;
+    // A mangled name is present; the model proposes it; GitHub says no.
+    const proposesMissing: Completer = async () => ({
+      text: '{"candidates":[{"full_name":"HKUDS/ViMaxx","source":"screen","confidence":0.8}],"search_query":"a tool for making short clips from long video"}',
+      model: "stub",
+      truncated: false,
+    });
+    const r3 = await resolveRepo({ stillsText: "HKUD5/ViMaxx" }, async () => null, {
+      complete: proposesMissing,
+      search: async () => {
+        searched++;
+        return ["GitHub - someone/unrelated https://github.com/someone/unrelated a clip tool"];
+      },
+    });
+    ok("a post that names something never reaches the search rung", searched === 0);
+    ok("and it answers 'I don't know' rather than a near-miss", r3.repo === null);
+
+    // Nothing named anywhere: this is what the rung exists for.
+    let searched2 = 0;
+    const namesNothing: Completer = async () => ({
+      text: '{"candidates":[],"search_query":"self hosted push notifications from a shell script"}',
+      model: "stub",
+      truncated: false,
+    });
+    const r4 = await resolveRepo(
+      { caption: "the open source thing that pushes alerts to your phone from a shell script" },
+      everythingExists,
+      {
+        complete: namesNothing,
+        search: async () => {
+          searched2++;
+          return ["GitHub - binwiederhier/ntfy https://github.com/binwiederhier/ntfy push notifications"];
+        },
+      },
+    );
+    ok("a post that names nothing does reach the search rung", searched2 === 1);
+    ok("and the search rung can still resolve it", r4.repo?.full_name === "binwiederhier/ntfy");
+    ok("a searched answer is never full confidence", (r4.confidence ?? 1) <= 0.65);
+  }
+
   // The guard must not break the case it was built around: a grounded but
   // mangled name still resolves.
   const repairs: Completer = async () => ({
