@@ -17,7 +17,10 @@ Portal where people/companies post GitHub repos for discovery and starring. Veri
 - `npx drizzle-kit generate` — generate SQL migration from `src/db/schema.ts`
 - `npx drizzle-kit migrate` — apply migrations (needs `DATABASE_URL`)
 
-No test framework yet.
+- `npm run test:mobile-auth` / `npm run test:resolve` — plain `tsx` scripts, no
+  framework, no database, no API key required
+- `npm run nemotron:doctor` — is Nebius reachable and are the model ids real?
+- `npm run eval:resolve -- --limit 20` — identification accuracy; **spends tokens**
 
 ## Architecture
 
@@ -28,6 +31,7 @@ No test framework yet.
 - **GitHub API:** `src/lib/github.ts` — star verification uses the starring user's own token (`GET /user/starred/{owner}/{repo}`), scopes `read:user user:email` only.
 - **Highlight status** is always derived from `starts_at`/`ends_at` timestamps in queries; the `status` column is reporting-only.
 - **Repo lists** (`repo_lists`/`repo_list_items`, queries in `src/lib/lists.ts`, mutations in `src/app/actions/lists.ts`): link-shareable curated pages. Slugs carry a random suffix so lists aren't enumerable; contributions are open to any signed-in visitor until the owner closes them. List items may only reference repos already in `repos` — accepting an arbitrary GitHub URL here would create a listing that bypassed `postRepo`'s owner/org check.
+- **Repo identification** (`src/lib/resolve-repo.ts`, model client in `src/lib/nemotron.ts`): turns a post's caption, OCR text or Whisper transcript into a GitHub repo, using NVIDIA Nemotron on Nebius Token Factory. The invariant is **the model proposes, GitHub decides** — every candidate is checked with `fetchPublicRepo` and a candidate that 404s is discarded regardless of the model's stated confidence, so the resolver can return "I don't know" but cannot invent a repository. Flag any change that returns a repo the GitHub check did not confirm, that lets the model's confidence substitute for validation, or that adds a `force`/override path to the ladder. `resolveRepo` takes `lookup` and `complete` as injected functions so the ladder is testable with no key and no network; keep it that way. Public endpoint `/api/identify` spends real credits, so its per-visitor **and** global ceilings are load-bearing — do not remove either, and do not persist the rate-limit key (that is what keeps /privacy's "IP never written to our database" true).
 - **Env vars:** see `.env.example`. `TOKEN_ENCRYPTION_KEY` encrypts GitHub tokens at rest (AES-256-GCM in `src/lib/crypto.ts`).
 
 ## Migration gotchas (learned the hard way)
