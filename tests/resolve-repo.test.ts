@@ -73,7 +73,10 @@ ok("finds nothing in text with no repo", urlsIn("just a reel about cooking").len
 ok("ignores a non-github url", urlsIn("https://gitlab.com/foo/bar").length === 0);
 
 // ── the ladder
+// Wrapped in a function because the package is CJS and esbuild refuses
+// top-level await there; `"type": "module"` would change how Next builds.
 
+async function main() {
 {
   const model = stub([]);
   const r = await resolveRepo(
@@ -201,5 +204,9 @@ ok("ignores a non-github url", urlsIn("https://gitlab.com/foo/bar").length === 0
   );
 }
 
-console.log(`\n  ${pass} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+}
+
+main().then(() => {
+  console.log(`\n  ${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+});
