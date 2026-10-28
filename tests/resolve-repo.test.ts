@@ -431,7 +431,7 @@ async function main() {
     language: null,
     stargazers_count: 0,
     archived: false,
-    owner: { login: owner, avatar_url: "" },
+    owner: { login: owner, avatar_url: "", type: "User" },
   });
 
   const r = await resolveRepo(
