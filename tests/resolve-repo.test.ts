@@ -60,6 +60,18 @@ function stub(replies: string[]): Completer & { prompts: string[] } {
 const target = names[0];
 const [tOwner] = target.split("/");
 
+/**
+ * The target as a transcript would carry it: punctuation pronounced, hyphens
+ * dropped. The model rungs only ever claim to repair a name that is present in
+ * the text, so a fixture whose text does not contain the name is testing a
+ * situation the ladder is not supposed to answer — see `isGrounded`.
+ */
+const spoken = (full: string) =>
+  `okay so number one on my list is ${full
+    .replace("/", " slash ")
+    .replace(/[-_]/g, " ")
+    .toLowerCase()} and it deserves more stars`;
+
 // ── url extraction
 
 ok("finds a bare github.com url", urlsIn(`see github.com/${target} now`)[0] === target);
@@ -97,7 +109,7 @@ async function main() {
       reasoning: "spoken punctuation reconstructed",
     }),
   ]);
-  const r = await resolveRepo({ transcript: "some mangled thing" }, lookup, {
+  const r = await resolveRepo({ transcript: spoken(target) }, lookup, {
     complete: model,
   });
   ok("the fast tier can resolve", r.repo?.full_name === target);
@@ -116,7 +128,7 @@ async function main() {
       candidates: [{ full_name: target, source: "narration", confidence: 0.7 }],
     }),
   ]);
-  const r = await resolveRepo({ transcript: "mangled" }, lookup, { complete: model });
+  const r = await resolveRepo({ transcript: spoken(target) }, lookup, { complete: model });
   ok("the deep tier recovers after a rejected candidate", r.repo?.full_name === target);
   ok("two model calls when the fast tier misses", r.modelCalls === 2);
   ok(
