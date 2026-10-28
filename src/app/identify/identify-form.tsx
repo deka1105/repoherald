@@ -12,6 +12,7 @@ type Attempt = {
   source: "caption" | "screen" | "narration";
   via: "url" | "model-fast" | "model-deep" | "web-search";
   resolved: boolean;
+  ungrounded?: boolean;
 };
 
 type Result = {
@@ -225,9 +226,12 @@ export function IdentifyForm() {
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Nothing it proposed exists on GitHub, so it returned nothing rather than a
-                    guess. In the real pipeline this post goes to the review queue — which is
-                    where every post went before any of this.
+                    Nothing it proposed survived checking, so it returned nothing rather than
+                    a guess. A candidate is dropped either because GitHub says it does not
+                    exist, or because the name appears nowhere in the post — a real repository
+                    the model free-associated to from the subject matter, which existence
+                    checking cannot catch. In the real pipeline this post goes to the review
+                    queue, which is where every post went before any of this.
                   </p>
                 )}
 
@@ -247,7 +251,11 @@ export function IdentifyForm() {
                           <span className="font-mono">{a.fullName}</span>
                           <span className="text-xs text-muted-foreground">
                             {VIA_LABEL[a.via]}
-                            {a.resolved ? "" : " — does not exist"}
+                            {a.resolved
+                              ? ""
+                              : a.ungrounded
+                                ? " — real, but this name is nowhere in the post"
+                                : " — does not exist"}
                           </span>
                         </li>
                       ))}
