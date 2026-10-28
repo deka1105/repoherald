@@ -67,6 +67,13 @@ export type Attempt = {
    * one never got that far, and would have passed if it had.
    */
   ungrounded?: boolean;
+  /**
+   * Found by search and confirmed to exist, then rejected by the verification
+   * rung as not being the project the post described. Distinct from
+   * `ungrounded` (never looked up) and from plain `resolved: false` (GitHub
+   * said it does not exist) — this one is real, and is somebody else's.
+   */
+  unverified?: boolean;
 };
 
 export type Resolution = {
@@ -179,6 +186,43 @@ const pickSchema = z.object({
     )
     .max(5),
   reasoning: z.string().optional(),
+});
+
+/**
+ * The fifth rung, and the only one that can say no.
+ *
+ * A search result is chosen for *resembling* the post, which is exactly the
+ * failure mode: search ranks by authority, so a post about an obscure project
+ * surfaces the well-known one that does the same job. Measured on 41 real
+ * scrubbed descriptions, the search rung was right 65.9% of the time and wrong
+ * 34.1% — and its unresolved rate was **0%**, because it has no way to decline.
+ *
+ * This gives it one. The candidate has already been confirmed to exist, which
+ * means we now hold its *real* GitHub description — information we were
+ * throwing away. Comparing the post against that description is a different
+ * question from "which result looks right", and it is asked of a model that
+ * has not already committed to an answer.
+ *
+ * Deliberately biased towards rejection: a wrong repository filed against
+ * someone's saved post is worse than no answer, because no answer routes to a
+ * human and a wrong one does not.
+ */
+const VERIFY_SYSTEM = `You are checking whether a repository is the one a social media post was about.
+
+You are given the post, and the REAL metadata of a candidate repository fetched from GitHub.
+
+The post never named the project, so this candidate came from a web search. Search ranks by popularity, so the usual error is a well-known project that does the same job as the small one the post actually meant. Version numbers and forks are the other trap: Wan2.1 is not Wan2.2, and a fork is not its upstream.
+
+Return JSON only:
+{"match":true|false,"why":"one short sentence"}
+
+Say true only if the repository's own description is consistent with the specific thing the post described.
+Say false if it is merely the same category of tool, a different version, an upstream of what was described, or a more famous alternative.
+If you are unsure, say false. A human reviews everything you reject, so a false negative costs one click and a false positive files the wrong project.`;
+
+const verifySchema = z.object({
+  match: z.boolean(),
+  why: z.string().optional(),
 });
 
 /**
@@ -489,6 +533,16 @@ export async function resolveRepo(
   // — not a project that happens to do something similar. Searching on a
   // half-read name is how you get a confident wrong answer, and a wrong
   // repository filed against someone's saved post is worse than no answer.
+  //
+  // Note the precise condition, which is narrower than "the post named
+  // nothing": the gate opens when no *grounded candidate was proposed*. A post
+  // can carry a name the model failed to extract at all — an OCR dump of
+  // `HKUD5/ViMax` where both tiers return no candidates — and search then gets
+  // a turn. That is deliberate. Everything this rung produces is
+  // `needsReview`, so it is a suggestion for a human rather than a catalogue
+  // entry, and a suggestion is better than nothing when the model came back
+  // empty. The 10.5% wrong measured on `screen` was with this rung ungated
+  // *and* unverified; rung 5 now stands between it and an answer.
   if (opts.search && !namePresent) {
     const query = searchQuery || naiveQuery(body);
 
@@ -531,6 +585,42 @@ export async function resolveRepo(
       for (const fullName of [...ranked, ...fromResults]) {
         const repo = await check(fullName, "caption", "web-search");
         if (repo) {
+          // Rung 5: the candidate exists, so we now have its real description.
+          // Ask whether it is actually the project the post meant.
+          let rejected = false;
+          let unverified = false;
+          try {
+            const verdict = await ask({
+              tier: "deep",
+              system: VERIFY_SYSTEM,
+              user: `post:\n${body}\n\n---\n\ncandidate repository, from the GitHub API:\nname: ${repo.full_name}\ndescription: ${repo.description ?? "(none)"}\nlanguage: ${repo.language ?? "(unknown)"}\nstars: ${repo.stargazers_count}`,
+            });
+            modelCalls++;
+            tokens += (verdict.promptTokens ?? 0) + (verdict.completionTokens ?? 0);
+            const checked = extractJson(verdict.text, verifySchema);
+            // A missing or unparseable verdict is not a pass. The rung's whole
+            // problem is over-confidence; defaulting to "yes" would restore it.
+            if (!checked || checked.match === false) {
+              rejected = true;
+              if (checked?.why) reasoning = checked.why;
+            }
+          } catch (err) {
+            // The model is unreachable — exhausted balance, outage, revoked
+            // key. Rejecting here would make an outage look like "no such
+            // project" and would break the rule that this ladder degrades
+            // rather than fails. So the candidate survives, unverified, at
+            // reduced confidence: it was already `needsReview`, which means a
+            // human confirms it either way, and handing them an unchecked
+            // suggestion beats handing them nothing.
+            modelUnavailable =
+              modelUnavailable ?? (err instanceof Error ? err.message : "verification failed");
+            unverified = true;
+          }
+          if (rejected) {
+            const i = attempts.findIndex((a) => a.fullName === fullName && a.via === "web-search");
+            if (i !== -1) attempts[i] = { ...attempts[i], resolved: false, unverified: true };
+            continue;
+          }
           const wasRanked = ranked.includes(fullName);
           return {
             repo,
@@ -538,7 +628,9 @@ export async function resolveRepo(
             // Lower than a reconstructed name on purpose: the post never said
             // this, so the claim rests on a search result matching a
             // description, which is weaker evidence than reading a name.
-            confidence: wasRanked ? 0.65 : 0.5,
+            // Unverified means rung 5 could not run, so this is the raw
+            // search result the 34.1% figure was measured on.
+            confidence: unverified ? 0.4 : wasRanked ? 0.65 : 0.5,
             needsReview: true,
             reasoning:
               reasoning ||

@@ -45,6 +45,12 @@ const lookup = async (owner: string, repo: string): Promise<GithubRepo | null> =
 function stub(replies: string[]): Completer & { prompts: string[] } {
   const prompts: string[] = [];
   const fn = (async (opts) => {
+    // Rung 5 asks a different question. Answering it here keeps the queued
+    // replies aligned with the extraction calls the tests are actually about;
+    // the rung has its own dedicated tests further down.
+    if (opts.system.startsWith("You are checking whether")) {
+      return { text: '{"match":true}', model: "stub", promptTokens: 1, completionTokens: 1, truncated: false };
+    }
     prompts.push(opts.user);
     return {
       text: replies[prompts.length - 1] ?? '{"candidates":[]}',
@@ -266,7 +272,8 @@ async function main() {
   ok("search uses the model's query, not the raw post", queries[0] === "open source photo editor written in rust");
   ok("the ranked result resolves", r.repo?.full_name === target);
   ok("a ranked hit scores above an unranked one", r.confidence === 0.65);
-  ok("ranking costs a third model call", r.modelCalls === 3);
+  // fast, deep, rank, then rung 5's verdict
+  ok("ranking and verification cost two calls beyond the tiers", r.modelCalls === 4);
 }
 
 {
@@ -311,6 +318,8 @@ async function main() {
   let calls = 0;
   const flaky: Completer = async (opts) => {
     calls++;
+    if (opts.system.startsWith("You are checking whether"))
+      return { text: '{"match":true}', model: "stub", promptTokens: 1, completionTokens: 1, truncated: false };
     if (opts.system.startsWith("You are given a social media post")) throw new Error("ranking down");
     return { text: '{"candidates":[]}', model: "stub", promptTokens: 1, completionTokens: 1, truncated: false };
   };
@@ -320,7 +329,8 @@ async function main() {
   });
   ok("a ranking failure falls back to link extraction", r.repo?.full_name === target);
   ok("an unranked hit scores lower", r.confidence === 0.5);
-  ok("the ranking call was attempted", calls === 3);
+  // fast, deep, the ranking that threw, then rung 5 on the extracted link
+  ok("the ranking call was attempted", calls === 4);
 }
 
 // ── the corpus
@@ -476,11 +486,14 @@ async function main() {
 
     // Nothing named anywhere: this is what the rung exists for.
     let searched2 = 0;
-    const namesNothing: Completer = async () => ({
-      text: '{"candidates":[],"search_query":"self hosted push notifications from a shell script"}',
-      model: "stub",
-      truncated: false,
-    });
+    const namesNothing: Completer = async (opts) =>
+      opts.system.startsWith("You are checking whether")
+        ? { text: '{"match":true}', model: "stub", truncated: false }
+        : {
+            text: '{"candidates":[],"search_query":"self hosted push notifications from a shell script"}',
+            model: "stub",
+            truncated: false,
+          };
     const r4 = await resolveRepo(
       { caption: "the open source thing that pushes alerts to your phone from a shell script" },
       everythingExists,
@@ -497,6 +510,59 @@ async function main() {
     ok("a searched answer is never full confidence", (r4.confidence ?? 1) <= 0.65);
     // Measured wrong 34.1% of the time, so it is a suggestion, not an answer.
     ok("a searched answer is flagged for human review", r4.needsReview === true);
+
+    // ── rung 5, the only rung that can say no
+    //
+    // Measured without it, the search rung was 34.1% wrong and 0% unresolved:
+    // it had no way to decline. These prove it now does.
+    const found = async () => [
+      "GitHub - famous/alternative https://github.com/famous/alternative the well known one",
+    ];
+    const askedNothing = '{"candidates":[],"search_query":"a tool that does the job described here"}';
+    const ranks = '{"candidates":[{"full_name":"famous/alternative","confidence":0.8}]}';
+    const route = (verdict: string): Completer => async (opts) => {
+      if (opts.system.startsWith("You are checking whether"))
+        return { text: verdict, model: "stub", truncated: false };
+      if (opts.system.startsWith("You are given a social media post"))
+        return { text: ranks, model: "stub", truncated: false };
+      return { text: askedNothing, model: "stub", truncated: false };
+    };
+    const post = { caption: "the open source thing that does the job everyone wants" };
+
+    const vetoed = await resolveRepo(post, everythingExists, {
+      complete: route('{"match":false,"why":"same category, not the project described"}'),
+      search: found,
+    });
+    ok("the verification rung can reject a real repository", vetoed.repo === null);
+    ok(
+      "a vetoed candidate is reported as real but not the right one",
+      vetoed.attempts.some((a) => a.fullName === "famous/alternative" && a.unverified === true),
+    );
+
+    const approved = await resolveRepo(post, everythingExists, {
+      complete: route('{"match":true,"why":"description matches what the post described"}'),
+      search: found,
+    });
+    ok("an approved candidate still resolves", approved.repo?.full_name === "famous/alternative");
+
+    // The rung's whole problem is over-confidence, so silence must mean no.
+    const garbled = await resolveRepo(post, everythingExists, {
+      complete: route("I think probably yes?"),
+      search: found,
+    });
+    ok("an unparseable verdict is not treated as approval", garbled.repo === null);
+
+    // But an outage must degrade, not reject — that rule predates this rung.
+    const outage: Completer = async (opts) => {
+      if (opts.system.startsWith("You are checking whether")) throw new Error("402 balance exhausted");
+      if (opts.system.startsWith("You are given a social media post"))
+        return { text: ranks, model: "stub", truncated: false };
+      return { text: askedNothing, model: "stub", truncated: false };
+    };
+    const down = await resolveRepo(post, everythingExists, { complete: outage, search: found });
+    ok("an unreachable verifier degrades rather than rejecting", down.repo?.full_name === "famous/alternative");
+    ok("and says so, at reduced confidence", down.confidence === 0.4 && Boolean(down.modelUnavailable));
+    ok("and still asks for human review", down.needsReview === true);
   }
 
   // The guard must not break the case it was built around: a grounded but
