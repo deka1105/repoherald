@@ -242,6 +242,74 @@ async function main() {
   ok("returns null on json that fails the schema", extractJson('{"wrong":1}', schema) === null);
   ok("returns null on truncated json", extractJson('{"candidates":[{"full_n', schema) === null);
 
+  // Nemotron-3_5-Lightning writes its thinking into `content`, and thinking
+  // about JSON means opening braces before the answer exists. The first
+  // balanced object is then a decoy, so every `{` has to be tried.
+  ok(
+    "skips a decoy object and finds the real one after it",
+    extractJson(
+      'Thinking: the shape should be {"candidates":[]} roughly, but the user wants the repo.\n' +
+        'Final answer:\n{"candidates":[{"full_name":"a/b"}]}',
+      z.object({ candidates: z.array(z.object({ full_name: z.string() })).min(1) }),
+    )?.candidates[0].full_name === "a/b",
+  );
+  ok(
+    "skips an unbalanced decoy and finds the real one after it",
+    extractJson(
+      'I will return {"candidates": ... and then\n{"candidates":[{"full_name":"c/d"}]}',
+      schema,
+    )?.candidates[0].full_name === "c/d",
+  );
+  ok(
+    "still returns null when every candidate object fails the schema",
+    extractJson('{"wrong":1} and {"also_wrong":2}', schema) === null,
+  );
+
+  // ── reasoning models: thinking is billed against max_tokens
+
+  handler = () => ({
+    status: 200,
+    body: JSON.stringify({
+      choices: [{ message: { content: "" }, finish_reason: "length" }],
+      usage: {
+        prompt_tokens: 31,
+        completion_tokens: 256,
+        completion_tokens_details: { reasoning_tokens: 256 },
+      },
+    }),
+  });
+  attempts = 0;
+  const cut = await complete({ tier: "fast", system: "s", user: "u" });
+  ok("reports truncation when thinking spends the whole budget", cut.truncated === true);
+  ok("surfaces finish_reason", cut.finishReason === "length");
+  ok("surfaces reasoning tokens", cut.reasoningTokens === 256);
+  ok("does not retry a truncated answer", attempts === 1);
+
+  handler = () => ({
+    status: 200,
+    body: JSON.stringify({
+      choices: [{ message: { content: '{"ok":true}' }, finish_reason: "stop" }],
+      usage: { prompt_tokens: 1, completion_tokens: 2 },
+    }),
+  });
+  const whole = await complete({ tier: "fast", system: "s", user: "u" });
+  ok("a complete answer is not truncated", whole.truncated === false);
+  ok(
+    "reasoning tokens are undefined when the model omits them",
+    whole.reasoningTokens === undefined,
+  );
+
+  // The deep tier is the one asked to reason, so it gets the larger budget.
+  await complete({ tier: "fast", system: "s", user: "u" });
+  const fastBudget = JSON.parse(lastBody).max_tokens;
+  await complete({ tier: "deep", system: "s", user: "u" });
+  const deepBudget = JSON.parse(lastBody).max_tokens;
+  ok("the deep tier gets a bigger token budget than the fast tier", deepBudget > fastBudget);
+  ok("an explicit maxTokens still wins", await (async () => {
+    await complete({ tier: "deep", system: "s", user: "u", maxTokens: 64 });
+    return JSON.parse(lastBody).max_tokens === 64;
+  })());
+
   server.close();
 }
 
