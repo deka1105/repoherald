@@ -43,7 +43,7 @@ const lookup = async (owner: string, repo: string): Promise<GithubRepo | null> =
 /** A model that answers with whatever the test tells it to, recording prompts. */
 function stub(replies: string[]): Completer & { prompts: string[] } {
   const prompts: string[] = [];
-  const fn = (async (opts: { user: string }) => {
+  const fn = (async (opts) => {
     prompts.push(opts.user);
     return {
       text: replies[prompts.length - 1] ?? '{"candidates":[]}',
@@ -51,7 +51,7 @@ function stub(replies: string[]): Completer & { prompts: string[] } {
       promptTokens: 10,
       completionTokens: 5,
     };
-  }) as Completer & { prompts: string[] };
+  }) as Completer as Completer & { prompts: string[] };
   fn.prompts = prompts;
   return fn;
 }

@@ -14,7 +14,7 @@ import {
   checkModels,
   complete,
   nemotronConfigured,
-} from "../src/lib/nemotron";
+} from "@/lib/nemotron";
 
 async function main() {
   if (!nemotronConfigured()) {
