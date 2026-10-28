@@ -223,8 +223,16 @@ npm run lint
 npx tsc --noEmit            # type-check
 ```
 
-**No test framework yet.** The invariants above — the ledger, the row locks, the
-mint uniqueness — are exactly what should be tested first.
+Tests are plain `tsx` scripts rather than a framework, and run without a
+database or any API key:
+
+```bash
+npm run test:mobile-auth    # the bearer-token layer
+npm run test:resolve        # the repo-identification ladder
+```
+
+The remaining invariants — the ledger, the row locks, the mint uniqueness —
+are what should be covered next.
 
 ## Scopes
 
