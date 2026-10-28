@@ -170,6 +170,19 @@ GITHUB_READ_TOKEN=…     # optional; raises GitHub's validation rate limit only
 Unset `NEBIUS_API_KEY` and identification degrades to literal links. Nothing
 breaks — it just stops being clever, exactly as it was before.
 
+The same is true when the model is *configured but unreachable*: an exhausted
+balance, a revoked key, an outage. A model call that fails does not throw out
+of the ladder. It stops the asking, sets `modelUnavailable`, and lets the
+remaining rungs run — the search rung still works, because its query has a
+model-free fallback and its ranking already degrades to reading links out of
+the results. `/api/identify` then answers **200 with `degraded: true`** and a
+plain explanation rather than a 502.
+
+That distinction matters more than it sounds. A demo that says "the model
+budget is spent, literal links still work" is a working demo with a caveat; one
+that returns 502 is just broken, and nobody clicking the link can tell the
+difference between the two causes.
+
 ## Stack
 
 **Next.js App Router** (TypeScript) · **Auth.js v5** with GitHub OAuth and JWT
