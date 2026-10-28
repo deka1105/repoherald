@@ -194,6 +194,54 @@ function normaliseFullName(raw: string): string | null {
   return FULL_NAME.test(cleaned) ? cleaned : null;
 }
 
+/**
+ * Does this candidate name actually appear in the post, or did the model
+ * invent it from the subject matter?
+ *
+ * The model rungs have exactly one job: reconstruct a name that is *present*
+ * in damaged text. OCR turns `HKUDS/ViMax` into `HKUD5/ViMax`; a speaker turns
+ * `yt-dlp/yt-dlp` into "yt dlp slash yt dlp". In both cases the answer is
+ * still in the text, just mangled.
+ *
+ * When the post names nothing at all — a reel that shows a tool, says what it
+ * does, and never says what it is called — asking a model for a repository
+ * name does not get a reconstruction, it gets a free association to whatever
+ * famous project occupies that niche. Measured on 41 real descriptions with
+ * every mention of the name scrubbed out, that produced a confidently wrong
+ * answer 14.6% of the time: a description of `chrisgreg/boop` came back as
+ * `binwiederhier/ntfy`, and one of `projectdiscovery/katana` as
+ * `apify/crawlee`.
+ *
+ * **Those are real repositories, so validating against GitHub cannot catch
+ * them.** `fetchPublicRepo` proves a repository exists; it cannot prove it is
+ * the one the post was about. This is the guard that covers the difference.
+ *
+ * The rule: at least one side of `owner/repo` must survive as a run of
+ * characters in the post once punctuation, spacing and case are discarded.
+ * That is lenient enough for the mangling we actually see — `vimax` survives
+ * `HKUD5/ViMax`, and `ytdlp` survives "yt dlp slash yt dlp" — and strict
+ * enough that a name which appears nowhere is refused.
+ *
+ * Short tokens are ignored rather than matched: `ui` is a substring of
+ * "build", "guide" and "intuitive", so `shadcn-ui/ui` would appear grounded in
+ * any post about frontend tooling.
+ *
+ * This applies to the model rungs only. The search rung's evidence comes from
+ * the web rather than from the post, so a name it finds is not expected to
+ * appear in the text — that is the whole reason that rung exists.
+ */
+const MIN_GROUNDED_TOKEN = 4;
+
+export function isGrounded(fullName: string, haystack: string): boolean {
+  const flatten = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const hay = flatten(haystack);
+  if (!hay) return false;
+  return fullName
+    .split("/")
+    .map(flatten)
+    .some((token) => token.length >= MIN_GROUNDED_TOKEN && hay.includes(token));
+}
+
 /** Literal github.com URLs, which need no model at all. */
 export function urlsIn(text: string | null | undefined): string[] {
   if (!text) return [];
@@ -285,6 +333,11 @@ export async function resolveRepo(
   }
 
   const body = describe(text);
+  // The post's own words only — `describe()` adds field labels, and matching
+  // against those would let the labels ground a candidate.
+  const haystack = [text.caption, text.stillsText, text.transcript]
+    .filter(Boolean)
+    .join(" ");
   if (!body.trim()) {
     return {
       repo: null,
@@ -351,6 +404,20 @@ export async function resolveRepo(
     for (const candidate of parsed?.candidates ?? []) {
       const fullName = normaliseFullName(candidate.full_name);
       if (!fullName) continue;
+      // A name that appears nowhere in the post is an association, not a
+      // reconstruction, and GitHub cannot refuse it because it is a real
+      // repository — see `isGrounded`. Recorded as an attempt so the demo
+      // still shows what the model proposed and why it was dropped.
+      if (!isGrounded(fullName, haystack)) {
+        attempts.push({
+          fullName,
+          source: candidate.source,
+          via: tier === "fast" ? "model-fast" : "model-deep",
+          resolved: false,
+          ungrounded: true,
+        });
+        continue;
+      }
       const repo = await check(
         fullName,
         candidate.source,
