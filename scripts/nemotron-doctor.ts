@@ -54,19 +54,45 @@ async function main() {
     process.exit(1);
   }
 
-  // A catalogue entry is not the same as a model that will answer. Ask it the
-  // cheapest real question there is.
-  try {
-    const out = await complete({
-      tier: "fast",
-      system: 'Reply with exactly: {"ok":true}',
-      user: "ping",
-      maxTokens: 32,
-    });
-    console.log(`✓  inference works — ${MODELS.fast} replied ${JSON.stringify(out.text.trim().slice(0, 60))}`);
-    console.log(`   tokens: ${out.promptTokens ?? "?"} in, ${out.completionTokens ?? "?"} out`);
-  } catch (err) {
-    console.log(`✖  inference failed: ${(err as Error).message}`);
+  // A catalogue entry is not the same as a model that will answer. Ask each
+  // tier the cheapest real question there is — both tiers, because they are
+  // different models and either can be the broken one.
+  //
+  // The budget here is deliberately not tiny. Nemotron 3 bills its thinking
+  // against `max_tokens`, so a 32-token ping returns empty content from a
+  // perfectly healthy model and reads as a platform fault.
+  const tiers = ["fast", "deep"] as const;
+  let failed = false;
+  for (const tier of tiers) {
+    try {
+      const started = Date.now();
+      const out = await complete({
+        tier,
+        system: 'Reply with exactly: {"ok":true}',
+        user: "ping",
+        maxTokens: 256,
+      });
+      const secs = ((Date.now() - started) / 1000).toFixed(1);
+      const reply = JSON.stringify(out.text.trim().slice(0, 60));
+      if (out.truncated) {
+        console.log(`⚠  ${tier} tier (${MODELS[tier]}) hit the token budget before answering`);
+        console.log("   thinking used the whole budget — raise maxTokens for this model");
+        failed = true;
+        continue;
+      }
+      console.log(`✓  ${tier} tier works — ${MODELS[tier]} replied ${reply} in ${secs}s`);
+      console.log(
+        `   tokens: ${out.promptTokens ?? "?"} in, ${out.completionTokens ?? "?"} out` +
+          (out.reasoningTokens === undefined
+            ? " (this model does not report reasoning tokens separately)"
+            : ` (${out.reasoningTokens} of them thinking)`),
+      );
+    } catch (err) {
+      console.log(`✖  ${tier} tier (${MODELS[tier]}) failed: ${(err as Error).message}`);
+      failed = true;
+    }
+  }
+  if (failed) {
     process.exit(1);
   }
 
