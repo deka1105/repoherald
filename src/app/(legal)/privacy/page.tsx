@@ -205,6 +205,22 @@ export default function PrivacyPage() {
             <td>Error monitoring</td>
             <td>Diagnostics when something breaks</td>
           </tr>
+          <tr>
+            <td>Nebius</td>
+            <td>Working out which repository a post is about</td>
+            <td>
+              The caption, on-screen text or narration of a post — never your
+              account details, and never anything you have not submitted for
+              identification
+            </td>
+          </tr>
+          <tr>
+            <td>Tavily</td>
+            <td>
+              Searching for a project that a post describes but never names
+            </td>
+            <td>A short description taken from that post&rsquo;s own text</td>
+          </tr>
         </tbody>
       </table>
       <p>
