@@ -32,8 +32,9 @@ import { fetchRepoByFullName, type GithubRepo } from "@/lib/github";
 import { resolveRepo, type Completer } from "@/lib/resolve-repo";
 import { searchForRepo, tavilyConfigured } from "@/lib/tavily";
 import { MODELS, nemotronConfigured } from "@/lib/nemotron";
-import { buildCases, type Mode } from "./corrupt";
+import { buildCases, buildDescribedCases, type Mode } from "./corrupt";
 import names from "./fixtures/repo-names.json";
+import descriptions from "./fixtures/repo-descriptions.json";
 
 const argv = process.argv.slice(2);
 const flag = (name: string): string | undefined => {
