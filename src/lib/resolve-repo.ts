@@ -436,6 +436,7 @@ export async function resolveRepo(
             attempts,
             modelCalls,
             tokens,
+            modelUnavailable,
           };
         }
       }
@@ -446,11 +447,13 @@ export async function resolveRepo(
     repo: null,
     foundIn: null,
     confidence: 0,
-    reasoning:
-      reasoning ||
-      `No candidate resolved. Tried: ${attempts.map((a) => a.fullName).join(", ") || "nothing"}.`,
+    reasoning: modelUnavailable
+      ? "No literal repository link in the text, and the model could not be reached — so the rungs that reconstruct a mangled or spoken name did not run."
+      : reasoning ||
+        `No candidate resolved. Tried: ${attempts.map((a) => a.fullName).join(", ") || "nothing"}.`,
     attempts,
     modelCalls,
     tokens,
+    modelUnavailable,
   };
 }

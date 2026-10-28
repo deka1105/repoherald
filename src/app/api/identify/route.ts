@@ -40,8 +40,16 @@ const MAX_FIELD = 2_000;
  * hash the view counter uses, held in memory for an hour and never persisted,
  * so /privacy's promise that an IP is never written to our database stays true.
  */
+/**
+ * The global figure is sized against the judging window, not against a busy
+ * day. A full identification runs one or two model calls at roughly 800
+ * tokens, so 60 a day is about 50k tokens a day — a promotional balance
+ * survives several weeks of that, where 300 a day could drain it inside one.
+ * The demo being a little stingy beats the demo being dead on the day somebody
+ * opens the link.
+ */
 const PER_VISITOR = { limit: 10, windowMs: 60 * 60 * 1000 };
-const GLOBAL = { limit: 300, windowMs: 24 * 60 * 60 * 1000 };
+const GLOBAL = { limit: 60, windowMs: 24 * 60 * 60 * 1000 };
 
 const visitors = new Map<string, { count: number; resetAt: number }>();
 let globalWindow = { count: 0, resetAt: Date.now() + GLOBAL.windowMs };
@@ -81,12 +89,13 @@ function clean(value: unknown): string | null {
 }
 
 export async function POST(request: Request) {
-  // No key is not an error. Rung 1 of the ladder is a regex over literal
-  // github.com links and needs no model at all, so an unconfigured deployment
-  // still answers the easy half honestly rather than refusing outright — and a
-  // judge following the demo link before the credits land gets something that
-  // works instead of a grey box. `degraded` tells the page to say so.
-  const degraded = !nemotronConfigured();
+  // Neither a missing key nor an unreachable model is an error here. Rung 1 of
+  // the ladder is a regex over literal github.com links and needs no model at
+  // all, so the easy half keeps working either way — whether the credits have
+  // not arrived yet or have run out. A visitor who gets a literal link
+  // resolved, over a banner saying the clever part is unavailable, is better
+  // served than one who gets a 502. `degraded` tells the page to say which.
+  const unconfigured = !nemotronConfigured();
 
   let body: unknown;
   try {
