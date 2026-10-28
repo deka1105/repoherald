@@ -93,6 +93,28 @@ Token Factory's catalogue moves, so both ids are env-overridable and
 `npm run nemotron:doctor` checks them against the live `/models` list rather
 than trusting a constant that was true the week it was written.
 
+**Which model sits on which tier was decided by measurement, and the result is
+not the obvious one:**
+
+| model | measured | tier |
+|---|---|---|
+| `NVIDIA-Nemotron-3-Nano-30B-A3B` | 25–34s | unused |
+| `nemotron-3-super-120b-a12b` | 1–2s | fast |
+| `Nemotron-3-Ultra-550b-a55b` | 0.8–1.2s | deep |
+
+The 30B model is reproducibly ~20× slower than the 550B one — four
+measurements, no cold-start effect — so the small model is the wrong choice for
+the cheap pass here. `Nemotron-3_5-Lightning` is excluded because it writes its
+chain of thought into `message.content` instead of `reasoning_content`, which
+buries the JSON in prose.
+
+One consequence worth knowing before changing anything: **Nemotron bills its
+thinking against `max_tokens`.** A budget that looks generous can be spent
+entirely on reasoning and return `finish_reason: "stop"` with empty content,
+which is indistinguishable from "found nothing" unless you look. `complete()`
+returns `truncated` so callers can tell the difference, and the deep tier gets
+a larger budget than the fast one for exactly this reason.
+
 ### Measuring it
 
 ```bash
@@ -161,7 +183,7 @@ where in production it would resolve and be accepted — so the real-world
 ```bash
 NEBIUS_API_KEY=…        # required for anything past rung 1
 NEMOTRON_MODEL_FAST=…   # optional; defaults to nvidia/nemotron-3-super-120b-a12b
-NEMOTRON_MODEL_DEEP=…   # optional; same default
+NEMOTRON_MODEL_DEEP=…   # optional; defaults to nvidia/Nemotron-3-Ultra-550b-a55b
 NEBIUS_BASE_URL=…       # optional; only if your account has a region-suffixed host
 TAVILY_API_KEY=…        # optional; enables rung 4
 GITHUB_READ_TOKEN=…     # optional; raises GitHub's validation rate limit only
