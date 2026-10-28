@@ -61,6 +61,12 @@ export type Attempt = {
   /** How the candidate was produced, for the audit trail and the demo. */
   via: "url" | "model-fast" | "model-deep" | "web-search";
   resolved: boolean;
+  /**
+   * Dropped before GitHub was asked, because the name appears nowhere in the
+   * post. Distinct from `resolved: false`, which means GitHub said no — this
+   * one never got that far, and would have passed if it had.
+   */
+  ungrounded?: boolean;
 };
 
 export type Resolution = {
