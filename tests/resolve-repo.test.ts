@@ -209,7 +209,7 @@ async function main() {
   let calls = 0;
   const diesOnSecond: Completer = async () => {
     calls++;
-    if (calls === 1) return { text: '{"candidates":[{"full_name":"no/such-repo","source":"caption","confidence":0.9}]}', model: "stub" };
+    if (calls === 1) return { text: '{"candidates":[{"full_name":"no/such-repo","source":"caption","confidence":0.9}]}', model: "stub", truncated: false };
     throw new Error("402 balance exhausted");
   };
   const r = await resolveRepo({ transcript: "mangled" }, lookup, { complete: diesOnSecond });
@@ -300,7 +300,7 @@ async function main() {
   const flaky: Completer = async (opts) => {
     calls++;
     if (opts.system.startsWith("You are given a social media post")) throw new Error("ranking down");
-    return { text: '{"candidates":[]}', model: "stub", promptTokens: 1, completionTokens: 1 };
+    return { text: '{"candidates":[]}', model: "stub", promptTokens: 1, completionTokens: 1, truncated: false };
   };
   const r = await resolveRepo({ caption: "a described thing" }, lookup, {
     complete: flaky,

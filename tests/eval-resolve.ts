@@ -115,6 +115,7 @@ async function main() {
     model: "baseline",
     promptTokens: 0,
     completionTokens: 0,
+    truncated: false,
   });
 
   type Tally = { correct: number; wrong: number; unresolved: number; calls: number; tokens: number };
