@@ -76,20 +76,12 @@
   "description": "Hermes Agent context engine: the main model writes the compaction handoff on its cached prompt prefix"
  },
  {
-  "fullName": "Tencent-Hunyuan/AuK",
-  "description": "An Open-Source Foundational Model for Speech Generation and Editing"
- },
- {
   "fullName": "Wan-Video/Wan2.2",
   "description": "Wan: Open and Advanced Large-Scale Video Generative Models"
  },
  {
   "fullName": "projectdiscovery/katana",
   "description": "A next-generation crawling and spidering framework."
- },
- {
-  "fullName": "MDSADABWASIM/You",
-  "description": "The app checks what internet knows about ."
  },
  {
   "fullName": "debpalash/VoiceStudio",
@@ -124,10 +116,6 @@
   "description": "Open Source Leaked. Same functionalities as Claude Code by Anthropic. Written in Rust, Ready to use immediately for free."
  },
  {
-  "fullName": "EddieLa/JOB",
-  "description": "A Barcode scanner capapable of reading Code128, Code93, Code39, Standard/Industrial 2 of 5, Interleaved 2 of 5, Codabar and EAN-13 barcodes in javascript."
- },
- {
   "fullName": "obra/superpowers",
   "description": "An agentic skills framework & software development methodology that works."
  },
@@ -142,14 +130,6 @@
  {
   "fullName": "imohammadfaraz/product-manager-toolkit",
   "description": "A modular AI toolkit for Product Managers: reusable skills, agents, workflows, prompts, templates, integrations, and evaluations for product discovery through delivery."
- },
- {
-  "fullName": "morluto/rea",
-  "description": "Reverse engineer anything with agents, from app behavior down to native binaries."
- },
- {
-  "fullName": "shadcn-ui/ui",
-  "description": "Composable, accessible components with thoughtful defaults. Build your own component library with code you can customize, extend, and make your own."
  },
  {
   "fullName": "SouravBeraAkaSpeed/xiryn",
