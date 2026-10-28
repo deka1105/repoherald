@@ -33,15 +33,29 @@ const RETRY_BASE_MS = 500;
  * while a minority arrive as mangled OCR or spoken narration and need real
  * reasoning to repair.
  *
- * Both default to the one id verified against Token Factory's published
- * catalogue. The catalogue changes, and the docs say to query `/models`
- * rather than hardcode, so these are env-overridable and `checkModels()`
- * verifies them against the live list instead of trusting a constant that was
- * true the week it was written.
+ * The ids below were picked by measuring this account's catalogue, not by
+ * reading the parameter counts, because the obvious assignment turned out to
+ * be wrong:
+ *
+ *   NVIDIA-Nemotron-3-Nano-30B-A3B   25-34s   the smallest model, 20x slower
+ *   nemotron-3-super-120b-a12b       1-2s     fast tier
+ *   Nemotron-3-Ultra-550b-a55b       0.8-1.2s deep tier, and the quickest
+ *
+ * Nano is the natural "fast" choice by size and is unusable for it here: four
+ * measurements, 25s to 34s, no cold-start effect. The large models answer in
+ * about a second, so the small one is presumably not on the same warm
+ * capacity. Nemotron-3_5-Lightning is excluded for a different reason — it
+ * writes its chain of thought into `message.content` instead of
+ * `reasoning_content`, so its JSON arrives buried in prose.
+ *
+ * The catalogue changes, and the docs say to query `/models` rather than
+ * hardcode, so these are env-overridable and `checkModels()` verifies them
+ * against the live list instead of trusting a constant that was true the week
+ * it was written.
  */
 export const MODELS = {
   fast: process.env.NEMOTRON_MODEL_FAST || "nvidia/nemotron-3-super-120b-a12b",
-  deep: process.env.NEMOTRON_MODEL_DEEP || "nvidia/nemotron-3-super-120b-a12b",
+  deep: process.env.NEMOTRON_MODEL_DEEP || "nvidia/Nemotron-3-Ultra-550b-a55b",
 } as const;
 
 export type Tier = keyof typeof MODELS;
@@ -149,12 +163,20 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const completionSchema = z.object({
   choices: z
-    .array(z.object({ message: z.object({ content: z.string().nullable() }) }))
+    .array(
+      z.object({
+        message: z.object({ content: z.string().nullable() }),
+        finish_reason: z.string().nullish(),
+      }),
+    )
     .min(1),
   usage: z
     .object({
       prompt_tokens: z.number().optional(),
       completion_tokens: z.number().optional(),
+      completion_tokens_details: z
+        .object({ reasoning_tokens: z.number().nullish() })
+        .nullish(),
     })
     .optional(),
 });
@@ -164,6 +186,17 @@ export type Completion = {
   model: string;
   promptTokens?: number;
   completionTokens?: number;
+  /**
+   * Nemotron 3 is a reasoning model and its thinking is billed against the
+   * same `max_tokens` as the answer, so a budget that looks generous can be
+   * spent entirely on thinking and return empty content. `"length"` here with
+   * no usable JSON means the budget ran out, which is a different fault from
+   * the model finding nothing — callers that cannot tell them apart report a
+   * truncation as an accuracy failure.
+   */
+  finishReason?: string;
+  reasoningTokens?: number;
+  truncated: boolean;
 };
 
 /** One chat completion. Returns the assistant text, or throws. */
@@ -187,7 +220,10 @@ export async function complete(opts: {
       // the same mangled caption resolving to the same repo across runs, which
       // is what makes the accuracy number in the eval mean anything.
       temperature: opts.temperature ?? 0,
-      max_tokens: opts.maxTokens ?? 800,
+      // Reasoning tokens come out of this same budget (see `Completion`), so
+      // the deep tier — the one actually asked to reason — gets more room.
+      // 800 was enough for the answer alone and is not enough for both.
+      max_tokens: opts.maxTokens ?? (opts.tier === "deep" ? 2_000 : 1_200),
     }),
   });
 
@@ -195,11 +231,17 @@ export async function complete(opts: {
   if (!parsed.success) {
     throw new NebiusError(200, `unexpected completion shape: ${parsed.error.message}`);
   }
+  const choice = parsed.data.choices[0];
+  const finishReason = choice.finish_reason ?? undefined;
   return {
-    text: parsed.data.choices[0].message.content ?? "",
+    text: choice.message.content ?? "",
     model,
     promptTokens: parsed.data.usage?.prompt_tokens,
     completionTokens: parsed.data.usage?.completion_tokens,
+    reasoningTokens:
+      parsed.data.usage?.completion_tokens_details?.reasoning_tokens ?? undefined,
+    finishReason,
+    truncated: finishReason === "length",
   };
 }
 
