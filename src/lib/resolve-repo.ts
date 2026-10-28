@@ -85,7 +85,14 @@ You are given up to three texts from one post, in descending reliability:
   dots and underscores that a speaker would never pronounce.
 
 Return JSON only, no prose:
-{"candidates":[{"full_name":"owner/repo","source":"caption|screen|narration","confidence":0.0-1.0,"why":"one short sentence"}],"reasoning":"one or two sentences"}
+{"candidates":[{"full_name":"owner/repo","source":"caption|screen|narration","confidence":0.0-1.0,"why":"one short sentence"}],"search_query":"...","reasoning":"one or two sentences"}
+
+"search_query" is for the case where the post shows a project and describes
+what it does but never names it. Write the query someone would actually type to
+find that project: what it does, what it is built with, that it is open source.
+Strip hashtags, emoji, "link in bio", "save this" and every other piece of
+social-media furniture. Omit the field entirely if the post names a repository
+outright — searching is only for when there is no name to read.
 
 Rules:
 - Order candidates best first. Up to 5. Include spelling variants when unsure
@@ -105,8 +112,61 @@ const candidatesSchema = z.object({
       }),
     )
     .max(8),
+  search_query: z.string().max(400).optional(),
   reasoning: z.string().optional(),
 });
+
+/**
+ * Picking a repository out of search results is a different question from
+ * reading one out of a caption, so it gets its own prompt. The hard part is
+ * discrimination rather than reconstruction: a search for "open source photo
+ * editor in Rust" surfaces the right owner's *other* project as readily as the
+ * right one, and only the post's own wording separates them.
+ */
+const PICK_SYSTEM = `You are given a social media post about an open-source project that never names it, and web search results.
+
+Decide which result IS the project the post is about.
+
+Return JSON only:
+{"candidates":[{"full_name":"owner/repo","confidence":0.0-1.0,"why":"one short sentence"}],"reasoning":"one or two sentences"}
+
+Rules:
+- Only propose repositories that appear in the search results. Do not invent one.
+- Order best first, at most 3.
+- Watch for near misses: the same owner often has several similar projects, and
+  the post's own description is the only thing that tells them apart.
+- If no result matches what the post describes, return {"candidates":[]}.
+- Never exceed 0.9 confidence.`;
+
+const pickSchema = z.object({
+  candidates: z
+    .array(
+      z.object({
+        full_name: z.string(),
+        confidence: z.number().min(0).max(1).catch(0.5),
+        why: z.string().optional(),
+      }),
+    )
+    .max(5),
+  reasoning: z.string().optional(),
+});
+
+/**
+ * Social-media furniture, stripped so a fallback query is about the software
+ * rather than the post. Only used when there is no model to write a better one.
+ */
+function naiveQuery(text: string): string {
+  return text
+    .replace(/^(caption|screen|narration):/gim, " ")
+    .replace(/#[\w]+/g, " ")
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/\b(link in bio|save this|follow for more|comment below|stop paying for this)\b/gi, " ")
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, " ")
+    .replace(/[^\p{L}\p{N}\s.\-_/]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
+}
 
 /** `owner/repo`, the only shape GitHub will accept. */
 const FULL_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/[A-Za-z0-9._-]{1,100}$/;
