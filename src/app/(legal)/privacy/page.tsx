@@ -143,6 +143,22 @@ export default function PrivacyPage() {
         that record, ask and we will delete it; the post link and both usernames go with it.
       </p>
 
+      <h3>The repository identifier</h3>
+      <p>
+        <Link href="/identify">/identify</Link> turns a post&rsquo;s caption, on-screen text or
+        narration into the GitHub repository it refers to. Whatever you paste there is sent to
+        Nebius, who run the model that reads it, and to GitHub to check whether the repository it
+        proposes actually exists. If a post names nothing at all, a short description from that
+        text may also be sent to Tavily to search for it.
+      </p>
+      <p>
+        <strong>We do not store what you submit there.</strong> It is held in memory for the length
+        of the request and then gone — there is no transcript, and nothing is attached to your
+        account, whether or not you are signed in. The page is rate-limited, which needs to tell
+        one visitor from another: that uses the same daily, salted, one-way visitor number
+        described under Usage measurement, kept only in memory and never written to our database.
+      </p>
+
       <h2>What we do not collect</h2>
       <ul>
         <li>No passwords — authentication is delegated to Clerk, GitHub and Google.</li>
