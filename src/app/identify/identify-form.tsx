@@ -32,6 +32,7 @@ type Result = {
   tokens: number;
   ms: number;
   degraded?: boolean;
+  needsReview?: boolean;
   error?: string;
 };
 
@@ -215,7 +216,19 @@ export function IdentifyForm() {
                         confidence {Math.round(result.confidence * 100)}%
                       </Badge>
                       {result.repo.archived && <Badge variant="destructive">archived</Badge>}
+                      {result.needsReview && <Badge variant="outline">needs review</Badge>}
                     </div>
+                    {result.needsReview && (
+                      <p className="pt-2 text-sm text-muted-foreground">
+                        The post never named this, so the match rests on a search result
+                        fitting a description. We measured that route: right about two
+                        thirds of the time, wrong a third — search ranks by authority, so
+                        an obscure project loses to the better-known one it resembles. Too
+                        unreliable to catalogue on its own, so it goes to the review queue
+                        as a pre-filled suggestion. That still turns a post nobody could
+                        identify into one click.
+                      </p>
+                    )}
                   </div>
                 ) : result.degraded ? (
                   <p className="text-sm text-muted-foreground">

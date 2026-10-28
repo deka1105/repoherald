@@ -149,6 +149,9 @@ export async function POST(request: Request) {
       tokens: result.tokens,
       ms: Date.now() - started,
       degraded: unconfigured || Boolean(result.modelUnavailable),
+      // A search-sourced answer is a suggestion for a human, not a result —
+      // measured wrong 34.1% of the time. The page has to say so.
+      needsReview: Boolean(result.needsReview),
     });
   } catch (err) {
     // The visitor gets a flat message; the detail goes to the logs. A model

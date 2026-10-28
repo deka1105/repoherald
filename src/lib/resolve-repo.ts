@@ -86,6 +86,22 @@ export type Resolution = {
    * outcome than a 502.
    */
   modelUnavailable?: string;
+  /**
+   * The answer came from the search rung, which means it rests on a search
+   * result matching a description rather than on reading a name. Measured on
+   * 41 real scrubbed descriptions, that is **right 65.9% of the time and wrong
+   * 34.1%** — search ranks by authority, so an obscure project loses to the
+   * category leader it resembles (`Wan-Video/Wan2.2` came back as
+   * `Wan-Video/Wan2.1`, `academa-labs/manimgx` as `ManimCommunity/manim`).
+   *
+   * A third wrong is far too high to catalogue automatically, and the rung
+   * never abstains — unresolved was 0%. So a search-sourced answer is a
+   * *suggestion for a human*, not a result: it belongs in the review queue as
+   * a pre-filled candidate, which turns an otherwise unanswerable post into a
+   * one-click confirmation rather than a guess. Do not auto-apply a resolution
+   * carrying this flag.
+   */
+  needsReview?: boolean;
 };
 
 const SYSTEM = `You identify which GitHub repository a social media post is about.
@@ -523,6 +539,7 @@ export async function resolveRepo(
             // this, so the claim rests on a search result matching a
             // description, which is weaker evidence than reading a name.
             confidence: wasRanked ? 0.65 : 0.5,
+            needsReview: true,
             reasoning:
               reasoning ||
               `The post described the project without naming it. Searching for "${query}" surfaced ${repo.full_name}, which GitHub confirms exists.`,

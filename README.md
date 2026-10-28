@@ -151,16 +151,30 @@ baseline, embarrassing against a 70% one. Three quarters of this corpus is
 unreachable without a model, and no regex reconstructs
 `ertasselli slash openterminal`.
 
-Measured on 28 Oct 2026 against the live endpoint, 320,029 tokens over 277
-model calls (Super on the fast tier, Ultra on the deep tier):
+Measured on 28 Oct 2026 against the live endpoint (Super on the fast tier,
+Ultra on the deep tier), with both guards in place and the search rung off —
+which is where it stays for these four modes, because they all name something:
 
 | mode | no model | with Nemotron |
 |---|---|---|
 | `caption_url` | 98.2% | 98.2% |
 | `caption_plain` | 0% | **98.2%** |
-| `screen` (OCR) | 0% | **71.9%** |
-| `narration` (Whisper) | 0% | **96.5%** |
-| **228 cases** | **24.6%** | **91.2%**, 0 wrong |
+| `screen` (OCR) | 0% | **70.2%** |
+| `narration` (Whisper) | 0% | **93.0%** |
+| **228 cases** | **24.6%** | **89.9%**, 1 wrong (0.4%) |
+
+The single wrong answer is arguably ours, not the model's: the catalogue stores
+`open-slide/open-slide` and the model returned `openslide/openslide`, which is
+the repository that exists. `caption_url` and `caption_plain` were not
+re-measured after the guards landed and cannot regress — rung 1 never consults
+`isGrounded`, and a caption carrying the name verbatim passes it trivially.
+
+Honest note on the guard's cost: `narration` measured 96.5% before `isGrounded`
+and 91.2% / 93.0% across two runs after it. So the guard costs this mode around
+4 points, and buys nothing here — narration was already at 0% wrong. It earns
+its place on `described_only`, where it cut confident errors from 14.6% to 2.4%.
+Trading recall for the elimination of a class of confident error is the right
+trade for a catalogue, but it is a trade, not a free win.
 
 1.03 model calls per case, because rung 1 resolves a quarter of the corpus for
 nothing and the deep tier only runs on what the fast tier got wrong. Narration
@@ -191,8 +205,45 @@ rung must have one side of `owner/repo` survive as a run of characters in the
 post once case, spacing and punctuation are discarded. `vimax` survives
 `HKUD5/ViMax` and `ytdlp` survives "yt dlp slash yt dlp", so real damage still
 repairs — but a name that appears nowhere is refused before GitHub is asked.
-It applies to the model rungs only; the search rung's evidence comes from the
-web, which is the whole reason that rung exists.
+
+### And the search rung is a suggestion engine, not an answer
+
+Measuring rung 4 on the 41 scrubbed descriptions it exists for was the most
+useful thing in this whole exercise, because it says the rung should not be
+trusted:
+
+```
+described_only, search ON    correct 65.9%   wrong 34.1%   unresolved 0.0%
+described_only, search OFF   correct  0.0%   wrong  2.4%   unresolved 97.6%
+```
+
+**Unresolved 0% is the tell.** Search always returns something and the ranking
+always picks one of the results, so the rung never abstains. And because search
+ranks by authority, an obscure project loses to the category leader it
+resembles:
+
+```
+Wan-Video/Wan2.2        → Wan-Video/Wan2.1        (right owner, wrong version)
+academa-labs/manimgx    → ManimCommunity/manim    (the upstream, not the fork)
+chrisgreg/boop          → binwiederhier/ntfy      (the famous alternative)
+```
+
+Going from 0% to 65.9% correct looks like a win until you notice it also went
+from 2.4% to 34.1% wrong. For a catalogue that is not a trade worth making: an
+unresolved post goes to a human, while a wrong one is filed silently against
+somebody's saved post.
+
+So a search-sourced resolution carries `needsReview: true` and is **a pre-filled
+candidate for the review queue, not a result**. That is still worth having —
+it turns a post nobody could identify into one click — but it must not be
+auto-applied, and `/identify` says so on screen.
+
+A second gate follows from the same measurement: rung 4 only runs when the post
+named *nothing*. With it running whenever the earlier rungs merely failed,
+`screen` reached 89.5% correct and **10.5% wrong**, because a half-read name
+sent to search comes back as a confident near-miss (`deka1105/ColdEmails` →
+`dancolta/trustpilot-outreach-automation`). If a grounded candidate was
+proposed, the post does contain a name and the honest answer is "I don't know".
 
 Running it also found two repositories in the catalogue that have since been
 renamed and one that was deleted — caught by validating against GitHub rather

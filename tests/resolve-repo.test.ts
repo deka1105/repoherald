@@ -495,6 +495,8 @@ async function main() {
     ok("a post that names nothing does reach the search rung", searched2 === 1);
     ok("and the search rung can still resolve it", r4.repo?.full_name === "binwiederhier/ntfy");
     ok("a searched answer is never full confidence", (r4.confidence ?? 1) <= 0.65);
+    // Measured wrong 34.1% of the time, so it is a suggestion, not an answer.
+    ok("a searched answer is flagged for human review", r4.needsReview === true);
   }
 
   // The guard must not break the case it was built around: a grounded but
@@ -509,6 +511,7 @@ async function main() {
     search: async () => [],
   });
   ok("a grounded repair still resolves", r2.repo?.full_name === "HKUDS/ViMax");
+  ok("a reconstructed answer is not flagged for review", !r2.needsReview);
 }
 
 }
