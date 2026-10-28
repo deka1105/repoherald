@@ -47,6 +47,14 @@ export type RepoLookup = (
 /** Optional web search, used only when the text names no resolvable repo. */
 export type WebSearch = (query: string) => Promise<string[]>;
 
+/**
+ * The model call, injectable for the same reason `lookup` is: the ladder's
+ * logic — the deep-tier retry, the rejected-candidate feedback, the stop on
+ * first confirmation — is the part most likely to break, and it should be
+ * provable without spending a token or holding a key.
+ */
+export type Completer = typeof complete;
+
 export type Attempt = {
   fullName: string;
   source: FoundIn;
@@ -156,8 +164,9 @@ function describe(text: PostText): string {
 export async function resolveRepo(
   text: PostText,
   lookup: RepoLookup,
-  opts: { search?: WebSearch } = {},
+  opts: { search?: WebSearch; complete?: Completer } = {},
 ): Promise<Resolution> {
+  const ask = opts.complete ?? complete;
   const attempts: Attempt[] = [];
   let modelCalls = 0;
   let tokens = 0;
