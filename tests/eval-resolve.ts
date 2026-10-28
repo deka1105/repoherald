@@ -44,6 +44,17 @@ const limit = Number(flag("limit") ?? "0") || 0;
 const onlyMode = flag("mode") as Mode | undefined;
 
 /**
+ * `--baseline` runs the corpus with the model stubbed out to return nothing,
+ * so only rung 1 — the literal-URL regex — can resolve anything.
+ *
+ * This is the number the model has to beat, and without it the model's score
+ * is unreadable: "72% correct" is excellent if a regex gets 25% and
+ * embarrassing if a regex gets 70%. Costs no tokens and needs no key, so it
+ * can be run before the credits arrive.
+ */
+const baselineOnly = argv.includes("--baseline");
+
+/**
  * A real GitHub token, so validation is the real thing. Authenticated gives
  * 5,000 requests an hour; unauthenticated gives 60, which the corpus would
  * exhaust in its first dozen cases.
