@@ -52,11 +52,13 @@ export default function IdentifyPage() {
           </p>
         </div>
 
-        {!nemotronConfigured() ? (
+        {!nemotronConfigured() && (
           <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-            Identification isn&rsquo;t configured on this deployment, so only
-            literal github.com links would resolve. The code and setup
-            instructions are in the{" "}
+            <strong>Running without a model on this deployment.</strong> Rung one
+            of the ladder is a regex over literal github.com links and needs no
+            model, so those still resolve — but a mangled transcript or OCR dump
+            will come back empty, because the rungs that repair them are the ones
+            that call Nemotron. Setup instructions are in the{" "}
             <Link
               href="https://github.com/deka1105/repoherald"
               className="underline underline-offset-4"
@@ -65,9 +67,9 @@ export default function IdentifyPage() {
             </Link>
             .
           </p>
-        ) : (
-          <IdentifyForm />
         )}
+
+        <IdentifyForm />
 
         <p className="max-w-3xl pt-2 text-xs text-muted-foreground">
           Text you submit here is sent to Nebius for inference and is not stored

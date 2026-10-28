@@ -30,6 +30,7 @@ type Result = {
   modelCalls: number;
   tokens: number;
   ms: number;
+  degraded?: boolean;
   error?: string;
 };
 
@@ -215,6 +216,13 @@ export function IdentifyForm() {
                       {result.repo.archived && <Badge variant="destructive">archived</Badge>}
                     </div>
                   </div>
+                ) : result.degraded ? (
+                  <p className="text-sm text-muted-foreground">
+                    No literal github.com link in that text, and this deployment has no model
+                    configured — so the rungs that reconstruct a mangled or spoken name never
+                    ran. This is the honest &ldquo;before&rdquo; state: it is exactly what the
+                    pipeline could do when a person had to do the rest.
+                  </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Nothing it proposed exists on GitHub, so it returned nothing rather than a
