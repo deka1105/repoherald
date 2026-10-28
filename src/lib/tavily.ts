@@ -36,16 +36,11 @@ export function tavilyConfigured(): boolean {
   return Boolean(process.env.TAVILY_API_KEY);
 }
 
-/**
- * Searches for a project by description, biased towards GitHub.
- *
- * Returns one string per result (title, url and snippet joined) so the caller
- * can run its URL extraction over the lot.
- */
-export async function searchForRepo(description: string): Promise<string[]> {
-  const key = process.env.TAVILY_API_KEY;
-  if (!key) return [];
-
+async function search(
+  key: string,
+  query: string,
+  restrictToGithub: boolean,
+): Promise<{ url?: string; text: string }[]> {
   let res: Response;
   try {
     res = await fetch(ENDPOINT, {
@@ -55,10 +50,13 @@ export async function searchForRepo(description: string): Promise<string[]> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        query: `${description.slice(0, 350)} github repository`,
+        query,
+        // Basic rather than advanced: this runs on a finite promotional
+        // balance, and the job is to surface a handful of candidate links for
+        // the model to choose between, not to read pages deeply.
         search_depth: "basic",
         max_results: 5,
-        include_domains: ["github.com"],
+        ...(restrictToGithub ? { include_domains: ["github.com"] } : {}),
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -73,7 +71,47 @@ export async function searchForRepo(description: string): Promise<string[]> {
   const parsed = responseSchema.safeParse(await res.json());
   if (!parsed.success) return [];
 
-  return parsed.data.results.map((r) =>
-    [r.title, r.url, r.content].filter(Boolean).join(" "),
-  );
+  return parsed.data.results.map((r) => ({
+    url: r.url,
+    text: [r.title, r.url, r.content].filter(Boolean).join(" "),
+  }));
+}
+
+/**
+ * Finds a project from a description of what it does.
+ *
+ * Two searches, because the repository gets named in two different kinds of
+ * place and neither alone is enough:
+ *
+ *   restricted to github.com — the repository page itself, when the
+ *                             description matches its own README closely
+ *   unrestricted            — the listicle, blog post or thread that names the
+ *                             project. Often the only hit, because a reel and
+ *                             a README rarely describe a tool the same way,
+ *                             while an article about it describes it the way
+ *                             people talk about it
+ *
+ * Returns one string per result (title, url and snippet joined) so the caller
+ * can both rank them with a model and extract links from them. Deduped by URL,
+ * with GitHub's own pages first since they are the stronger evidence.
+ */
+export async function searchForRepo(description: string): Promise<string[]> {
+  const key = process.env.TAVILY_API_KEY;
+  if (!key) return [];
+
+  const query = description.slice(0, 350);
+  const [direct, wider] = await Promise.all([
+    search(key, `${query} github repository`, true),
+    search(key, `${query} open source github`, false),
+  ]);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const r of [...direct, ...wider]) {
+    const key = r.url ?? r.text;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(r.text);
+  }
+  return out;
 }
