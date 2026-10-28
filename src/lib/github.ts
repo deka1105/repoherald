@@ -95,6 +95,36 @@ export async function fetchRepoByFullName(
   return res.json();
 }
 
+/**
+ * Does this public repository exist? Usable without a signed-in user.
+ *
+ * Repo identification runs for visitors who may not be signed in at all, so it
+ * cannot borrow a user's token the way star verification does. Public repo
+ * metadata needs no authentication; `GITHUB_READ_TOKEN` is optional and buys
+ * only rate limit (5,000/hour authenticated against 60 unauthenticated), never
+ * extra access. A private repo stays 404 here either way, which is correct —
+ * an identifier must not confirm the existence of something the asker cannot see.
+ */
+export async function fetchPublicRepo(
+  ownerLogin: string,
+  repoName: string,
+): Promise<GithubRepo | null> {
+  const token = process.env.GITHUB_READ_TOKEN;
+  const res = await fetch(`${GH}/repos/${ownerLogin}/${repoName}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+    },
+    cache: "no-store",
+  });
+  if (res.status === 404) return null;
+  checkCommonErrors(res);
+  if (!res.ok) return null;
+  const repo: GithubRepo = await res.json();
+  return repo.private ? null : repo;
+}
+
 /** ID-based lookup survives renames/transfers. */
 export async function fetchRepoById(
   token: string,
