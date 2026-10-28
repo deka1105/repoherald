@@ -121,6 +121,9 @@ async function main() {
   const byMode = new Map<Mode, Tally>();
   const total = blank();
   const wrongExamples: string[] = [];
+  const renames: string[] = [];
+  /** url-mode cases where the link 404s now, so falling to the model is correct. */
+  let urlFellThrough = 0;
 
   for (const [i, c] of cases.entries()) {
     const t = byMode.get(c.mode) ?? blank();
@@ -134,8 +137,27 @@ async function main() {
     );
 
     const got = r.repo?.full_name ?? null;
-    const hit = got?.toLowerCase() === c.fullName.toLowerCase();
+    let hit = got?.toLowerCase() === c.fullName.toLowerCase();
+
+    // A name that differs may still be the same repository. GitHub 301s a
+    // renamed or transferred repo to its current full_name, and fetch follows
+    // that redirect — so resolving `MadsLorentzen/ai-job-search` to
+    // `ai-job-search-dev/ai-job-search` is the right answer about a repo that
+    // moved, not a wrong answer about a repo that didn't. Compare ids before
+    // calling it a miss, or the score punishes the resolver for the
+    // catalogue's own staleness.
+    let renamed = false;
+    if (!hit && got && r.repo) {
+      const [owner, name] = c.fullName.split("/");
+      const canonical = await lookup(owner, name);
+      if (canonical && canonical.id === r.repo.id) {
+        hit = true;
+        renamed = true;
+      }
+    }
+
     const outcome = got === null ? "unresolved" : hit ? "correct" : "WRONG";
+    if (renamed) renames.push(`${c.fullName} → ${got}`);
 
     if (outcome === "correct") {
       t.correct++;
