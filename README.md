@@ -88,9 +88,32 @@ than trusting a constant that was true the week it was written.
 ```bash
 npm run nemotron:doctor              # key, model ids, and one real inference
 npm run test:resolve                 # the ladder — no key, no tokens, no network
+npm run eval:resolve -- --baseline   # the no-model bar, free
 npm run eval:resolve -- --limit 20   # accuracy against the real endpoint (spends tokens)
 npm run eval:resolve -- --mode narration
 ```
+
+Start with `--baseline`. It runs the whole corpus with the model stubbed out,
+so only rung 1 can resolve anything, and that is the bar Nemotron has to clear:
+
+```
+  mode            n   outcome
+  caption_url      57  correct  98.2%   wrong  0.0%   unresolved   1.8%
+  caption_plain    57  correct   0.0%   wrong  0.0%   unresolved 100.0%
+  screen           57  correct   0.0%   wrong  0.0%   unresolved 100.0%
+  narration        57  correct   0.0%   wrong  0.0%   unresolved 100.0%
+  ALL             228  correct  24.6%   wrong  0.0%   unresolved  75.4%
+```
+
+Without that line, "72% correct" is unreadable — excellent against a 25%
+baseline, embarrassing against a 70% one. Three quarters of this corpus is
+unreachable without a model, and no regex reconstructs
+`ertasselli slash openterminal`.
+
+Running it also found two repositories in the catalogue that have since been
+renamed and one that was deleted — caught by validating against GitHub rather
+than trusting a stored name. The eval compares repo ids, so a rename counts as
+correct.
 
 The eval reports three outcomes, deliberately not two:
 
