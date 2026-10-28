@@ -32,6 +32,102 @@ should cost more than taking it yourself.
 | **Sponsor** | Paid placement via Stripe Checkout, pinned and injected into the feed |
 | **Admin** | Sponsorships, credit adjustments, and moderation |
 
+## Identifying a repository from a post
+
+**NVIDIA Nemotron on Nebius Token Factory.** Try it: [`/identify`](https://repoherald.com/identify)
+
+When someone sends repoherald a post instead of saving it, something has to
+answer *which repository is this?* Until now that something was a person — the
+landing page said so out loud, *"A person looks up the repository behind it"* —
+and it is why the catalogue could never grow faster than somebody's evening.
+
+The inputs are the three places a repo can be named, in descending fidelity:
+
+| Source | Fidelity | Typical damage |
+|---|---|---|
+| Caption | highest | often a literal `github.com` URL, or absent entirely |
+| Screen (OCR) | near-verbatim | mangled glyphs — `5` for `S`, `1` for `l`, `0` for `O` |
+| Narration (Whisper) | lossiest | punctuation is *spoken*: `yt-dlp/yt-dlp` arrives as "yt dlp slash yt dlp" — the slash is said aloud, the hyphens are not said at all |
+
+### The rule that makes it safe to automate
+
+**Nemotron proposes. GitHub decides.**
+
+Every candidate is checked against `GET /repos/{owner}/{repo}`, and one that
+does not resolve is discarded however confident the model sounded. The model
+never names the output — it only narrows the search. A wrong guess costs one
+API call; a hallucinated repository sitting in someone's private list costs
+their trust in the entire product.
+
+That is enforced rather than promised: `tests/resolve-repo.test.ts` feeds the
+ladder a model that invents repositories with `confidence: 1.0` and asserts
+nothing comes back.
+
+### The ladder
+
+`src/lib/resolve-repo.ts`, cheapest rung first, stopping at the first candidate
+GitHub confirms:
+
+1. **A literal URL** — a regex reads a URL correctly, and spending a token to
+   read one would be silly. Costs zero model calls.
+2. **Nemotron, fast tier** — over all three texts at once.
+3. **Nemotron, deep tier** — told *which candidates GitHub already rejected*, so
+   it repairs instead of repeating itself. This is the rung that undoes spoken
+   punctuation.
+4. **Tavily** — only when the post describes a project and never names it. No
+   amount of re-reading recovers a name that was never there.
+
+Two tiers because the work is two-speed: most posts name the repo plainly and
+want the cheap pass, while a minority are mangled and want real reasoning.
+Token Factory's catalogue moves, so both ids are env-overridable and
+`npm run nemotron:doctor` checks them against the live `/models` list rather
+than trusting a constant that was true the week it was written.
+
+### Measuring it
+
+```bash
+npm run nemotron:doctor              # key, model ids, and one real inference
+npm run test:resolve                 # the ladder — no key, no tokens, no network
+npm run eval:resolve -- --limit 20   # accuracy against the real endpoint (spends tokens)
+npm run eval:resolve -- --mode narration
+```
+
+The eval reports three outcomes, deliberately not two:
+
+- **correct** — resolved, and it is the right repository
+- **wrong** — resolved to a *real* repository that is not the right one. The
+  only harmful outcome, because it enters a list looking like a correct answer
+- **unresolved** — nothing survived GitHub. Safe: the post falls back to the
+  review queue, which is where every post went before any of this existed
+
+An identifier that is unsure and says so is worth more here than one that is
+usually right, so *wrong* is reported on its own line and never folded into an
+accuracy percentage.
+
+**Two honest limits.** Ground truth is the 57 repositories repoherald has really
+catalogued, pulled from the production database — but the mangled text those
+were originally read from is not preserved anywhere, so the eval *inputs* are
+generated (`tests/corrupt.ts`), with each mode reproducing a failure the
+pipeline actually hit. It therefore measures reconstruction from damaged text,
+not end-to-end production accuracy. And because the eval's ground truth is a
+closed set of 57, a plausible-but-wrong *real* repository is scored wrong,
+where in production it would resolve and be accepted — so the real-world
+"confidently wrong" rate is higher than the eval's, not lower.
+
+### Setup
+
+```bash
+NEBIUS_API_KEY=…        # required for anything past rung 1
+NEMOTRON_MODEL_FAST=…   # optional; defaults to nvidia/nemotron-3-super-120b-a12b
+NEMOTRON_MODEL_DEEP=…   # optional; same default
+NEBIUS_BASE_URL=…       # optional; only if your account has a region-suffixed host
+TAVILY_API_KEY=…        # optional; enables rung 4
+GITHUB_READ_TOKEN=…     # optional; raises GitHub's validation rate limit only
+```
+
+Unset `NEBIUS_API_KEY` and identification degrades to literal links. Nothing
+breaks — it just stops being clever, exactly as it was before.
+
 ## Stack
 
 **Next.js App Router** (TypeScript) · **Auth.js v5** with GitHub OAuth and JWT
