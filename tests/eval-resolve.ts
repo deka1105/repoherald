@@ -29,7 +29,7 @@
 
 import { execFileSync } from "node:child_process";
 import { fetchRepoByFullName, type GithubRepo } from "@/lib/github";
-import { resolveRepo } from "@/lib/resolve-repo";
+import { resolveRepo, type Completer } from "@/lib/resolve-repo";
 import { searchForRepo, tavilyConfigured } from "@/lib/tavily";
 import { MODELS, nemotronConfigured } from "@/lib/nemotron";
 import { buildCases, type Mode } from "./corrupt";
@@ -127,7 +127,10 @@ async function main() {
     const r = await resolveRepo(
       { caption: c.caption, stillsText: c.stillsText, transcript: c.transcript },
       lookup,
-      { search: tavilyConfigured() ? searchForRepo : undefined },
+      {
+        complete: baselineOnly ? noModel : undefined,
+        search: baselineOnly || !tavilyConfigured() ? undefined : searchForRepo,
+      },
     );
 
     const got = r.repo?.full_name ?? null;
