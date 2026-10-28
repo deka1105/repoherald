@@ -10,7 +10,8 @@
     "test:mobile-auth": "tsx tests/mobile-auth.test.ts",
     "test:resolve": "tsx tests/resolve-repo.test.ts",
     "eval:resolve": "tsx tests/eval-resolve.ts",
-    "nemotron:doctor": "tsx scripts/nemotron-doctor.ts"
+    "nemotron:doctor": "tsx scripts/nemotron-doctor.ts",
+    "test:nemotron": "tsx tests/nemotron-wire.test.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",

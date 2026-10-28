@@ -88,6 +88,7 @@ than trusting a constant that was true the week it was written.
 ```bash
 npm run nemotron:doctor              # key, model ids, and one real inference
 npm run test:resolve                 # the ladder — no key, no tokens, no network
+npm run test:nemotron                # the HTTP contract, against a local server
 npm run eval:resolve -- --baseline   # the no-model bar, free
 npm run eval:resolve -- --limit 20   # accuracy against the real endpoint (spends tokens)
 npm run eval:resolve -- --mode narration
@@ -252,7 +253,12 @@ database or any API key:
 ```bash
 npm run test:mobile-auth    # the bearer-token layer
 npm run test:resolve        # the repo-identification ladder
+npm run test:nemotron       # the Token Factory client's HTTP contract
 ```
+
+80 assertions, none of which need a key, a database or the internet — the
+Nemotron client is exercised against a local server that speaks Token
+Factory's documented shapes, including the retry rules.
 
 The remaining invariants — the ledger, the row locks, the mint uniqueness —
 are what should be covered next.

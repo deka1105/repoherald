@@ -17,8 +17,10 @@ Portal where people/companies post GitHub repos for discovery and starring. Veri
 - `npx drizzle-kit generate` — generate SQL migration from `src/db/schema.ts`
 - `npx drizzle-kit migrate` — apply migrations (needs `DATABASE_URL`)
 
-- `npm run test:mobile-auth` / `npm run test:resolve` — plain `tsx` scripts, no
-  framework, no database, no API key required
+- `npm run test:mobile-auth` / `npm run test:resolve` / `npm run test:nemotron` —
+  plain `tsx` scripts, 80 assertions, no framework, no database, no API key and
+  no internet required (`test:nemotron` runs the client against a local server
+  speaking Token Factory's shapes, so the retry rules are proved not assumed)
 - `npm run nemotron:doctor` — is Nebius reachable and are the model ids real?
 - `npm run eval:resolve -- --limit 20` — identification accuracy; **spends tokens**
 
