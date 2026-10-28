@@ -9,8 +9,8 @@
     "lint": "eslint",
     "test:mobile-auth": "tsx tests/mobile-auth.test.ts",
     "test:resolve": "tsx tests/resolve-repo.test.ts",
-    "eval:resolve": "tsx tests/eval-resolve.ts",
-    "nemotron:doctor": "tsx scripts/nemotron-doctor.ts",
+    "eval:resolve": "tsx --env-file-if-exists=.env.local tests/eval-resolve.ts",
+    "nemotron:doctor": "tsx --env-file-if-exists=.env.local scripts/nemotron-doctor.ts",
     "test:nemotron": "tsx tests/nemotron-wire.test.ts"
   },
   "dependencies": {
