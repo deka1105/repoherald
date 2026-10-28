@@ -251,16 +251,38 @@ export async function complete(opts: {
  * Token Factory advertises OpenAI compatibility but its published API
  * reference does not document `response_format: json_schema`, so this does
  * not depend on strict structured output being honoured. The model is asked
- * for JSON, the first balanced object is extracted (models wrap JSON in prose
- * and fenced blocks no matter how firmly you ask them not to), and zod is the
+ * for JSON, balanced objects are extracted (models wrap JSON in prose and
+ * fenced blocks no matter how firmly you ask them not to), and zod is the
  * thing that actually decides whether the result is usable.
+ *
+ * Every `{` is tried, not just the first. A reasoning model that leaks its
+ * thinking into `content` — Nemotron-3_5-Lightning does exactly this — opens
+ * braces while talking about the answer before emitting it, so the first
+ * balanced object is often a fragment of the reasoning. Because the schema is
+ * the arbiter, trying the next candidate is free of risk: a wrong object fails
+ * validation rather than being returned.
  */
 export function extractJson<T>(text: string, schema: z.ZodType<T>): T | null {
-  const start = text.indexOf("{");
-  if (start === -1) return null;
+  for (let start = text.indexOf("{"); start !== -1; start = text.indexOf("{", start + 1)) {
+    const end = balancedEnd(text, start);
+    if (end === -1) continue;
+    try {
+      return schema.parse(JSON.parse(text.slice(start, end)));
+    } catch {
+      // Not this one. Keep looking — the real object may come after the prose.
+    }
+  }
+  return null;
+}
 
-  // Balance braces rather than regex: a repo description containing a brace
-  // would defeat a lazy match, and descriptions come straight from GitHub.
+/**
+ * Index just past the `}` closing the object that opens at `start`, or -1.
+ *
+ * Balances braces rather than matching a regex: a repo description containing
+ * a brace would defeat a lazy match, and descriptions come straight from
+ * GitHub.
+ */
+function balancedEnd(text: string, start: number): number {
   let depth = 0;
   let inString = false;
   let escaped = false;
@@ -274,21 +296,15 @@ export function extractJson<T>(text: string, schema: z.ZodType<T>): T | null {
       escaped = true;
       continue;
     }
-    if (ch === '"') inString = !inString;
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
     if (inString) continue;
     if (ch === "{") depth++;
-    else if (ch === "}") {
-      depth--;
-      if (depth === 0) {
-        try {
-          return schema.parse(JSON.parse(text.slice(start, i + 1)));
-        } catch {
-          return null;
-        }
-      }
-    }
+    else if (ch === "}" && --depth === 0) return i + 1;
   }
-  return null;
+  return -1;
 }
 
 /**
