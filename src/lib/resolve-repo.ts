@@ -303,6 +303,7 @@ export async function resolveRepo(
   }
 
   let reasoning = "";
+  let searchQuery: string | undefined;
 
   // ── 2 & 3. the model, fast then deep
   for (const tier of ["fast", "deep"] as const) {
@@ -323,6 +324,9 @@ export async function resolveRepo(
 
     const parsed = extractJson(out.text, candidatesSchema);
     if (parsed?.reasoning) reasoning = parsed.reasoning;
+    // Asked for in the same completion as the candidates, so a post that turns
+    // out to name nothing has already paid for its search query.
+    if (parsed?.search_query?.trim()) searchQuery = parsed.search_query.trim();
 
     for (const candidate of parsed?.candidates ?? []) {
       const fullName = normaliseFullName(candidate.full_name);
@@ -351,17 +355,60 @@ export async function resolveRepo(
   }
 
   // ── 4. web search, for a post that describes a project without naming it
+  //
+  // The rungs above can only reconstruct a name that is present somewhere in
+  // the text. When a reel shows a tool, says what it does, and never once says
+  // what it is called, there is nothing to reconstruct — searching for the
+  // description is the only remaining route to an answer.
   if (opts.search) {
-    const results = await opts.search(body.slice(0, 500));
+    const query = searchQuery || naiveQuery(body);
+    const results = await opts.search(query);
+
     if (results.length) {
-      for (const fullName of urlsIn(results.join("\n"))) {
+      // Ask the model which result is the project, rather than taking the
+      // first GitHub link. Search for "open source photo editor in Rust"
+      // returns the right owner's *other* project just as readily as the right
+      // one, and only the post's own wording tells them apart — regexing the
+      // first URL would pick by result order, which is not evidence.
+      let ranked: string[] = [];
+      try {
+        const pick = await ask({
+          tier: "deep",
+          system: PICK_SYSTEM,
+          user: `post:\n${body}\n\n---\n\nsearch results for "${query}":\n${results
+            .slice(0, 8)
+            .map((r, i) => `${i + 1}. ${r}`)
+            .join("\n")}`,
+        });
+        modelCalls++;
+        tokens += (pick.promptTokens ?? 0) + (pick.completionTokens ?? 0);
+        const parsed = extractJson(pick.text, pickSchema);
+        if (parsed?.reasoning) reasoning = parsed.reasoning;
+        ranked = (parsed?.candidates ?? [])
+          .map((c) => normaliseFullName(c.full_name))
+          .filter((n): n is string => Boolean(n));
+      } catch {
+        // A failure here costs the ranking, not the rung — fall through to
+        // reading links straight out of the results.
+        ranked = [];
+      }
+
+      // The model's ranking first, then anything else the results mentioned.
+      const fromResults = urlsIn(results.join("\n"));
+      for (const fullName of [...ranked, ...fromResults]) {
         const repo = await check(fullName, "caption", "web-search");
         if (repo) {
+          const wasRanked = ranked.includes(fullName);
           return {
             repo,
             foundIn: "caption",
-            confidence: 0.6,
-            reasoning: `The post described the project without naming it; a web search surfaced ${repo.full_name}, which GitHub confirms.`,
+            // Lower than a reconstructed name on purpose: the post never said
+            // this, so the claim rests on a search result matching a
+            // description, which is weaker evidence than reading a name.
+            confidence: wasRanked ? 0.65 : 0.5,
+            reasoning:
+              reasoning ||
+              `The post described the project without naming it. Searching for "${query}" surfaced ${repo.full_name}, which GitHub confirms exists.`,
             attempts,
             modelCalls,
             tokens,
