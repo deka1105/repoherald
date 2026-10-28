@@ -3,6 +3,17 @@ import { Header } from "@/components/header";
 import { nemotronConfigured } from "@/lib/nemotron";
 import { IdentifyForm } from "./identify-form";
 
+/**
+ * Rendered per request, not prerendered.
+ *
+ * This page branches on whether NEBIUS_API_KEY is set. Prerendered, that read
+ * happens at build time and gets baked in — so a deploy that ran before the
+ * key was added would keep telling visitors identification is unconfigured
+ * long after it worked. The page does nothing else dynamic; this is only here
+ * to make the env read a request-time one.
+ */
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Identify a repository — repoherald",
   description:
