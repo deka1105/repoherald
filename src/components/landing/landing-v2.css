@@ -523,6 +523,11 @@
   flex: 1 1 260px;
   min-width: 0;
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rhl-row-title {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
@@ -532,6 +537,14 @@
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.015em;
+}
+/* Where the thing is actually sitting. A span, not a <p>, because `.rhl-row p`
+   claims the prose column with `flex: 1 1 380px` and this belongs in the head. */
+.rhl-row-where {
+  font-family: var(--font-jbmono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
 }
 .rhl-tag {
   padding: 5px 9px;
@@ -543,6 +556,18 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--fg);
+  white-space: nowrap;
+}
+/* "In review" is a different promise from "not built": it is with somebody
+   else and the date is not ours to give. Amber carries that distinction so the
+   neutral chip can keep meaning "nobody is looking at this yet".
+   Contrast measured on the real tokens: --accent-ink on --accent-soft is
+   6.05:1 in light and 8.94:1 in dark, both clear of the 4.5:1 AGENTS.md
+   records as already met. The border stays --hair so the chip keeps its edge
+   in both modes. */
+.rhl-tag-review {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 .rhl-row p {
   flex: 1 1 380px;
