@@ -52,6 +52,68 @@ export default function IdentifyPage() {
           </p>
         </div>
 
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border p-3">
+            <p className="text-2xl font-semibold tabular-nums">24.6%</p>
+            <p className="text-xs text-muted-foreground">
+              identified automatically <span className="font-medium">before</span> — a regex
+              over literal github.com links, and nothing at all from OCR or speech
+            </p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-2xl font-semibold tabular-nums">89.9%</p>
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium">with Nemotron</span>, over the same 228 real
+              cases — one wrong answer, traceable to a stale name in our own catalogue
+            </p>
+          </div>
+          <div className="rounded-lg border p-3">
+            <p className="text-2xl font-semibold tabular-nums">1.03</p>
+            <p className="text-xs text-muted-foreground">
+              model calls per post on average, because a quarter of posts carry a literal
+              link and cost nothing at all
+            </p>
+          </div>
+        </div>
+
+        <details className="rounded-lg border p-3 text-sm">
+          <summary className="cursor-pointer font-medium">
+            The five rungs, cheapest first — and which model does what
+          </summary>
+          <ol className="mt-3 space-y-2 text-muted-foreground">
+            <li>
+              <span className="font-medium text-foreground">A literal link.</span> A regex.
+              No model, no cost, and the only path that earns full confidence.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Nemotron 3 Super (120B), fast tier.</span>{" "}
+              Reads the caption, the OCR and the transcript together. Most posts stop here.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Nemotron 3 Ultra (550B), deep tier.</span>{" "}
+              Runs only on candidates GitHub has already rejected, and is{" "}
+              <em>told which ones</em>, so it repairs rather than repeating itself. This is
+              the rung that undoes spoken punctuation.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Tavily web search.</span> Only
+              when the post named nothing at all. Two searches, then Nemotron ranks the
+              results — taking the first link would be picking by result order.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Nemotron verifies.</span> The
+              one rung that can say no: it compares the post against the repository&rsquo;s{" "}
+              <em>real</em> GitHub description and vetoes a near-miss. We added it because
+              search alone was wrong a third of the time and never once abstained.
+            </li>
+          </ol>
+          <p className="mt-3 text-xs text-muted-foreground">
+            A post with a link answers instantly. A spoken name takes about two seconds. A
+            post that names nothing can take twenty — it is four model calls and two
+            searches, and we would rather it be slow than wrong.
+          </p>
+        </details>
+
         {!nemotronConfigured() && (
           <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
             <strong>Running without a model on this deployment.</strong> Rung one

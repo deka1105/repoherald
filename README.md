@@ -7,6 +7,34 @@ put your own repo at the top of the feed, or donate them to someone else's.
 
 ---
 
+## Built with NVIDIA Nemotron on Nebius Token Factory
+
+The hard step in this product is *"which GitHub repository is this social media
+post about?"* — and until now that step was **a person**. The landing page said
+so. It is the reason the catalogue could never grow faster than somebody's
+evening.
+
+That step now runs on **NVIDIA Nemotron, served by Nebius Token Factory**:
+
+- `nvidia/nemotron-3-super-120b-a12b` — the fast tier, on every post
+- `nvidia/Nemotron-3-Ultra-550b-a55b` — the deep tier, only on what the fast
+  tier got wrong
+- **Tavily** — for posts that describe a project and never name it
+
+Measured on 228 real cases, against a no-model baseline run first so the figure
+means something:
+
+| | automatic identification |
+|---|---|
+| regex over literal links (before) | **24.6%** — and 0% of OCR or spoken cases |
+| Nemotron on Token Factory (after) | **89.9%**, 1 wrong |
+
+Live demo: **[repoherald.com/identify](https://repoherald.com/identify)** ·
+Full write-up, including the three experiments that failed:
+**[Identifying a repository from a post](#identifying-a-repository-from-a-post)**
+
+---
+
 ## The idea
 
 Every "show your project" board has the same failure: everyone posts, nobody
