@@ -1,0 +1,171 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--ground);
+      font-family: var(--font-display);
+    }
+
+    /* The same geometry as a tile in scene 1's grid, in the same place, so
+       the cut carries one object across rather than changing worlds. */
+    #se-card {
+      position: absolute;
+      left: 591px;
+      top: 441px;
+      width: 356px;
+      height: 198px;
+      background: var(--card);
+      border: 1px solid var(--hair);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    #se-thumb {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 356px;
+      height: 146px;
+      background: var(--chip);
+    }
+    #se-play {
+      position: absolute;
+      left: 160px;
+      top: 55px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    #se-play::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      top: 10px;
+      width: 0;
+      height: 0;
+      border-left: 12px solid rgba(255, 255, 255, 0.45);
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+    }
+    #se-strip {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 356px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+    }
+    #se-mark {
+      width: 13px;
+      height: 18px;
+      background: var(--muted);
+      opacity: 0.5;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+      flex: none;
+    }
+    #se-blank {
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      flex: 1;
+    }
+
+    /* A generic message bubble. No platform chrome, no avatar, no name —
+       it is a thing being sent, not a recreation of anyone's interface. */
+    #se-tail {
+      position: absolute;
+      left: 1372px;
+      top: 586px;
+      width: 34px;
+      height: 26px;
+      background: var(--card);
+      clip-path: polygon(0 0, 100% 0, 0 100%);
+    }
+    #se-tick {
+      position: absolute;
+      left: 1127px;
+      top: 636px;
+      width: 270px;
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 32px;
+      color: var(--muted);
+    }
+
+    #se-note {
+      position: absolute;
+      left: 192px;
+      top: 772px;
+      width: 1536px;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 44px;
+      letter-spacing: -0.01em;
+      color: var(--muted);
+    }
+    #se-dm {
+      position: absolute;
+      left: 192px;
+      top: 926px;
+      font-family: var(--font-mono);
+      font-size: 38px;
+      color: var(--ink);
+      opacity: 0.75;
+    }
+  </style>
+
+  <div id="root" data-composition-id="send" data-width="1920" data-height="1080">
+    <div id="se-card" class="clip" data-start="0" data-duration="2.9" data-track-index="2">
+      <div id="se-thumb"><div id="se-play"></div></div>
+      <div id="se-strip"><span id="se-mark"></span><span id="se-blank"></span></div>
+    </div>
+
+    <div id="se-tail" class="clip" data-start="0.3" data-duration="2.6" data-track-index="3" data-layout-ignore></div>
+
+    <div id="se-tick" class="clip" data-start="0.5" data-duration="2.4" data-track-index="4">Sent ✓</div>
+
+    <div id="se-note" class="clip" data-start="0.62" data-duration="2.28" data-track-index="5">
+      no caption. the name is only spoken.
+    </div>
+
+    <div id="se-dm" class="clip" data-start="1.1" data-duration="1.8" data-track-index="6">One DM.</div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // One tile leaves the folder and is sent. It rises and grows: an arrival
+    // on a long tail, one move, one tween.
+    tl.fromTo(
+      "#se-card",
+      { x: 0, y: 0, scale: 1, opacity: 1 },
+      { x: 290, y: -110, scale: 1.9, duration: 0.5, ease: "expo.out" },
+      0,
+    );
+    tl.fromTo("#se-tail", { opacity: 0 }, { opacity: 1, duration: 0.14, ease: "power2.out" }, 0.3);
+    tl.fromTo("#se-tick", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.18, ease: "power3.out" }, 0.5);
+
+    // Settled 0.80-2.90 = 2.10s for seven words (floor 2.1s). This line is
+    // the reason the next scene is hard: there is no caption to read.
+    tl.fromTo(
+      "#se-note",
+      { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" },
+      0.62,
+    );
+    tl.fromTo("#se-dm", { opacity: 0 }, { opacity: 0.75, duration: 0.16, ease: "power2.out" }, 1.1);
+
+    // Object becomes the world: the bubble accelerates past its own frame and
+    // the next scene's panel opens out of it. The words stay sharp, so the
+    // transition costs no reading time. Lands at 2.89, inside the scene.
+    tl.to("#se-card", { scale: 2.25, filter: "blur(7px)", duration: 0.27, ease: "power3.in" }, 2.62);
+    tl.to("#se-tail", { opacity: 0, duration: 0.18, ease: "power2.in" }, 2.62);
+    tl.to("#se-tick", { opacity: 0, duration: 0.18, ease: "power2.in" }, 2.62);
+
+    window.__timelines["send"] = tl;
+  </script>
+</template>

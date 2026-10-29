@@ -1,0 +1,236 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--ground);
+      font-family: var(--font-display);
+    }
+
+    /* A 4x3 grid of saved posts with no titles on any of them. That absence
+       is the whole point of the scene, so nothing here carries a label. */
+    #fo-grid {
+      position: absolute;
+      left: 209px;
+      top: 217px;
+      width: 1502px;
+      height: 646px;
+      display: grid;
+      grid-template-columns: repeat(4, 356px);
+      grid-template-rows: repeat(3, 198px);
+      gap: 26px;
+    }
+    .fo-tile {
+      position: relative;
+      width: 356px;
+      height: 198px;
+      background: var(--card);
+      border: 1px solid var(--hair);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .fo-thumb {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 356px;
+      height: 146px;
+      background: var(--chip);
+    }
+    /* The faint shapes inside a thumbnail: enough to read as an image,
+       never enough to read as information. */
+    .fo-thumb::after {
+      content: "";
+      position: absolute;
+      left: 26px;
+      top: 34px;
+      width: 190px;
+      height: 10px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .fo-strip {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 356px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 20px;
+    }
+    /* A bookmark ribbon, drawn — the only mark on a tile. */
+    .fo-mark {
+      width: 13px;
+      height: 18px;
+      background: var(--muted);
+      opacity: 0.5;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+      flex: none;
+    }
+    /* Where a title would be, if a saved post had one. */
+    .fo-blank {
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      flex: 1;
+    }
+    .fo-play {
+      position: absolute;
+      left: 160px;
+      top: 55px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .fo-play::after {
+      content: "";
+      position: absolute;
+      left: 14px;
+      top: 10px;
+      width: 0;
+      height: 0;
+      border-left: 12px solid rgba(255, 255, 255, 0.45);
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+    }
+
+    #fo-scrim {
+      position: absolute;
+      inset: 0;
+      background: var(--ground);
+    }
+
+    /* The landing page's own eyebrow. It is on screen at frame 0 so the
+       first frame — the thumbnail on every social player — says what the
+       film is about instead of being an empty ground. */
+    #fo-eyebrow {
+      position: absolute;
+      left: 192px;
+      top: 196px;
+      width: 1536px;
+      text-align: center;
+      font-size: 32px;
+      letter-spacing: 0.01em;
+      color: var(--muted);
+    }
+
+    /* Two lines in one place: only one is settled at a time, and the
+       0.07s crossfade between them is deliberate. */
+    #fo-head {
+      position: absolute;
+      left: 192px;
+      top: 452px;
+      width: 1536px;
+      height: 176px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .fo-line {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      font-size: 96px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.08;
+      white-space: nowrap;
+    }
+    #fo-a {
+      color: var(--ink);
+    }
+    #fo-b {
+      color: var(--accent);
+    }
+    .fo-w {
+      display: inline-block;
+      will-change: opacity, filter;
+    }
+  </style>
+
+  <div id="root" data-composition-id="folder" data-width="1920" data-height="1080">
+    <div id="fo-grid" data-layout-ignore>
+      <div class="fo-tile" data-fo-keep="0"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"><div class="fo-play"></div></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile" data-fo-keep="1"><div class="fo-thumb"><div class="fo-play"></div></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+      <div class="fo-tile"><div class="fo-thumb"></div><div class="fo-strip"><span class="fo-mark"></span><span class="fo-blank"></span></div></div>
+    </div>
+
+    <div id="fo-scrim" class="clip" data-start="1.05" data-duration="3.15" data-track-index="2" data-layout-allow-occlusion></div>
+
+    <div id="fo-eyebrow" class="clip" data-start="0" data-duration="2.9" data-track-index="3">
+      For everyone who saves more than they read
+    </div>
+
+    <div id="fo-head" class="clip" data-start="1.2" data-duration="3.0" data-track-index="3" data-layout-allow-overlap>
+      <div id="fo-a" class="fo-line"><span class="fo-w">You</span> <span class="fo-w">already</span> <span class="fo-w">found</span> <span class="fo-w">it.</span></div>
+      <div id="fo-b" class="fo-line"><span class="fo-w">Find</span> <span class="fo-w">it</span> <span class="fo-w">again.</span></div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const tiles = gsap.utils.toArray("#fo-grid .fo-tile");
+
+    // beat-grid: the folder starts filling on the track's first beat, 0.267s,
+    // then every 0.055s. Twelve arrivals inside 0.6s read as one fill, not
+    // twelve events — and no tile carries text, so no reading floor applies.
+    // Frame 0 is the thumbnail on every social player, so the grid is
+    // already there at 0s, dim — it brightens rather than arriving from
+    // nothing. The folder reads as a folder before a frame has played.
+    tl.fromTo(
+      tiles,
+      { opacity: 0.38, y: 0 },
+      { opacity: 1, duration: 0.34, ease: "power3.out", stagger: 0.055 },
+      0.267,
+    );
+
+    // The eyebrow is already settled at frame 0 and holds 2.70s for eight
+    // words (floor 2.4s), then leaves as the amber line arrives.
+    tl.to("#fo-eyebrow", { opacity: 0, duration: 0.2, ease: "power2.in" }, 2.7);
+
+    // The folder dims. Nothing on it was ever readable.
+    tl.fromTo("#fo-scrim", { opacity: 0 }, { opacity: 0.76, duration: 0.35, ease: "power2.inOut" }, 1.05);
+
+    // The product's own <h1>, word by word, with no translate: a landed title
+    // is dead still, so the only motion left is the blur clearing.
+    // Settled 1.55-2.78 = 1.23s for four words (floor 1.2s).
+    tl.set("#fo-b", { opacity: 0 }, 0);
+    tl.fromTo(
+      "#fo-a .fo-w",
+      { opacity: 0, filter: "blur(7px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power4.out", stagger: 0.07 },
+      1.2,
+    );
+    // Exit is 0.15s against a 0.35s entrance, as exits should be.
+    tl.to("#fo-a", { opacity: 0, filter: "blur(6px)", duration: 0.15, ease: "power3.in" }, 2.78);
+    tl.set("#fo-b", { opacity: 1 }, 2.85);
+    // Settled 3.13-4.10 = 0.97s for three words (floor 0.9s).
+    tl.fromTo(
+      "#fo-b .fo-w",
+      { opacity: 0, filter: "blur(7px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power4.out", stagger: 0.07 },
+      2.85,
+    );
+
+    // Dip cut into scene 2: the frame darkens for three frames so the cut
+    // reads as meant rather than as a jump. Lands at 4.19, just inside the
+    // scene, because an end state exactly on the end is never rendered.
+    tl.to("#fo-scrim", { opacity: 0.96, duration: 0.09, ease: "power2.in" }, 4.1);
+    tl.to("#fo-head", { opacity: 0.25, duration: 0.09, ease: "power2.in" }, 4.1);
+
+    window.__timelines["folder"] = tl;
+  </script>
+</template>

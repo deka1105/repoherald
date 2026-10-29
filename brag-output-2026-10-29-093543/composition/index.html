@@ -1,0 +1,194 @@
+<!doctype html>
+<html
+  lang="en"
+  data-composition-variables='[
+    {"id":"hookA","type":"string","label":"Hook line 1","default":"You already found it."},
+    {"id":"hookB","type":"string","label":"Hook line 2","default":"Find it again."},
+    {"id":"accent","type":"color","label":"Accent","default":"#e8ad46"},
+    {"id":"domain","type":"string","label":"Domain","default":"repoherald.com"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* Tokens lifted verbatim from the product:
+         src/components/landing/landing-v2.css, .rhl[data-theme="dark"] */
+      :root {
+        --ground: #0a0a0a;
+        --card: #141413;
+        --chip: #1c1c1a;
+        --ink: #f5f5f4;
+        --muted: #9c9c97;
+        --accent: #e8ad46;
+        --hair: rgba(255, 255, 255, 0.13);
+        --ok: #7cc98a;
+        --radius: 10px;
+        --font-display: Inter, sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ground);
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        font-family: var(--font-display);
+        background: var(--ground);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="21.7"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- Scenes. Host id === scene data-composition-id === timeline key. -->
+      <div
+        id="folder"
+        class="clip"
+        data-composition-id="folder"
+        data-composition-src="compositions/folder.html"
+        data-start="0"
+        data-duration="4.2"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 1"
+      ></div>
+
+      <div
+        id="send"
+        class="clip"
+        data-composition-id="send"
+        data-composition-src="compositions/send.html"
+        data-start="4.2"
+        data-duration="2.9"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 2"
+      ></div>
+
+      <div
+        id="identify"
+        class="clip"
+        data-composition-id="identify"
+        data-composition-src="compositions/identify.html"
+        data-start="7.1"
+        data-duration="5.45"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 3"
+      ></div>
+
+      <div
+        id="search"
+        class="clip"
+        data-composition-id="search"
+        data-composition-src="compositions/search.html"
+        data-start="12.55"
+        data-duration="3.274"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 4"
+      ></div>
+
+      <div
+        id="measure"
+        class="clip"
+        data-composition-id="measure"
+        data-composition-src="compositions/measure.html"
+        data-start="15.6"
+        data-duration="6.1"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 5"
+      ></div>
+
+      <!-- ── Music ────────────────────────────────────────────────────────
+           109.96 BPM. Bed only: it never drives a cut, and it fades out
+           across the last 1.5s so the wordmark lands near-silent. -->
+      <audio
+        id="bed"
+        class="clip"
+        data-start="0"
+        data-duration="21.7"
+        data-track-index="8"
+        data-volume="0.95"
+        data-fade-in="0.6"
+        data-fade-out="1.5"
+        src="assets/music/happy-beats-business-moves-vol-10-by-ende-dot-app.mp3"
+      ></audio>
+
+      <!-- ── SFX ──────────────────────────────────────────────────────────
+           Six cue types in 21s. Every one has a cause on screen, and each
+           is placed one frame (0.033s) after its picture, per the rule that
+           light arrives before sound.
+           Scene 1: three of the twelve tiles tick, so the grid filling
+           reads as one texture rather than twelve events. -->
+      <audio id="sfx-tile-1" class="clip" data-start="0.300" data-duration="0.057" data-track-index="9" data-volume="0.27" src="assets/sfx/ui/rollover2.ogg"></audio>
+      <audio id="sfx-tile-2" class="clip" data-start="0.520" data-duration="0.057" data-track-index="9" data-volume="0.22" src="assets/sfx/ui/rollover2.ogg"></audio>
+      <audio id="sfx-tile-3" class="clip" data-start="0.740" data-duration="0.057" data-track-index="9" data-volume="0.17" src="assets/sfx/ui/rollover2.ogg"></audio>
+
+      <!-- Scene 2: the DM leaving. One sound, warm, no whoosh. -->
+      <audio id="sfx-send" class="clip" data-start="4.233" data-duration="0.191" data-track-index="9" data-volume="0.62" src="assets/sfx/interface/drop_002.ogg"></audio>
+
+      <!-- Scene 3: the transcript typing. Six ticks across a 38-character
+           reveal, three takes rotated — not one per character. -->
+      <audio id="sfx-k1" class="clip" data-start="7.633" data-duration="0.18" data-track-index="10" data-volume="0.34" src="assets/sfx/keyboard/keypress-003.wav"></audio>
+      <audio id="sfx-k2" class="clip" data-start="7.823" data-duration="0.18" data-track-index="10" data-volume="0.31" src="assets/sfx/keyboard/keypress-007.wav"></audio>
+      <audio id="sfx-k3" class="clip" data-start="8.013" data-duration="0.18" data-track-index="10" data-volume="0.34" src="assets/sfx/keyboard/keypress-012.wav"></audio>
+      <audio id="sfx-k4" class="clip" data-start="8.203" data-duration="0.18" data-track-index="10" data-volume="0.31" src="assets/sfx/keyboard/keypress-003.wav"></audio>
+      <audio id="sfx-k5" class="clip" data-start="8.393" data-duration="0.18" data-track-index="10" data-volume="0.34" src="assets/sfx/keyboard/keypress-007.wav"></audio>
+      <audio id="sfx-k6" class="clip" data-start="8.583" data-duration="0.18" data-track-index="10" data-volume="0.27" src="assets/sfx/keyboard/keypress-012.wav"></audio>
+
+      <!-- Scene 3: the model proposes (quiet) then GitHub decides (the one
+           bright sound in the film, and still a warm, low-HF one). -->
+      <audio id="sfx-propose" class="clip" data-start="9.867" data-duration="0.057" data-track-index="9" data-volume="0.36" src="assets/sfx/ui/rollover2.ogg"></audio>
+      <audio id="sfx-verdict" class="clip" data-start="11.492" data-duration="0.123" data-track-index="9" data-volume="0.88" src="assets/sfx/interface/bong_001.ogg"></audio>
+
+      <!-- Scene 4: typing `terminal`, then the one result arriving. -->
+      <audio id="sfx-k7" class="clip" data-start="13.133" data-duration="0.18" data-track-index="10" data-volume="0.34" src="assets/sfx/keyboard/keypress-007.wav"></audio>
+      <audio id="sfx-k8" class="clip" data-start="13.253" data-duration="0.18" data-track-index="11" data-volume="0.31" src="assets/sfx/keyboard/keypress-012.wav"></audio>
+      <audio id="sfx-k9" class="clip" data-start="13.373" data-duration="0.18" data-track-index="10" data-volume="0.34" src="assets/sfx/keyboard/keypress-003.wav"></audio>
+      <audio id="sfx-k10" class="clip" data-start="13.493" data-duration="0.18" data-track-index="11" data-volume="0.29" src="assets/sfx/keyboard/keypress-007.wav"></audio>
+      <audio id="sfx-card" class="clip" data-start="13.675" data-duration="0.147" data-track-index="9" data-volume="0.58" src="assets/sfx/impact/impactSoft_medium_004.ogg"></audio>
+
+      <!-- Scene 5: the two figures. Presence, not a stinger — the second is
+           3dB up on the first and that is the whole escalation. -->
+      <audio id="sfx-stat-1" class="clip" data-start="15.857" data-duration="0.183" data-track-index="9" data-volume="0.46" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+      <audio id="sfx-stat-2" class="clip" data-start="18.040" data-duration="0.183" data-track-index="9" data-volume="0.62" src="assets/sfx/impact/impactSoft_medium_001.ogg"></audio>
+    </div>
+    <script>
+      // The root holds only scene hosts and the mix; each scene drives itself.
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

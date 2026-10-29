@@ -1,0 +1,158 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--ground);
+      font-family: var(--font-display);
+    }
+
+    /* The landing page's own GET /search control, with its own placeholder. */
+    #se2-form {
+      position: absolute;
+      left: 330px;
+      top: 340px;
+      width: 1260px;
+      height: 118px;
+      display: flex;
+      gap: 18px;
+    }
+    #se2-input {
+      position: relative;
+      flex: 1;
+      height: 118px;
+      background: var(--card);
+      border: 1px solid var(--hair);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    #se2-ph,
+    #se2-q {
+      position: absolute;
+      left: 32px;
+      top: 0;
+      height: 118px;
+      line-height: 118px;
+      font-size: 44px;
+      white-space: nowrap;
+    }
+    #se2-ph {
+      color: var(--muted);
+    }
+    #se2-q {
+      color: var(--ink);
+    }
+    #se2-caret {
+      position: absolute;
+      left: 32px;
+      top: 37px;
+      width: 3px;
+      height: 44px;
+      background: var(--accent);
+    }
+    #se2-btn {
+      flex: none;
+      height: 118px;
+      padding: 0 52px;
+      background: var(--ink);
+      color: var(--ground);
+      border-radius: var(--radius);
+      font-size: 38px;
+      font-weight: 600;
+      line-height: 118px;
+    }
+
+    /* The payoff. In scene 1 this bookmark had no name beside it. */
+    #se2-card {
+      position: absolute;
+      left: 330px;
+      top: 510px;
+      width: 1260px;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      padding: 0 40px;
+      background: var(--card);
+      border: 1px solid var(--hair);
+      border-radius: var(--radius);
+    }
+    #se2-mark {
+      width: 30px;
+      height: 42px;
+      background: var(--accent);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+      flex: none;
+    }
+    #se2-name {
+      font-family: var(--font-mono);
+      font-size: 56px;
+      color: var(--ink);
+    }
+
+    #se2-note {
+      position: absolute;
+      left: 192px;
+      top: 790px;
+      width: 1536px;
+      text-align: center;
+      font-size: 46px;
+      color: var(--muted);
+    }
+  </style>
+
+  <div id="root" data-composition-id="search" data-width="1920" data-height="1080">
+    <div id="se2-form" class="clip" data-start="0" data-duration="3.274" data-track-index="2" data-layout-allow-overlap>
+      <div id="se2-input">
+        <span id="se2-ph" data-layout-ignore>rust, scraper, that 3D thing…</span>
+        <span id="se2-q">terminal</span>
+        <span id="se2-caret"></span>
+      </div>
+      <div id="se2-btn">Search</div>
+    </div>
+
+    <div id="se2-note" class="clip" data-start="0.4" data-duration="2.874" data-track-index="3">
+      In a private list only you can open.
+    </div>
+
+    <div id="se2-card" class="clip" data-start="1.092" data-duration="2.182" data-track-index="4">
+      <span id="se2-mark"></span>
+      <span id="se2-name">ErTasselli/OpenTerminal</span>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    tl.fromTo("#se2-form", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.26, ease: "power3.out" }, 0);
+
+    // One word typed. The placeholder leaves as the query arrives, and the
+    // reveal is a crop so every frame stands alone. `terminal` is 8 glyphs of
+    // Inter at 44px, about 183px wide — the caret travels exactly that far.
+    tl.set("#se2-q", { clipPath: "inset(0 100% 0 0)" }, 0);
+    tl.set("#se2-caret", { opacity: 0 }, 0);
+    tl.to("#se2-ph", { opacity: 0, duration: 0.12, ease: "power2.in" }, 0.55);
+    tl.fromTo(
+      "#se2-q",
+      { clipPath: "inset(0 100% 0 0)" },
+      { clipPath: "inset(0 0% 0 0)", duration: 0.48, ease: "none" },
+      0.55,
+    );
+    tl.fromTo("#se2-caret", { x: 0, opacity: 0 }, { x: 183, opacity: 1, duration: 0.48, ease: "none" }, 0.55);
+    tl.to("#se2-caret", { opacity: 0, duration: 0.12, ease: "power2.in" }, 1.03);
+
+    // Settled 13.13-15.70 = 2.57s for eight words (floor 2.4s).
+    tl.fromTo(
+      "#se2-note",
+      { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" },
+      0.4,
+    );
+
+    // beat-locked: 13.642s absolute (strong beat, 0.895). One result, not
+    // three — the promise is finding the thing, not browsing a list.
+    tl.fromTo("#se2-card", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.32, ease: "expo.out" }, 1.092);
+
+    window.__timelines["search"] = tl;
+  </script>
+</template>

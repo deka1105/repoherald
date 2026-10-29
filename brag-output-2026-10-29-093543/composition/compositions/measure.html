@@ -1,0 +1,169 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: var(--font-display);
+    }
+
+    /* Its own ground, so the dissolve out of scene 4 happens here and the
+       two scenes never hard-cut. */
+    #me-ground {
+      position: absolute;
+      inset: 0;
+      background: var(--ground);
+    }
+
+    .me-stat {
+      position: absolute;
+      top: 318px;
+      width: 560px;
+      text-align: center;
+    }
+    #me-before {
+      left: 340px;
+    }
+    #me-after {
+      left: 1020px;
+    }
+    .me-fig {
+      font-size: 136px;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    #me-before .me-fig {
+      color: var(--ink);
+    }
+    #me-after .me-fig {
+      color: var(--accent);
+    }
+    .me-lab {
+      margin: 28px auto 0;
+      width: 480px;
+      font-size: 32px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    #me-mark {
+      position: absolute;
+      left: 192px;
+      top: 742px;
+      width: 1536px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    #me-shield {
+      width: 40px;
+      height: 48px;
+      background: var(--accent);
+      clip-path: polygon(50% 0, 100% 18%, 100% 58%, 50% 100%, 0 58%, 0 18%);
+      flex: none;
+    }
+    #me-word {
+      font-size: 64px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: var(--ink);
+    }
+    #me-url {
+      position: absolute;
+      left: 192px;
+      top: 850px;
+      width: 1536px;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 30px;
+      color: var(--muted);
+    }
+  </style>
+
+  <div id="root" data-composition-id="measure" data-width="1920" data-height="1080">
+    <div id="me-ground" class="clip" data-start="0" data-duration="6.1" data-track-index="1" data-layout-allow-occlusion></div>
+
+    <div id="me-before" class="me-stat clip" data-start="0.224" data-duration="5.876" data-track-index="2">
+      <div class="me-fig">24.6%</div>
+      <div class="me-lab">found automatically before</div>
+    </div>
+
+    <div id="me-after" class="me-stat clip" data-start="2.407" data-duration="3.693" data-track-index="3">
+      <div class="me-fig">89.9%</div>
+      <div class="me-lab">with Nemotron on Nebius Token Factory</div>
+    </div>
+
+    <div id="me-mark" class="clip" data-start="4.044" data-duration="2.056" data-track-index="4">
+      <span id="me-shield"></span>
+      <span id="me-word">repoherald</span>
+    </div>
+
+    <div id="me-url" class="clip" data-start="4.044" data-duration="2.056" data-track-index="5" data-var-text="domain">
+      repoherald.com
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // Dissolve out of scene 4: this scene's ground rises over it, so the
+    // seam is a fade on one stage rather than a cut between two.
+    tl.fromTo("#me-ground", { opacity: 0 }, { opacity: 1, duration: 0.22, ease: "power2.inOut" }, 0);
+
+    // beat-locked: 15.824s absolute (strong beat, 0.957).
+    tl.fromTo(
+      "#me-before",
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" },
+      0.224,
+    );
+
+    // beat-locked: 18.007s absolute (strong beat, 0.966) — the next strong
+    // cue but one, deliberately: 2.18s after the first figure, so the first
+    // label clears its reading floor before the second arrives.
+    tl.fromTo(
+      "#me-after",
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" },
+      2.407,
+    );
+
+    /* Audio-reactive, kept subtle and deterministic. The intensities below are
+       the track's own measured values at the two cues this scene is locked to,
+       read from the bundled preset
+       assets/music/cues/…vol-10….music-cues.json (strongCues[].intensity).
+       There is no per-frame extraction helper installed, so the cue preset is
+       the audio data available — and driving the tween from a constant keeps
+       every frame renderable on its own, which a per-frame RMS read would not.
+       It moves presence on the amber figure only: no bars, no pulsing text. */
+    const CUE_INTENSITY = { before: 0.957, after: 0.966 };
+    tl.fromTo(
+      "#me-before .me-fig",
+      { filter: "brightness(1)" },
+      { filter: "brightness(" + (1 + CUE_INTENSITY.before * 0.1) + ")", duration: 0.14, ease: "power2.out" },
+      0.224,
+    );
+    tl.to("#me-before .me-fig", { filter: "brightness(1)", duration: 0.5, ease: "power2.inOut" }, 0.364);
+    tl.fromTo(
+      "#me-after .me-fig",
+      { textShadow: "0 0 0px rgba(232,173,70,0)" },
+      {
+        textShadow: "0 0 " + Math.round(CUE_INTENSITY.after * 34) + "px rgba(232,173,70,0.45)",
+        duration: 0.16,
+        ease: "power2.out",
+      },
+      2.407,
+    );
+    tl.to("#me-after .me-fig", { textShadow: "0 0 0px rgba(232,173,70,0)", duration: 0.8, ease: "power2.inOut" }, 2.567);
+
+    // The mark lands on the bar at 19.644s and then holds dead still. The
+    // film runs to 21.7s so it gets the 2.06s a closing line needs, rather
+    // than being dragged off the beat to fit a shorter cut.
+    tl.fromTo("#me-mark", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.26, ease: "power4.out" }, 4.044);
+    tl.fromTo("#me-url", { opacity: 0 }, { opacity: 1, duration: 0.26, ease: "power4.out" }, 4.1);
+
+    window.__timelines["measure"] = tl;
+  </script>
+</template>

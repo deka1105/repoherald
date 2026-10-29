@@ -1,0 +1,192 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      background: var(--ground);
+      font-family: var(--font-display);
+    }
+
+    /* The /identify result panel. Card, hairline and radius are the
+       product's own: #141413 on rgba(255,255,255,0.13) at 10px. */
+    #id-panel {
+      position: absolute;
+      left: 240px;
+      top: 260px;
+      width: 1440px;
+      height: 560px;
+      background: var(--card);
+      border: 1px solid var(--hair);
+      border-radius: var(--radius);
+    }
+
+    #id-chip {
+      position: absolute;
+      left: 296px;
+      top: 316px;
+      padding: 9px 18px;
+      background: var(--chip);
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 32px;
+      color: var(--muted);
+    }
+
+    /* The input, as Whisper hands it over. Monospace because every
+       repository name, transcript and verdict in the product is. */
+    #id-transcript {
+      position: absolute;
+      left: 296px;
+      top: 400px;
+      width: 1348px;
+      height: 66px;
+      font-family: var(--font-mono);
+      font-size: 48px;
+      line-height: 66px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    #id-type {
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    #id-caret {
+      position: absolute;
+      left: 0;
+      top: 12px;
+      width: 3px;
+      height: 44px;
+      background: var(--accent);
+    }
+
+    #id-repair {
+      position: absolute;
+      left: 296px;
+      top: 500px;
+      width: 1348px;
+      font-size: 54px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .id-w {
+      display: inline-block;
+      will-change: opacity, filter;
+    }
+
+    /* The resolved row: the model's proposal and the authority that checked
+       it, on one line. The only place in the product where both appear. */
+    #id-row {
+      position: absolute;
+      left: 296px;
+      top: 622px;
+      width: 1348px;
+      height: 124px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      background: var(--chip);
+      border: 1px solid var(--hair);
+      border-radius: 8px;
+    }
+    #id-name {
+      font-family: var(--font-mono);
+      font-size: 54px;
+      color: var(--muted);
+    }
+    #id-verdict {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-mono);
+      font-size: 32px;
+      color: var(--ok);
+      white-space: nowrap;
+    }
+  </style>
+
+  <div id="root" data-composition-id="identify" data-width="1920" data-height="1080">
+    <div id="id-panel" class="clip" data-start="0" data-duration="5.45" data-track-index="2" data-layout-allow-occlusion></div>
+
+    <div id="id-chip" class="clip" data-start="0.3" data-duration="5.15" data-track-index="3">narration · Whisper</div>
+
+    <div id="id-transcript" class="clip" data-start="0.5" data-duration="4.95" data-track-index="4" data-layout-allow-overflow>
+      <span id="id-type">"... ertasselli slash openterminal ..."</span>
+      <span id="id-caret"></span>
+    </div>
+
+    <div id="id-repair" class="clip" data-start="1.7" data-duration="3.75" data-track-index="5">
+      <span class="id-w">The</span> <span class="id-w">slash</span> <span class="id-w">was</span> <span class="id-w">spoken.</span>
+      <span class="id-w">The</span> <span class="id-w">hyphens</span> <span class="id-w">never</span> <span class="id-w">were.</span>
+    </div>
+
+    <div id="id-row" class="clip" data-start="2.734" data-duration="2.716" data-track-index="6">
+      <span id="id-name">ErTasselli/OpenTerminal</span>
+      <span id="id-verdict">✓ GitHub confirmed it</span>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    // The panel opens out of the bubble that just grew past its frame.
+    tl.fromTo(
+      "#id-panel",
+      { opacity: 0, scale: 0.96 },
+      { opacity: 1, scale: 1, duration: 0.4, ease: "expo.out" },
+      0,
+    );
+    tl.fromTo("#id-chip", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.2, ease: "power3.out" }, 0.3);
+
+    // A crop reveal across monospace reads as typing, and it is one tween on
+    // one property, so every frame is renderable on its own. Linear, because
+    // constant speed is the point. 38 characters at 0.6em of 48px = 1094px.
+    tl.set("#id-type", { clipPath: "inset(0 100% 0 0)" }, 0);
+    tl.fromTo(
+      "#id-type",
+      { clipPath: "inset(0 100% 0 0)" },
+      { clipPath: "inset(0 0% 0 0)", duration: 0.95, ease: "none" },
+      0.5,
+    );
+    tl.fromTo("#id-caret", { x: 0, opacity: 1 }, { x: 1094, duration: 0.95, ease: "none" }, 0.5);
+    tl.to("#id-caret", { opacity: 0, duration: 0.12, ease: "power2.in" }, 1.5);
+
+    // Word by word, no translate. Settled 2.33-5.45 = 3.12s for eight words
+    // (floor 2.4s) — this is the line the whole scene exists to land.
+    tl.fromTo(
+      "#id-repair .id-w",
+      { opacity: 0, filter: "blur(7px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.14, ease: "power4.out", stagger: 0.07 },
+      1.7,
+    );
+
+    // beat-grid: 9.834s absolute. The model proposes — the name arrives
+    // muted, because at this point nothing has checked it.
+    tl.fromTo("#id-row", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, 2.734);
+    tl.set("#id-verdict", { opacity: 0 }, 0);
+
+    // beat-locked: 11.459s absolute, the strongest onset peak in the middle
+    // of the track. GitHub decides, and the name goes from proposed to
+    // confirmed in the same instant. Settled 11.459-12.39 = 0.93s.
+    tl.fromTo(
+      "#id-verdict",
+      { opacity: 0, scale: 0.86 },
+      { opacity: 1, scale: 1, duration: 0.22, ease: "back.out(1.2)" },
+      4.359,
+    );
+    tl.to("#id-name", { color: "#f5f5f4", duration: 0.3, ease: "power2.out" }, 4.359);
+
+    // Blur swap into scene 4: the ground never cuts. Lands at 5.44.
+    tl.to(
+      ["#id-panel", "#id-chip", "#id-transcript", "#id-repair", "#id-row"],
+      { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in" },
+      5.28,
+    );
+
+    window.__timelines["identify"] = tl;
+  </script>
+</template>

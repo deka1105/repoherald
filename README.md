@@ -1,25 +1,45 @@
 # repoherald
 
-**A place to post a repository and have people actually look at it — where attention is earned by giving it.**
+**You already found it. Find it again.**
 
-Post a repo. Star someone else's and that star mints a credit. Spend credits to
-put your own repo at the top of the feed, or donate them to someone else's.
+Your saved folder is full of repositories you never opened. You saved the post
+because the tool looked useful; then it sank into a thread, and you have been
+searching the wrong app for it ever since — no titles, no notes, no working
+search.
+
+repoherald is the other half of that. Send the post instead of saving it, and it
+comes back as something you can search: the repository behind it identified,
+catalogued by what it is and what it is written in, filed in a private list only
+you can open. Claim your handle and everything you sent before you had an
+account comes back with it.
+
+Live: **[repoherald.com](https://repoherald.com)** · The hard step, as a public
+demo: **[repoherald.com/identify](https://repoherald.com/identify)**
 
 ---
 
-## Built with NVIDIA Nemotron on Nebius Token Factory
+## The step in the middle used to be a person
 
-The hard step in this product is *"which GitHub repository is this social media
-post about?"* — and until now that step was **a person**. The landing page said
-so. It is the reason the catalogue could never grow faster than somebody's
-evening.
+A saved post is not a repository. Between the two sits one question —
+**which repository is this post about?** — and until 28 October 2026 the answer
+was somebody reading captions and searching GitHub by hand. The landing page
+said so out loud: *"A person looks up the repository behind it."* It is why the
+catalogue could never grow faster than one person's evening, and why the rescue
+could not be offered to everyone who needs it.
 
 That step now runs on **NVIDIA Nemotron, served by Nebius Token Factory**:
 
 - `nvidia/nemotron-3-super-120b-a12b` — the fast tier, on every post
 - `nvidia/Nemotron-3-Ultra-550b-a55b` — the deep tier, only on what the fast
-  tier got wrong
+  tier got wrong, and *told which candidates GitHub already rejected*
 - **Tavily** — for posts that describe a project and never name it
+
+A post names its repository in one of three places, in descending fidelity: the
+caption, the text burned into the frames (OCR), and the narration (Whisper).
+Each damages the name differently, and the lossiest is the most interesting —
+punctuation inside a repository name is *spoken*, so `yt-dlp/yt-dlp` arrives as
+"yt dlp slash yt dlp": the slash was said aloud, the hyphens were never said at
+all.
 
 Measured on 228 real cases, against a no-model baseline run first so the figure
 means something:
@@ -29,27 +49,31 @@ means something:
 | regex over literal links (before) | **24.6%** — and 0% of OCR or spoken cases |
 | Nemotron on Token Factory (after) | **89.9%**, 1 wrong |
 
-Live demo: **[repoherald.com/identify](https://repoherald.com/identify)** ·
-Full write-up, including the three experiments that failed:
-**[Identifying a repository from a post](#identifying-a-repository-from-a-post)**
+**Nemotron proposes. GitHub decides.** Every candidate is checked against the
+real API, and one that does not resolve is discarded however confident the model
+sounded — so this can tell you it does not know, but it cannot invent a
+repository to file in somebody's list. Full write-up, including the three
+experiments that failed: **[Identifying a repository from a
+post](#identifying-a-repository-from-a-post)**.
 
 ---
 
-## The idea
+## How a rescue works
 
-Every "show your project" board has the same failure: everyone posts, nobody
-reads. Attention is asked for and never given, so the feed fills with repos whose
-authors left immediately after posting.
+| | |
+|---|---|
+| **1. Send it** | DM a link you saved — a reel, a post, something three months deep in a thread |
+| **2. Identify it** | Nemotron reads the caption, the on-screen text and the narration together, and GitHub confirms the repository |
+| **3. Keep it** | It lands in a private list with a note on why you kept it. Nothing is published |
+| **4. Find it** | Search by language, use case, sector, or just the word you remember |
+| **5. Backfill** | Claim your handle and everything you sent before you had an account is swept in behind you |
 
-repoherald makes attention the currency. The only way to get your repo
-highlighted is to have genuinely starred someone else's — verified against the
-GitHub API with your own token, not taken on trust.
+## Also here: posting your own work
 
-**1 credit = 1 hour of self-highlight, or 15 minutes donated to another repo.**
-Donation is deliberately the more expensive rate: giving a stranger the floor
-should cost more than taking it yourself.
-
-## How it works
+Secondary to the rescue, and deliberately so. If you want other developers to
+find a repository you own, you can list it — and the only way to get it
+highlighted is to have genuinely starred someone else's, verified against the
+GitHub API with your own token rather than taken on trust.
 
 | | |
 |---|---|
@@ -60,14 +84,17 @@ should cost more than taking it yourself.
 | **Sponsor** | Paid placement via Stripe Checkout, pinned and injected into the feed |
 | **Admin** | Sponsorships, credit adjustments, and moderation |
 
+**1 credit = 1 hour of self-highlight, or 15 minutes donated to another repo.**
+Donation is deliberately the more expensive rate: giving a stranger the floor
+should cost more than taking it yourself.
+
 ## Identifying a repository from a post
 
 **NVIDIA Nemotron on Nebius Token Factory.** Try it: [`/identify`](https://repoherald.com/identify)
 
-When someone sends repoherald a post instead of saving it, something has to
-answer *which repository is this?* Until now that something was a person — the
-landing page said so out loud, *"A person looks up the repository behind it"* —
-and it is why the catalogue could never grow faster than somebody's evening.
+The summary is at the top of this file. This is the whole of it: how the ladder
+is built, what measuring it changed about the product, and the three things that
+did not work.
 
 The inputs are the three places a repo can be named, in descending fidelity:
 
