@@ -398,28 +398,68 @@ export function Landing({
         <section className="rhl-sec">
           <div className="rhl-wrap">
             <h2 className="rhl-h2">Upcoming</h2>
+            {/* Two states, deliberately told apart. "In review" is submitted and
+                sitting with Apple, Google or Mozilla, so the date is not ours to
+                give; "not built" is nobody looking at it. Collapsing them into
+                one neutral tag is what would make this section a promise. */}
             <p className="rhl-lede">
-              Neither of these works today. They&rsquo;re here so you know what&rsquo;s coming
-              &mdash; not what you&rsquo;re getting.
+              None of this is something you can install today. Three are with a reviewer
+              &mdash; Apple, Google and Mozilla decide when, not us. The last one
+              isn&rsquo;t built.
             </p>
 
             <div className="rhl-rows">
               <div className="rhl-row">
                 <div className="rhl-row-head">
-                  <h3>Browser extension</h3>
-                  <span className="rhl-tag">Not released yet</span>
+                  <div className="rhl-row-title">
+                    <h3>iOS app</h3>
+                    <span className="rhl-tag rhl-tag-review">In review</span>
+                  </div>
+                  <span className="rhl-row-where">App Store</span>
                 </div>
                 <p>
-                  Send a repo from the page you&rsquo;re on, without the detour through a DM. It is
-                  written, but it is not in the Chrome or Firefox stores yet, so you cannot install
-                  it.
+                  Everything this site&rsquo;s phone nav has, except anything that sells or
+                  spends: browse, search, post a repo, open your lists. Credits are earned by
+                  starring and the wallet is read-only, so there is nothing to buy in it.
                 </p>
               </div>
 
               <div className="rhl-row">
                 <div className="rhl-row-head">
-                  <h3>TikTok</h3>
-                  <span className="rhl-tag">Not built yet</span>
+                  <div className="rhl-row-title">
+                    <h3>Android app</h3>
+                    <span className="rhl-tag rhl-tag-review">In review</span>
+                  </div>
+                  <span className="rhl-row-where">Google Play</span>
+                </div>
+                <p>
+                  The same build, and the same sign-in as the website &mdash; so the lists you
+                  filled here are already in it the first time you open it.
+                </p>
+              </div>
+
+              <div className="rhl-row">
+                <div className="rhl-row-head">
+                  <div className="rhl-row-title">
+                    <h3>Firefox extension</h3>
+                    <span className="rhl-tag rhl-tag-review">In review</span>
+                  </div>
+                  <span className="rhl-row-where">addons.mozilla.org</span>
+                </div>
+                <p>
+                  Post the repo on the page you&rsquo;re on, without the detour through a DM. It
+                  answers listed-or-not on your own machine, from a catalogue it downloads every
+                  few hours, so it never tells us which repositories you browse. Chrome runs the
+                  same build but is not submitted yet.
+                </p>
+              </div>
+
+              <div className="rhl-row">
+                <div className="rhl-row-head">
+                  <div className="rhl-row-title">
+                    <h3>TikTok</h3>
+                    <span className="rhl-tag">Not built yet</span>
+                  </div>
                 </div>
                 <p>
                   You can claim a TikTok handle today, so it&rsquo;s yours when this lands. Nothing
