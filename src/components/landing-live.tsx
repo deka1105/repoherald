@@ -408,6 +408,77 @@ export function Landing({
               isn&rsquo;t built.
             </p>
 
+            {/* Real screens from the builds that are with the reviewers, so
+                "in review" is something you can look at rather than take on
+                trust. Pre-cropped to one ratio and served at 1x/2x WebP;
+                plain <img> with the same disable header-nav.tsx uses: these are
+                already exact-size WebP, so next/image would add a billed
+                optimisation pass that has nothing left to do. */}
+            <div className="rhl-gallery">
+              <figure className="rhl-shot">
+                <div className="rhl-shot-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/screens/ios-explore-560.webp"
+                    srcSet="/screens/ios-explore-280.webp 280w, /screens/ios-explore-560.webp 560w"
+                    sizes="(max-width: 767px) 45vw, 260px"
+                    width={560}
+                    height={1214}
+                    loading="lazy"
+                    decoding="async"
+                    alt="The iOS app's Explore tab: a feed of repository cards, each with its owner, star count, description and language, above a six-tab bar."
+                  />
+                </div>
+                <figcaption>
+                  <span className="rhl-shot-cap">iOS &middot; Explore</span>
+                  The same feed as this page, with every tab the site has except the ones
+                  that spend.
+                </figcaption>
+              </figure>
+
+              <figure className="rhl-shot">
+                <div className="rhl-shot-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/screens/ios-repo-560.webp"
+                    srcSet="/screens/ios-repo-280.webp 280w, /screens/ios-repo-560.webp 560w"
+                    sizes="(max-width: 767px) 45vw, 260px"
+                    width={560}
+                    height={1214}
+                    loading="lazy"
+                    decoding="async"
+                    alt="A repository page in the iOS app, with buttons to view it on GitHub, claim a credit for having starred it, add it to a list, or report it."
+                  />
+                </div>
+                <figcaption>
+                  <span className="rhl-shot-cap">iOS &middot; A repository</span>
+                  Open it on GitHub, claim the credit for starring it, or file it straight
+                  into a list.
+                </figcaption>
+              </figure>
+
+              <figure className="rhl-shot">
+                <div className="rhl-shot-frame">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/screens/android-feed-560.webp"
+                    srcSet="/screens/android-feed-280.webp 280w, /screens/android-feed-560.webp 560w"
+                    sizes="(max-width: 767px) 45vw, 260px"
+                    width={560}
+                    height={1214}
+                    loading="lazy"
+                    decoding="async"
+                    alt="The Android app's feed while signed out, showing repository cards with star counts and a Sign in link in the header."
+                  />
+                </div>
+                <figcaption>
+                  <span className="rhl-shot-cap">Android &middot; The feed</span>
+                  Signed out, because the feed works before you have an account &mdash; there
+                  is no wall to get past.
+                </figcaption>
+              </figure>
+            </div>
+
             <div className="rhl-rows">
               <div className="rhl-row">
                 <div className="rhl-row-head">
