@@ -89,13 +89,41 @@ const VIA_LABEL: Record<Attempt["via"], string> = {
   "web-search": "web search",
 };
 
+/**
+ * Zero model calls means two opposite things, and the old copy said "needed"
+ * for both. Rung 1 resolving a literal link is the ladder working as designed
+ * and genuinely costing nothing; a degraded run that resolved nothing means a
+ * call *was* needed and could not be made — telling that visitor no call was
+ * needed contradicts the paragraph directly above it.
+ */
+function costLine(result: Result): string {
+  const took = ` \u00b7 ${(result.ms / 1000).toFixed(1)}s`;
+  if (result.modelCalls > 0) {
+    const calls = `${result.modelCalls} Nemotron call${result.modelCalls === 1 ? "" : "s"}`;
+    return `${calls}, ${result.tokens.toLocaleString()} tokens${took}`;
+  }
+  if (result.degraded && !result.repo) {
+    return `No model call completed \u2014 the model was unavailable${took}`;
+  }
+  return `No model call needed \u2014 the link was literal.${took}`;
+}
+
 export function IdentifyForm() {
-  const [fields, setFields] = useState<Fields>(PRESETS[1].fields);
+  /**
+   * Starts empty on purpose. Defaulting to a preset's text made that preset's
+   * button a dead control: clicking it set the state it was already in, so the
+   * first thing a visitor tried appeared broken.
+   */
+  const [fields, setFields] = useState<Fields>(EMPTY);
+  const [active, setActive] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const set = (key: keyof Fields) => (e: React.ChangeEvent<HTMLTextAreaElement>) =>
+  /** Typing means the boxes are no longer the preset they came from. */
+  const set = (key: keyof Fields) => (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setActive(null);
     setFields((f) => ({ ...f, [key]: e.target.value }));
+  };
 
   async function identify() {
     setBusy(true);
@@ -125,36 +153,55 @@ export function IdentifyForm() {
   }
 
   const empty = !fields.caption && !fields.stillsText && !fields.transcript;
+  const activeHint = PRESETS.find((p) => p.label === active)?.hint ?? null;
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {PRESETS.map((preset) => (
+      <div className="space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Four cases the real pipeline has to survive. Load one, or paste your own text
+          into the boxes below.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((preset) => {
+            const isActive = active === preset.label;
+            return (
+              <Button
+                key={preset.label}
+                type="button"
+                variant={isActive ? "default" : "outline"}
+                size="sm"
+                aria-pressed={isActive}
+                title={preset.hint}
+                onClick={() => {
+                  setFields(preset.fields);
+                  setActive(preset.label);
+                  setResult(null);
+                }}
+              >
+                {preset.label}
+              </Button>
+            );
+          })}
           <Button
-            key={preset.label}
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
-            title={preset.hint}
+            disabled={empty}
             onClick={() => {
-              setFields(preset.fields);
+              setFields(EMPTY);
+              setActive(null);
               setResult(null);
             }}
           >
-            {preset.label}
+            Clear
           </Button>
-        ))}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            setFields(EMPTY);
-            setResult(null);
-          }}
-        >
-          Clear
-        </Button>
+        </div>
+        {activeHint && (
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Loaded:</span> {activeHint}
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -276,12 +323,7 @@ export function IdentifyForm() {
                   </div>
                 )}
 
-                <p className="text-xs text-muted-foreground">
-                  {result.modelCalls === 0
-                    ? "No model call needed."
-                    : `${result.modelCalls} Nemotron call${result.modelCalls === 1 ? "" : "s"}, ${result.tokens.toLocaleString()} tokens`}
-                  {` · ${(result.ms / 1000).toFixed(1)}s`}
-                </p>
+                <p className="text-xs text-muted-foreground">{costLine(result)}</p>
               </>
             )}
           </CardContent>

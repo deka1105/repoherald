@@ -63,7 +63,7 @@ post](#identifying-a-repository-from-a-post)**.
 | | |
 |---|---|
 | **1. Send it** | DM a link you saved — a reel, a post, something three months deep in a thread |
-| **2. Identify it** | Nemotron reads the caption, the on-screen text and the narration together, and GitHub confirms the repository |
+| **2. Identify it** | The caption, on-screen text and narration are read together and GitHub confirms the repository. In production that read is still a person's — the Nemotron ladder built to replace it is live at [`/identify`](https://repoherald.com/identify) and is not yet wired into ingest |
 | **3. Keep it** | It lands in a private list with a note on why you kept it. Nothing is published |
 | **4. Find it** | Search by language, use case, sector, or just the word you remember |
 | **5. Backfill** | Claim your handle and everything you sent before you had an account is swept in behind you |
@@ -141,6 +141,13 @@ GitHub confirms:
    "open source photo editor in Rust" returns the right owner's *other*
    project just as readily, and taking the first link would be picking by
    result order rather than by evidence.
+5. **Nemotron verifies** — the only rung that can say *no*. It compares the post
+   against the candidate's **real** GitHub description and vetoes a near-miss.
+   An absent or unparseable verdict counts as rejection, never approval: the
+   rung's failure mode is over-confidence, so silence must not read as consent.
+   But a verification call that *throws* degrades rather than rejects — the
+   candidate survives at confidence 0.4 carrying `needsReview`, because an
+   outage must not read as "no such project".
 
 Two tiers because the work is two-speed: most posts name the repo plainly and
 want the cheap pass, while a minority are mangled and want real reasoning.
@@ -292,6 +299,23 @@ So a search-sourced resolution carries `needsReview: true` and is **a pre-filled
 candidate for the review queue, not a result**. That is still worth having —
 it turns a post nobody could identify into one click — but it must not be
 auto-applied, and `/identify` says so on screen.
+
+### Rung 5 exists to supply the abstention search cannot
+
+Those two lines measure rung 4 *alone*. `VERIFY_SYSTEM` now sits behind it and is
+the only rung in the ladder allowed to answer no:
+
+```
+described_only, search ON, verify OFF    wrong 34.1%
+described_only, search ON, verify ON     wrong 13.3%
+```
+
+It pays for that drop in wrong answers with correct ones it also vetoes, which
+for a catalogue is the right way round: a post sent to a human costs an evening,
+while a wrong repository filed against a saved post is the failure the whole
+ladder exists to avoid. What survives verification still carries
+`needsReview: true` — verification lowers the wrong rate, it does not make the
+rung trustworthy enough to auto-catalogue.
 
 A second gate follows from the same measurement: rung 4 only runs when the post
 named *nothing*. With it running whenever the earlier rungs merely failed,
