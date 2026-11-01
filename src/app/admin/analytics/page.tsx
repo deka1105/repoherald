@@ -36,6 +36,7 @@ type PostRow = {
 };
 type PageRow = { path: string; views: number; visitors: number };
 type SourceRow = { referrer_host: string; visitors: number };
+type CountryRow = { country: string; visitors: number; views: number };
 type Funnel = {
   repo_views: number;
   claim_clicks: number;
@@ -48,11 +49,23 @@ function pct(part: number, whole: number): string {
   return `${((part / whole) * 100).toFixed(1)}%`;
 }
 
+/** "IN" → "India". Intl ships the names, so there is no table to maintain and
+ * nothing to keep in sync when a code changes. Falls back to the raw code,
+ * since `of()` throws on anything that is not a region. */
+const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+function countryName(code: string): string {
+  try {
+    return regionNames.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 export default async function AdminAnalyticsPage() {
   const session = await auth();
   if (session?.user?.role !== "admin") notFound();
 
-  const [totalsR, trendR, postsR, pagesR, sourcesR, funnelR] = await Promise.all([
+  const [totalsR, trendR, postsR, pagesR, sourcesR, countriesR, funnelR] = await Promise.all([
     db.execute(sql`
       SELECT
         count(*) FILTER (WHERE created_at > now() - interval '24 hours')::int AS views_24h,
@@ -103,6 +116,16 @@ export default async function AdminAnalyticsPage() {
       GROUP BY referrer_host ORDER BY visitors DESC LIMIT 10
     `),
     db.execute(sql`
+      SELECT country,
+             count(DISTINCT visitor_id)::int AS visitors,
+             count(*)::int AS views
+      FROM analytics_events
+      WHERE is_admin = false AND country IS NOT NULL
+        AND type IN ('page_view','repo_view')
+        AND created_at > now() - interval '30 days'
+      GROUP BY country ORDER BY visitors DESC, views DESC LIMIT 15
+    `),
+    db.execute(sql`
       SELECT
         (SELECT count(*) FROM analytics_events WHERE type='repo_view'   AND is_admin=false AND created_at > now() - interval '30 days')::int AS repo_views,
         (SELECT count(*) FROM analytics_events WHERE type='claim_click' AND is_admin=false AND created_at > now() - interval '30 days')::int AS claim_clicks,
@@ -119,6 +142,7 @@ export default async function AdminAnalyticsPage() {
   const posts = postsR.rows as unknown as PostRow[];
   const pages = pagesR.rows as unknown as PageRow[];
   const sources = sourcesR.rows as unknown as SourceRow[];
+  const countries = countriesR.rows as unknown as CountryRow[];
   const funnel = (funnelR.rows[0] as unknown as Funnel) ?? {
     repo_views: 0, claim_clicks: 0, stars_claimed: 0, highlights_spent: 0,
   };
@@ -275,7 +299,7 @@ export default async function AdminAnalyticsPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Top pages (30d)</CardTitle>
@@ -331,6 +355,45 @@ export default async function AdminAnalyticsPage() {
                         <TableCell className="truncate">{s.referrer_host}</TableCell>
                         <TableCell className="text-right tabular-nums">
                           {s.visitors}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Top countries (30d)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {countries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No country recorded yet. The code is resolved at the edge, so
+                  it stays empty in local development.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Country</TableHead>
+                      <TableHead className="text-right">Visitors</TableHead>
+                      <TableHead className="text-right">Views</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {countries.map((c) => (
+                      <TableRow key={c.country}>
+                        <TableCell className="truncate">
+                          {countryName(c.country)}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {c.visitors}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {c.views}
                         </TableCell>
                       </TableRow>
                     ))}

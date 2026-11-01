@@ -40,6 +40,33 @@ export function visitorHash(ip: string, ua: string): string {
     .slice(0, 32);
 }
 
+/**
+ * Visitor country, from the hosting edge's own geo lookup.
+ *
+ * Country only. The edge also offers region, city, latitude and longitude; we
+ * take none of them, because "which countries read this" is the question
+ * listing authors actually ask, and a city plus a timestamp against ~100
+ * visitors a month is close enough to a name to be worth not holding.
+ *
+ * The IP is still never stored — this resolves to a two-letter code before it
+ * reaches us, so there is nothing to hash or discard.
+ *
+ * Validated rather than trusted. On Vercel this header is set by the platform
+ * and overwrites anything a client sends, but the same code runs behind
+ * `next dev` and could run behind another proxy, and an unvalidated header
+ * would mean an arbitrary 512-byte string per event with a visitor choosing it.
+ * `ZZ` is what the edge returns when it cannot place an address; it is dropped
+ * so "unknown" reads as one thing in the data, not two.
+ */
+export function requestCountry(
+  headers: Pick<Headers, "get">
+): string | null {
+  const raw = headers.get("x-vercel-ip-country");
+  if (!raw || !/^[A-Za-z]{2}$/.test(raw)) return null;
+  const code = raw.toUpperCase();
+  return code === "ZZ" ? null : code;
+}
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

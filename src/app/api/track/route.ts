@@ -8,6 +8,7 @@ import {
   isUuid,
   referrerHost,
   repoIdFromPath,
+  requestCountry,
   visitorHash,
   type AnalyticsEventType,
 } from "@/lib/analytics";
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
       userId: session?.user?.id ?? null,
       visitorId: visitorHash(ip, ua as string),
       referrerHost: refHost,
+      country: requestCountry(req.headers),
       // Staff self-visits (admin or moderator) are excluded from KPIs.
       isAdmin:
         session?.user?.role === "admin" || session?.user?.role === "moderator",

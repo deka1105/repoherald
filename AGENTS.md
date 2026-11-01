@@ -17,10 +17,14 @@ Portal where people/companies post GitHub repos for discovery and starring. Veri
 - `npx drizzle-kit generate` — generate SQL migration from `src/db/schema.ts`
 - `npx drizzle-kit migrate` — apply migrations (needs `DATABASE_URL`)
 
-- `npm run test:mobile-auth` / `npm run test:resolve` / `npm run test:nemotron` —
-  plain `tsx` scripts, 80 assertions, no framework, no database, no API key and
+- `npm run test:mobile-auth` / `npm run test:resolve` / `npm run test:nemotron` /
+  `npm run test:analytics` —
+  plain `tsx` scripts, 110 assertions, no framework, no database, no API key and
   no internet required (`test:nemotron` runs the client against a local server
-  speaking Token Factory's shapes, so the retry rules are proved not assumed)
+  speaking Token Factory's shapes, so the retry rules are proved not assumed).
+  `test:analytics` passes `--conditions=react-server` so `server-only` resolves
+  to its empty build instead of throwing — that is how to test a module that is
+  marked `server-only`, rather than unmarking it.
 - `npm run nemotron:doctor` — is Nebius reachable and are the model ids real?
 - `npm run eval:resolve -- --limit 20` — identification accuracy; **spends tokens**
 
@@ -48,6 +52,8 @@ Portal where people/companies post GitHub repos for discovery and starring. Veri
 - Policy pages live in the `src/app/(legal)/` route group: `/privacy`, `/terms`, `/cookies`, `/refunds`. Every factual claim in them is derived from the code — **if you change what is collected, stored, charged, or refunded, update the matching page in the same commit.**
 - Business identity comes from `src/lib/legal.ts`, which reads `LEGAL_ENTITY_NAME` / `LEGAL_ENTITY_ADDRESS` / `LEGAL_JURISDICTION` / `LEGAL_CONTACT_EMAIL`. Unset values make the pages **omit** the operator block — never hardcode a company name or address, and never invent one.
 - View counting is first-party and cookieless (`src/lib/analytics.ts`: daily-rotating salted hash of IP+UA, IP never stored). `src/lib/analytics-consent.ts` gates it — `trackEvent` checks the opt-out at send time and honours Global Privacy Control automatically. Storage that fails to read counts as opted OUT.
+- **Visitor country is stored, nothing finer.** `requestCountry` reads `x-vercel-ip-country` and validates it to two ASCII letters (the header is attacker-supplied anywhere the edge is not terminating the request, and `ZZ` means unresolved). The edge also offers region, city, latitude and longitude — do not start reading them without changing `/privacy` and `/cookies` in the same commit, which both now state country-only explicitly. The country rides on the same event as the view, so the existing opt-out and GPC handling already cover it; keep it that way rather than adding a second measurement with its own switch.
+- **Sentry is hardened, and must stay that way** (`src/lib/sentry-privacy.ts`, wired into both `src/instrumentation.ts` and `src/instrumentation-client.ts`). It strips `request.headers`/`request.cookies`, clears `user.geo` and pins `user.ip_address` to **null** — null rather than absent, because null is what stops Sentry inferring the address from the connection. This is not belt-and-braces: on Vercel every request carries `x-vercel-ip-city`/`-latitude`/`-longitude`, `sendDefaultPii` is deprecated, and from SDK v11 the `dataCollection` defaults apply and send the IP. Without this guard a major-version bump would silently start collecting precise location. `npm run test:analytics` is what fails if it regresses.
 - `StorageNotice` is a notice, not a consent wall: only two cookies exist (auth session, feed layout) and both are consent-exempt. Do not turn it into an "Accept all" modal — both buttons are deliberately the same visual weight.
 - Marketing email must carry a working unsubscribe. `src/lib/unsubscribe.ts` signs a per-recipient token (HMAC over the user id, no expiry) and `notify.ts` sets `List-Unsubscribe` + `List-Unsubscribe-Post`. `unsubscribeUrl()` returns **null** rather than throwing when `AUTH_SECRET` is unset, so a misconfigured env degrades to an email without one-click rather than sending nothing.
 - Accessibility floors that are already met — do not regress them: `--muted-foreground` clears 4.5:1 on both `--background` and `--muted` in all three dark themes, `--ring` clears 3:1, focus outlines are solid (not alpha-reduced), every `<main>` has `id="main"` for the skip link, and decorative logos beside their own text keep `alt=""` on purpose.

@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:mobile-auth": "tsx tests/mobile-auth.test.ts",
+    "test:analytics": "tsx --conditions=react-server tests/analytics-privacy.test.ts",
     "test:resolve": "tsx tests/resolve-repo.test.ts",
     "eval:resolve": "tsx --env-file-if-exists=.env.local tests/eval-resolve.ts",
     "nemotron:doctor": "tsx --env-file-if-exists=.env.local scripts/nemotron-doctor.ts",

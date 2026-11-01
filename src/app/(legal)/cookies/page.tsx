@@ -115,6 +115,13 @@ export default function CookiesPage() {
         time.
       </p>
       <p>
+        Alongside the count we record the country the view came from, as a two-letter code, so
+        listing authors can see where their work is being read. Nothing finer than the country —
+        no city and no coordinates — and our host resolves it before the request reaches us, so it
+        still involves no stored address. The switch below covers it: opting out stops the whole
+        event, country included.
+      </p>
+      <p>
         This needs no cookie and no consent prompt. We are still giving you the switch, because
         being countable should be your call.
       </p>

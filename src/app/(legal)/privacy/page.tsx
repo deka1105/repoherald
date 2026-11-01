@@ -83,6 +83,15 @@ export default function PrivacyPage() {
         hostname alone and drop known bots. You can switch this off entirely — see{" "}
         <Link href="/cookies">Cookies &amp; local storage</Link>.
       </p>
+      <p>
+        We do store the <strong>country</strong> each view came from, as a two-letter code such as
+        &ldquo;IN&rdquo; or &ldquo;DE&rdquo;, because the people who post listings want to know
+        where their work is being read. Our hosting provider resolves it at the network edge and
+        hands us the code, so no address is involved by the time it reaches us and there is still
+        nothing to store or discard. We do not record the region, the city or any coordinates,
+        though the same lookup offers all three. Switching off view counting stops the country
+        being recorded too — it is part of the same event, not a separate measurement.
+      </p>
 
       <h3>Payments</h3>
       <p>
@@ -166,7 +175,10 @@ export default function PrivacyPage() {
         <li>No card numbers — those stay with Stripe.</li>
         <li>No advertising or cross-site tracking identifiers, and no data sold or brokered.</li>
         <li>No private repository contents, and no write access to anything you own.</li>
-        <li>No location beyond what a hostname or hashed visitor number implies.</li>
+        <li>
+          No location more precise than a country — no region, city or coordinates, and never a
+          stored IP address. See Usage measurement above.
+        </li>
       </ul>
 
       <h2>Who else processes your data</h2>

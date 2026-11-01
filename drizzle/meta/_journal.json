@@ -141,6 +141,13 @@
       "when": 1792015922626,
       "tag": "0019_unique_galactus",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793548438156,
+      "tag": "0020_awesome_wither",
+      "breakpoints": true
     }
   ]
 }

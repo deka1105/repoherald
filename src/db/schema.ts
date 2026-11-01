@@ -414,6 +414,12 @@ export const analyticsEvents = pgTable(
     userId: uuid("user_id"),
     visitorId: text("visitor_id").notNull(),
     referrerHost: text("referrer_host"),
+    // ISO-3166-1 alpha-2, from the edge's own geo lookup (see
+    // src/lib/analytics.ts). Country only, deliberately: it answers "where are
+    // the readers" without city or coordinates, which at this traffic volume
+    // would be close to identifying when paired with a timestamp. Null when the
+    // edge did not resolve one, or in local development where no header exists.
+    country: text("country"),
     // Traffic from signed-in admins, so KPIs can exclude self-visits.
     isAdmin: boolean("is_admin").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -424,6 +430,7 @@ export const analyticsEvents = pgTable(
     index("analytics_events_created_idx").on(t.createdAt),
     // Per-page view counts (list pages) look up by path.
     index("analytics_events_path_idx").on(t.path),
+    index("analytics_events_country_idx").on(t.country, t.createdAt),
   ]
 );
 
