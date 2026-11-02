@@ -141,6 +141,34 @@ ok("no city survives in a span", !JSON.stringify(span).includes("Mumbai"));
 // `_ga` cookies are not consent-exempt under ePrivacy, so a wrong `true` here
 // is a legal problem rather than a bug. Every uncertain case must read false.
 
+// ── The gtag queue: Arguments, not Array ────────────────────────────────────
+//
+// gtag.js reads a command only when it arrives as array-like Arguments. Push a
+// real Array and it is ignored silently: no error, no warning, `config` never
+// registers, and the tag sends nothing while the queue looks correct. That
+// shipped to production once. This is the check that catches it.
+
+async function gtagQueueTests() {
+  const { createGtag } = await import("@/components/google-analytics");
+  const dl: unknown[] = [];
+  const gtag = createGtag(dl);
+
+  gtag("consent", "default", { analytics_storage: "denied" });
+  gtag("config", "G-TEST");
+
+  const first = dl[0] as IArguments;
+  ok("queues one entry per call", dl.length === 2);
+  ok("queued value is NOT a real Array", Array.isArray(first) === false);
+  ok("queued value is array-like", typeof first?.length === "number");
+  ok("preserves the command name", first[0] === "consent");
+  ok("preserves every argument", first.length === 3);
+  ok(
+    "preserves the options object",
+    (first[2] as Record<string, string>).analytics_storage === "denied",
+  );
+  ok("config lands as Arguments too", Array.isArray(dl[1]) === false);
+}
+
 // Wrapped in an async function because these tests run as CJS, where
 // top-level await is unavailable — the same reason nemotron-wire.test.ts
 // nests its dynamic import.
@@ -219,7 +247,9 @@ async function consentTests() {
   );
 }
 
-void consentTests().then(() => {
-  console.log(`\n  ${pass} passed, ${fail} failed`);
-  process.exit(fail ? 1 : 0);
-});
+void gtagQueueTests()
+  .then(consentTests)
+  .then(() => {
+    console.log(`\n  ${pass} passed, ${fail} failed`);
+    process.exit(fail ? 1 : 0);
+  });

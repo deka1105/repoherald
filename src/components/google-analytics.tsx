@@ -37,9 +37,35 @@ const SCRIPT_ID = "ga-gtag";
 
 declare global {
   interface Window {
-    dataLayer?: unknown[][];
+    dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
   }
+}
+
+/**
+ * The gtag command queue.
+ *
+ * It must push the `arguments` object itself, never a copied array. gtag.js
+ * recognises a command only when it arrives as array-like Arguments; a real
+ * Array lands in the queue and is ignored. Nothing throws, nothing warns, and
+ * `config` simply never registers — so the tag transmits no hits at all, sets
+ * no cookie, and applies no consent. The queue looks perfectly correct while
+ * doing nothing, which is the whole trap.
+ *
+ * This is why Google's snippet is written `function gtag(){dataLayer.push(
+ * arguments);}`. Tidying it into a rest-parameter arrow is exactly the change
+ * that breaks it, and it shipped that way once already. Exported so a test can
+ * assert the queued value is Arguments and not an Array — the only check that
+ * would have caught it.
+ */
+export function createGtag(target: unknown[]): (...args: unknown[]) => void {
+  function gtag() {
+    // The Arguments object IS the payload gtag.js requires; rest parameters
+    // would produce an Array, which it ignores. See the note above.
+    // eslint-disable-next-line prefer-rest-params
+    target.push(arguments);
+  }
+  return gtag as (...args: unknown[]) => void;
 }
 
 /** Queue consent + config, then inject gtag.js. Idempotent. */
@@ -47,9 +73,7 @@ function ensureLoaded(measurementId: string) {
   if (document.getElementById(SCRIPT_ID)) return;
 
   window.dataLayer = window.dataLayer ?? [];
-  const gtag = (...args: unknown[]) => {
-    window.dataLayer?.push(args);
-  };
+  const gtag = createGtag(window.dataLayer);
   window.gtag = gtag;
 
   // Denied first, before anything can act on it.
