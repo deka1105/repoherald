@@ -50,14 +50,17 @@ ok("refuses non-ASCII letters", requestCountry(hdr("ÅÄ")) === null);
 ok("refuses a 512-byte string", requestCountry(hdr("A".repeat(512))) === null);
 ok(
   "refuses an injection attempt",
-  requestCountry(hdr("IN'; DROP TABLE analytics_events;--")) === null
+  requestCountry(hdr("IN'; DROP TABLE analytics_events;--")) === null,
 );
 
 // Country is the only geo header we read. The edge offers more; we take none.
-ok("ignores the city header", requestCountry(hdr("Mumbai", "x-vercel-ip-city")) === null);
+ok(
+  "ignores the city header",
+  requestCountry(hdr("Mumbai", "x-vercel-ip-city")) === null,
+);
 ok(
   "ignores the latitude header",
-  requestCountry(hdr("19.0760", "x-vercel-ip-latitude")) === null
+  requestCountry(hdr("19.0760", "x-vercel-ip-latitude")) === null,
 );
 
 // ── Sentry scrubbers: what must never leave the process ─────────────────────
@@ -86,7 +89,10 @@ const event = scrubSentryEvent({
 
 ok("drops request headers", event.request?.headers === undefined);
 ok("drops request cookies", event.request?.cookies === undefined);
-ok("keeps the request url", event.request?.url === "https://repoherald.com/repos/x");
+ok(
+  "keeps the request url",
+  event.request?.url === "https://repoherald.com/repos/x",
+);
 ok("keeps the user id", event.user?.id === "u1");
 ok("drops Sentry's derived geo", event.user?.geo === undefined);
 // Null, not absent: null is what stops Sentry inferring the address from the
@@ -99,7 +105,10 @@ ok("no coordinates survive", !JSON.stringify(event).includes("19.0760"));
 const bare = scrubSentryEvent({ message: "bare" } as Parameters<
   typeof scrubSentryEvent
 >[0]);
-ok("pins ip_address even with no user on the event", bare.user?.ip_address === null);
+ok(
+  "pins ip_address even with no user on the event",
+  bare.user?.ip_address === null,
+);
 
 const span = scrubSentrySpan({
   span_id: "s",
@@ -117,15 +126,100 @@ const span = scrubSentrySpan({
 
 ok(
   "drops request-header span attributes",
-  !("http.request.header.x_vercel_ip_city" in span.data)
+  !("http.request.header.x_vercel_ip_city" in span.data),
 );
 ok(
   "drops response-header span attributes",
-  !("http.response.header.x_vercel_id" in span.data)
+  !("http.response.header.x_vercel_id" in span.data),
 );
 ok("keeps the request method", span.data["http.request.method"] === "GET");
 ok("keeps the route", span.data["http.route"] === "/repos/[id]");
 ok("no city survives in a span", !JSON.stringify(span).includes("Mumbai"));
 
-console.log(`\n  ${pass} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+// ── Google Analytics consent: the grant that must never happen by accident ──
+//
+// `_ga` cookies are not consent-exempt under ePrivacy, so a wrong `true` here
+// is a legal problem rather than a bug. Every uncertain case must read false.
+
+// Wrapped in an async function because these tests run as CJS, where
+// top-level await is unavailable — the same reason nemotron-wire.test.ts
+// nests its dynamic import.
+async function consentTests() {
+  const store = new Map<string, string>();
+  const gpc: { globalPrivacyControl?: boolean } = {};
+
+  // defineProperty rather than Object.assign: in Node 23 `navigator` is a
+  // getter-only global, so assigning to it throws.
+  const define = (name: string, value: unknown) =>
+    Object.defineProperty(globalThis, name, {
+      value,
+      writable: true,
+      configurable: true,
+    });
+
+  define("window", {
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
+  });
+  define("localStorage", {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+  });
+  define("navigator", gpc);
+
+  const consent = await import("@/lib/analytics-consent");
+
+  ok("no stored value means not granted", consent.gaCookiesAllowed() === false);
+
+  store.set(consent.GA_CONSENT_KEY, "1");
+  ok("an explicit opt-in grants", consent.gaCookiesAllowed() === true);
+
+  // A value that is not exactly "1" is not a grant.
+  store.set(consent.GA_CONSENT_KEY, "true");
+  ok(
+    "a truthy-looking value does not grant",
+    consent.gaCookiesAllowed() === false,
+  );
+  store.set(consent.GA_CONSENT_KEY, "1");
+
+  // Opting out of counting entirely outranks the GA opt-in.
+  store.set(consent.OPT_OUT_KEY, "1");
+  ok("an opt-out overrides the grant", consent.gaCookiesAllowed() === false);
+  store.delete(consent.OPT_OUT_KEY);
+  ok(
+    "grant returns once the opt-out is lifted",
+    consent.gaCookiesAllowed() === true,
+  );
+
+  // Global Privacy Control outranks it too, without the visitor doing anything.
+  gpc.globalPrivacyControl = true;
+  ok("GPC overrides the grant", consent.gaCookiesAllowed() === false);
+  ok("GPC also reads as opted out", consent.analyticsOptedOut() === true);
+  delete gpc.globalPrivacyControl;
+
+  // Unreadable storage (private mode, hardened settings) must not grant.
+  const throwing = {
+    getItem: () => {
+      throw new Error("storage blocked");
+    },
+    setItem: () => {
+      throw new Error("storage blocked");
+    },
+    removeItem: () => {
+      throw new Error("storage blocked");
+    },
+  };
+  define("localStorage", throwing);
+  ok("unreadable storage does not grant", consent.gaCookiesAllowed() === false);
+  ok(
+    "unreadable storage reads as opted out",
+    consent.analyticsOptedOut() === true,
+  );
+}
+
+void consentTests().then(() => {
+  console.log(`\n  ${pass} passed, ${fail} failed`);
+  process.exit(fail ? 1 : 0);
+});

@@ -13,11 +13,16 @@ import {
 /**
  * Storage notice.
  *
- * Deliberately NOT a consent wall. We set no advertising or third-party
- * analytics cookies, and our own view counting is cookieless and stores no IP,
- * so there is nothing here that legally requires permission. A modal demanding
+ * Deliberately NOT a consent wall. We set no advertising cookies, our own view
+ * counting is cookieless and stores no IP, and Google Analytics runs with
+ * storage denied until someone ticks the opt-in on /cookies — so nothing that
+ * legally requires permission is set before it is given. A modal demanding
  * consent for cookies we do not set would be theatre — and the kind of
  * manufactured friction this project is trying to avoid.
+ *
+ * That holds only while Consent Mode stays denied by default. Granting
+ * `analytics_storage` anywhere other than that explicit opt-in would make this
+ * notice unlawful in the EU and UK, not merely inaccurate.
  *
  * So: a dismissible strip that says what is stored, with a genuine opt-out
  * beside it. Both buttons carry the same visual weight — no "Accept all" in

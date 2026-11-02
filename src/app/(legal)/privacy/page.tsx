@@ -89,6 +89,18 @@ export default function PrivacyPage() {
         at all.
       </p>
       <p>
+        <strong>Google Analytics</strong> runs here as well, and it is the one measurement that
+        would normally need a permission banner — so we have set it up not to. It loads with every
+        storage type <em>denied</em>: no cookie is written, and Google receives aggregated,
+        cookieless measurements of pages viewed. Its advertising permissions are denied
+        permanently and are never granted by anything on this site, so no advertising identifier
+        or personalisation signal is created from your visit. If you would rather it measured
+        properly, there is an opt-in on{" "}
+        <Link href="/cookies">Cookies &amp; local storage</Link> that lets it set two cookies; it
+        is off until you tick it, and untick stops them. Opting out of view counting switches
+        Google Analytics off entirely, and Global Privacy Control does the same without you asking.
+      </p>
+      <p>
         <strong>Your IP address is never written to our database.</strong> Because the secret
         changes daily, the same person on two different days produces two unrelated values, so the
         record cannot be used to follow anyone over time. We also reduce referrer URLs to the
@@ -233,6 +245,14 @@ export default function PrivacyPage() {
             <td>
               Standard request logs, including IP; and, for analytics, a daily-reset hash of the
               request with the page, referrer, browser, operating system, city and country
+            </td>
+          </tr>
+          <tr>
+            <td>Google</td>
+            <td>Analytics (Google Analytics 4)</td>
+            <td>
+              Pages viewed, referrer, browser, device and approximate location, with advertising
+              storage denied; cookieless and aggregated unless you opt in on /cookies
             </td>
           </tr>
           <tr>

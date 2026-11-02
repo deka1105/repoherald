@@ -7,6 +7,22 @@ export const NOTICE_KEY = "rh_storage_notice_seen";
 export const CONSENT_EVENT = "rh-consent-change";
 
 /**
+ * Permission for Google Analytics to store its cookies. Separate from
+ * OPT_OUT_KEY, and the opposite polarity, deliberately.
+ *
+ * Our own counting is cookieless and stores no IP, so it is lawful without
+ * permission and the switch above is a courtesy — opt **out**. Google
+ * Analytics' `_ga` cookies are not consent-exempt under ePrivacy in the EU and
+ * UK, so they need permission *first* — opt **in**, default off, and absent
+ * storage means off rather than on.
+ *
+ * Without this grant Google Analytics still runs, under Consent Mode with
+ * `analytics_storage: "denied"`: no cookie is written and Google receives
+ * cookieless, aggregated pings. Granting trades that for full measurement.
+ */
+export const GA_CONSENT_KEY = "rh_ga_cookies";
+
+/**
  * Global Privacy Control is a legally recognised opt-out signal in several
  * jurisdictions. Honouring it automatically means a visitor who has set it
  * never has to find our switch.
@@ -45,6 +61,34 @@ export function setAnalyticsOptOut(optOut: boolean) {
     window.dispatchEvent(new Event(CONSENT_EVENT));
   } catch {
     // Nothing to do — analyticsOptedOut() already fails closed.
+  }
+}
+
+/**
+ * True only when the visitor has actively allowed analytics cookies.
+ *
+ * Fails closed in every uncertain case: no stored value, unreadable storage,
+ * server render, an active opt-out, or a Global Privacy Control signal all
+ * mean *not granted*. A cookie that needs prior permission must never be set
+ * because a preference could not be read.
+ */
+export function gaCookiesAllowed(): boolean {
+  if (typeof window === "undefined") return false;
+  if (analyticsOptedOut()) return false;
+  try {
+    return localStorage.getItem(GA_CONSENT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setGaCookiesAllowed(allowed: boolean) {
+  try {
+    if (allowed) localStorage.setItem(GA_CONSENT_KEY, "1");
+    else localStorage.removeItem(GA_CONSENT_KEY);
+    window.dispatchEvent(new Event(CONSENT_EVENT));
+  } catch {
+    // gaCookiesAllowed() already fails closed.
   }
 }
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AnalyticsOptOut } from "@/components/analytics-opt-out";
+import { GaCookieConsent } from "@/components/ga-cookie-consent";
 import { LEGAL } from "@/lib/legal";
 
 export const metadata = {
@@ -14,7 +15,16 @@ export default function CookiesPage() {
       <p>
         This is the complete list. {LEGAL.serviceName} sets <strong>three cookies</strong> — one to
         keep you signed in, and two that remember display choices you made. We run no advertising
-        cookies, no third-party analytics cookies, and nothing that follows you to other sites.
+        cookies and nothing that follows you to other sites.
+      </p>
+      <p>
+        <strong>Two more exist only if you ask for them.</strong> Google Analytics runs here with
+        cookie storage switched off, so by default it sets nothing and Google receives only
+        aggregated, cookieless measurements. If you tick{" "}
+        <em>Allow Google Analytics cookies</em> below, it may set <code>_ga</code> and{" "}
+        <code>_ga_*</code> so repeat visits can be recognised. Untick it and they stop being set.
+        Nothing is written before you tick it, which is why this page is a notice and not a
+        permission wall.
       </p>
 
       <h2>Cookies</h2>
@@ -133,6 +143,7 @@ export default function CookiesPage() {
 
       <h2>Opt out of view counting</h2>
       <AnalyticsOptOut />
+      <GaCookieConsent />
       <p>
         Opting out stops your browser sending view events at all. It is stored in your browser, so
         set it again on other devices. We also honour your browser’s{" "}

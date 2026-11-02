@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { PageTracker } from "@/components/page-tracker";
 import { GithubClickTracker } from "@/components/github-click-tracker";
 import { VercelAnalytics } from "@/components/vercel-analytics";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { cookies } from "next/headers";
 import { htmlThemeAttrs, parseThemeId, THEME_COOKIE } from "@/lib/themes";
 import "./globals.css";
@@ -102,6 +103,7 @@ export default async function RootLayout({
         <PageTracker />
         <GithubClickTracker />
         <VercelAnalytics />
+        <GoogleAnalytics />
       </body>
     </html>
     </ClerkProvider>
