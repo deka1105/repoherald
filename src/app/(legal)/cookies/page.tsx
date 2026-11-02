@@ -122,6 +122,11 @@ export default function CookiesPage() {
         event, country included.
       </p>
       <p>
+        Vercel Web Analytics runs alongside this and works the same way — no cookies, and a hash of
+        the request that resets daily. It is covered by the same switch: opting out stops it
+        reporting as well, so there is still nothing here you need to accept or refuse.
+      </p>
+      <p>
         This needs no cookie and no consent prompt. We are still giving you the switch, because
         being countable should be your call.
       </p>

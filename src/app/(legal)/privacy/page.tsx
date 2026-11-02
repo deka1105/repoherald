@@ -71,10 +71,22 @@ export default function PrivacyPage() {
 
       <h3>Usage measurement</h3>
       <p>
-        We count page and repository views ourselves, without cookies and without a third-party
-        analytics vendor. Instead of storing who you are, we derive a visitor number: your IP
-        address and browser user-agent are combined with a secret that rotates every day and run
-        through a one-way hash. We store only that hash.
+        We count page and repository views ourselves, without cookies. Instead of storing who you
+        are, we derive a visitor number: your IP address and browser user-agent are combined with a
+        secret that rotates every day and run through a one-way hash. We store only that hash.
+      </p>
+      <p>
+        We also run <strong>Vercel Web Analytics</strong>, which measures the same thing
+        independently and tells us how pages perform. It sets no cookies and identifies visitors by
+        a hash of the request that is reset daily, much as ours is. It is not ours, though: Vercel
+        processes that data on our behalf, and derives a city from the address as well as a country
+        — more than our own records keep. Their{" "}
+        <a href="https://vercel.com/docs/analytics/privacy-policy">
+          analytics privacy policy
+        </a>{" "}
+        describes what they hold. <strong>Our opt-out covers it:</strong> turning view counting off
+        stops this reporting too, and a browser sending Global Privacy Control is never reported on
+        at all.
       </p>
       <p>
         <strong>Your IP address is never written to our database.</strong> Because the secret
@@ -176,8 +188,9 @@ export default function PrivacyPage() {
         <li>No advertising or cross-site tracking identifiers, and no data sold or brokered.</li>
         <li>No private repository contents, and no write access to anything you own.</li>
         <li>
-          No location more precise than a country — no region, city or coordinates, and never a
-          stored IP address. See Usage measurement above.
+          No location more precise than a country in our own records — no region, city or
+          coordinates, and never a stored IP address. Vercel&rsquo;s analytics, described under
+          Usage measurement, does derive a city; that is held by them, not by us.
         </li>
       </ul>
 
@@ -216,8 +229,11 @@ export default function PrivacyPage() {
           </tr>
           <tr>
             <td>Vercel</td>
-            <td>Application hosting</td>
-            <td>Standard request logs, including IP</td>
+            <td>Application hosting and Web Analytics</td>
+            <td>
+              Standard request logs, including IP; and, for analytics, a daily-reset hash of the
+              request with the page, referrer, browser, operating system, city and country
+            </td>
           </tr>
           <tr>
             <td>Stripe</td>
