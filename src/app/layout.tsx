@@ -12,6 +12,7 @@ import { cookies, headers } from "next/headers";
 import { htmlThemeAttrs, parseThemeId, THEME_COOKIE } from "@/lib/themes";
 import { requestCountry } from "@/lib/analytics";
 import { priorConsentRequired } from "@/lib/consent-region";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,9 +34,6 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jbmono",
   subsets: ["latin"],
 });
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://repoherald.com";
 
 const DESCRIPTION =
   "Post your repos, earn highlight time for the repos you star, and discover what's worth starring.";

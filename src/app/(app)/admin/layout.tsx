@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { NOINDEX } from "@/lib/site";
 
 // adminOnly tabs stay hidden from moderators; the pages behind them also
 // enforce the role server-side (hiding a link is not access control).
@@ -20,6 +21,13 @@ const NAV = [
   { href: "/admin/audit", label: "Audit log", adminOnly: true },
   { href: "/admin/settings", label: "Settings", adminOnly: true },
 ];
+
+export const metadata = {
+  title: "Admin — repoherald",
+  // Set on the layout so every page in the portal inherits it, including
+  // the ones that declare only a title of their own.
+  robots: NOINDEX,
+};
 
 export default async function AdminLayout({
   children,

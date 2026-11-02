@@ -4,10 +4,13 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
 import { PostRepoForm } from "./post-form";
+import { NOINDEX } from "@/lib/site";
 
 /** Only accept a github.com repo URL, so a crafted link can't prefill the form
  *  with arbitrary text. Mirrors the pattern postRepo validates against. */
 const PREFILL_RE = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/i;
+
+export const metadata = { title: "Post a repo — repoherald", robots: NOINDEX };
 
 export default async function PostPage({
   searchParams,

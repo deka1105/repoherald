@@ -5,8 +5,9 @@ import { getActiveCreditPacks } from "@/lib/pricing";
 import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BuyCreditsForm } from "./buy-credits-form";
+import { NOINDEX } from "@/lib/site";
 
-export const metadata = { title: "Buy credits — repoherald" };
+export const metadata = { title: "Buy credits — repoherald", robots: NOINDEX };
 
 export default async function CreditsPage({
   searchParams,

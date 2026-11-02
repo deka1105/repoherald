@@ -5,9 +5,13 @@ import { RepoCard } from "@/components/repo-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NOINDEX } from "@/lib/site";
 
 export const metadata = {
   title: "Search — repoherald",
+  // Query-string permutations are endless and none of them is a page anyone
+  // should land on from Google.
+  robots: NOINDEX,
   description: "Find the repo you saved and forgot about.",
 };
 

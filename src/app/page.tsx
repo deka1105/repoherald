@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { sql } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
@@ -9,6 +10,20 @@ import { Header } from "@/components/header";
 import { UserCount } from "@/components/user-count";
 import { Landing } from "@/components/landing-live";
 import { CreditNotifier } from "@/components/credit-notifier";
+import { JsonLd } from "@/components/json-ld";
+import { organizationSchema, websiteSchema } from "@/lib/schema";
+import { LEGAL } from "@/lib/legal";
+
+const HOME_DESCRIPTION =
+  "Post your repos, earn highlight time for the repos you star, and discover what's worth starring.";
+
+export const metadata: Metadata = {
+  // The root layout's bare "repoherald" is right for a tab but says nothing in
+  // a search result, where this is the only line describing the site.
+  title: "repoherald — post, discover and star GitHub repos",
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: "/" },
+};
 
 export default async function HomePage({
   searchParams,
@@ -60,26 +75,41 @@ export default async function HomePage({
   };
 
   return (
-    <Landing
-      stats={{
-        repoCount: stats.repo_count,
-        starsClaimed: stats.stars_claimed,
-        userCount: displayUserCount(stats.user_count),
-      }}
-      // Unset means the landing omits the "send us what you saved" block
-      // rather than pointing people at a handle nobody owns. Set
-      // INGEST_INSTAGRAM to the account repoHeraldIG actually reads.
-      instagramHandle={process.env.INGEST_INSTAGRAM?.trim().replace(/^@/, "") || null}
-      sponsorships={sponsorships}
-      showStats={showStats}
-      plans={activePlans.map((p) => ({
-        key: p.key,
-        durationDays: p.durationDays,
-        starsCap: p.starsCap,
-        amountCents: p.amountCents,
-        discountPercent: p.discountPercent,
-        currency: p.currency,
-      }))}
-    />
+    <>
+      <JsonLd
+        data={[
+          websiteSchema(HOME_DESCRIPTION),
+          // legalName is emitted only when LEGAL_ENTITY_NAME is configured;
+          // see organizationSchema. Never invented here.
+          organizationSchema({
+            entityName: LEGAL.entityName,
+            logoPath: "/brand/shield-black.png",
+          }),
+        ]}
+      />
+      <Landing
+        stats={{
+          repoCount: stats.repo_count,
+          starsClaimed: stats.stars_claimed,
+          userCount: displayUserCount(stats.user_count),
+        }}
+        // Unset means the landing omits the "send us what you saved" block
+        // rather than pointing people at a handle nobody owns. Set
+        // INGEST_INSTAGRAM to the account repoHeraldIG actually reads.
+        instagramHandle={
+          process.env.INGEST_INSTAGRAM?.trim().replace(/^@/, "") || null
+        }
+        sponsorships={sponsorships}
+        showStats={showStats}
+        plans={activePlans.map((p) => ({
+          key: p.key,
+          durationDays: p.durationDays,
+          starsCap: p.starsCap,
+          amountCents: p.amountCents,
+          discountPercent: p.discountPercent,
+          currency: p.currency,
+        }))}
+      />
+    </>
   );
 }

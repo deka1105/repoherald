@@ -9,8 +9,9 @@ import { getFlag } from "@/lib/settings";
 import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromoteForm } from "./promote-form";
+import { NOINDEX } from "@/lib/site";
 
-export const metadata = { title: "Sponsor a listing — repoherald" };
+export const metadata = { title: "Sponsor a listing — repoherald", robots: NOINDEX };
 
 export default async function PromotePage({
   searchParams,

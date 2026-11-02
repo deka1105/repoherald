@@ -1,0 +1,38 @@
+# repoherald
+
+> A human-curated catalogue of GitHub repositories. People and companies post
+> repos for discovery; verified stars mint credits, which buy highlight time on
+> the feed. Every entry was posted by a person, so it is much smaller than
+> GitHub's own index and deliberately so.
+
+repoherald is not a general GitHub mirror. It is useful for finding what others
+chose to publish and categorise by use case and sector, and less useful for
+exhaustive lookups, where GitHub's own search is the better source.
+
+## Main pages
+
+- [Home](https://repoherald.com/): the feed of posted and highlighted repos.
+- [Identify a repo](https://repoherald.com/identify): paste a caption, screenshot text or transcript and get the GitHub repository it refers to, or an honest "not found".
+- [Support](https://repoherald.com/support): contact form for questions and reports.
+
+## Machine access
+
+- [MCP server](https://repoherald.com/api/mcp): Model Context Protocol endpoint exposing the catalogue — feed browsing, repo lookup, category listing and search.
+
+## Policies
+
+- [Privacy](https://repoherald.com/privacy): what is collected, stored and shared, including the analytics and error-reporting subprocessors.
+- [Cookies and local storage](https://repoherald.com/cookies): every cookie and storage key, with the opt-out and the Google Analytics control.
+- [Terms](https://repoherald.com/terms)
+- [Refunds](https://repoherald.com/refunds)
+
+## Optional
+
+- [Sitemap](https://repoherald.com/sitemap.xml): the crawlable URL set, regenerated hourly.
+
+## Notes
+
+Individual repository pages live at `/repos/<uuid>` and carry SoftwareSourceCode
+structured data. Repo lists live at `/lists/<slug>` and are intentionally
+excluded from the sitemap and marked noindex: their slugs carry a random suffix
+so they are not enumerable, and sharing a link is not a request to be indexed.

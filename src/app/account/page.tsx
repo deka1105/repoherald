@@ -19,8 +19,9 @@ import { FeedLayoutChooser } from "@/components/account/feed-layout-chooser";
 import { MyPosts } from "@/components/account/my-posts";
 import { SponsorAlerts } from "@/app/(app)/wallet/sponsor-alerts";
 import { DeleteAccount } from "@/app/(app)/wallet/delete-account";
+import { NOINDEX } from "@/lib/site";
 
-export const metadata = { title: "Account settings — repoherald" };
+export const metadata = { title: "Account settings — repoherald", robots: NOINDEX };
 
 export default async function AccountPage({
   searchParams,

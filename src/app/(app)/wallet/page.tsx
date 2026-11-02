@@ -18,6 +18,7 @@ import { SelfHighlightForm } from "./self-highlight-form";
 import { DeleteAccount } from "./delete-account";
 import { ShareRewards } from "./share-rewards";
 import { SponsorAlerts } from "./sponsor-alerts";
+import { NOINDEX } from "@/lib/site";
 
 const TYPE_LABELS: Record<string, string> = {
   mint: "Star claimed",
@@ -34,6 +35,8 @@ const TYPE_LABELS: Record<string, string> = {
   purchase_refund: "Purchase refunded — clawback",
   issue_report_reward: "Issue report validated",
 };
+
+export const metadata = { title: "Wallet — repoherald", robots: NOINDEX };
 
 export default async function WalletPage({
   searchParams,

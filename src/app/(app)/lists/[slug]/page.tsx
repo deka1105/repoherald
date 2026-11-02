@@ -24,6 +24,7 @@ import {
 } from "@/lib/lists";
 import { getRepoSources, type RepoSource } from "@/lib/ingest-source";
 import { AddRepoForm } from "./add-repo-form";
+import { NOINDEX } from "@/lib/site";
 
 export async function generateMetadata({
   params,
@@ -31,16 +32,23 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  // Lists are never indexed. Slugs carry a random suffix so they are not
+  // enumerable and `visibility` is only ever "unlisted" or "private" — an
+  // owner sharing a link has not asked to be published. robots.ts disallows
+  // the path; this is what covers a URL a crawler found somewhere else.
   const row = await getListBySlug(slug);
-  if (!row || row.list.status !== "active") return { title: "List — repoherald" };
+  if (!row || row.list.status !== "active")
+    return { title: "List — repoherald", robots: NOINDEX };
   // A private list's title is private too. generateMetadata runs without the
   // page's viewer check, so it must not describe what it cannot authorise.
-  if (row.list.visibility === "private") return { title: "List — repoherald" };
+  if (row.list.visibility === "private")
+    return { title: "List — repoherald", robots: NOINDEX };
   return {
     title: `${row.list.title} — repoherald`,
     description:
       row.list.description ??
       `A repo list curated by ${row.ownerLogin ?? "a member"}.`,
+    robots: NOINDEX,
   };
 }
 

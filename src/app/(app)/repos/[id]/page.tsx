@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, eq, sql } from "drizzle-orm";
@@ -34,6 +35,58 @@ import {
   getClaimUsage,
 } from "@/lib/credits";
 import { getComments, getLikeState } from "@/lib/social";
+import { isUuid } from "@/lib/analytics";
+import { abs, SITE_NAME } from "@/lib/site";
+import { JsonLd } from "@/components/json-ld";
+import { breadcrumbs, repoSchema } from "@/lib/schema";
+
+/**
+ * A repo's own page is the only thing here a search engine should rank, so it
+ * is the one page whose metadata is worth deriving rather than inheriting.
+ *
+ * A `hidden` repo gets noindex: it stays reachable for whoever holds the link,
+ * but moderation hiding something while Google keeps serving it is the outcome
+ * to avoid. `removed` 404s below, and a 404 needs no robots directive.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  if (!isUuid(id)) return { title: `Repo — ${SITE_NAME}` };
+
+  const repo = await db.query.repos.findFirst({ where: eq(repos.id, id) });
+  if (!repo || repo.status === "removed") return { title: `Repo — ${SITE_NAME}` };
+
+  const canonical = `/repos/${repo.id}`;
+  const description =
+    repo.description?.trim() ||
+    `${repo.fullName} on ${SITE_NAME} — ${repo.starsCount.toLocaleString()} stars${
+      repo.primaryLanguage ? `, written in ${repo.primaryLanguage}` : ""
+    }.`;
+
+  return {
+    title: `${repo.fullName} — ${SITE_NAME}`,
+    description,
+    alternates: { canonical },
+    robots: repo.status === "hidden" ? { index: false, follow: false } : undefined,
+    openGraph: {
+      type: "website",
+      title: repo.fullName,
+      description,
+      url: abs(canonical),
+      siteName: SITE_NAME,
+      ...(repo.avatarUrl ? { images: [{ url: repo.avatarUrl }] } : {}),
+    },
+    twitter: {
+      card: "summary",
+      title: repo.fullName,
+      description,
+      ...(repo.avatarUrl ? { images: [repo.avatarUrl] } : {}),
+    },
+  };
+}
 
 export default async function RepoPage({
   params,
@@ -41,6 +94,12 @@ export default async function RepoPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  // `repos.id` is a uuid column, so comparing it against arbitrary text makes
+  // Postgres raise rather than return no rows — which surfaced as a 500 on any
+  // malformed URL. Crawlers and scanners generate those constantly, and
+  // Googlebot slows its crawl of a whole origin in response to 5xx, so this
+  // has to be a 404 before it is anything else.
+  if (!isUuid(id)) notFound();
   const session = await auth();
 
   const repo = await db.query.repos.findFirst({ where: eq(repos.id, id) });
@@ -86,6 +145,19 @@ export default async function RepoPage({
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Hidden repos are noindex, so they get no markup inviting a crawler to
+          describe them either. */}
+      {repo.status === "active" && (
+        <JsonLd
+          data={[
+            repoSchema(repo),
+            breadcrumbs([
+              { name: SITE_NAME, path: "/" },
+              { name: repo.fullName, path: `/repos/${repo.id}` },
+            ]),
+          ]}
+        />
+      )}
       <div className="flex items-start gap-4">
         <Avatar className="size-12">
           <AvatarImage src={repo.avatarUrl ?? undefined} />

@@ -5,6 +5,7 @@ import {
   DEFAULT_SPONSOR_ALERT_TEMPLATE_ID,
   type SponsorAlertData,
 } from "@/lib/email-templates";
+import { NOINDEX } from "@/lib/site";
 
 // Standalone admin-only preview of the sponsored-repo alert emails. Lives as a
 // top-level route (not under /admin) so it doesn't depend on the admin route
@@ -20,7 +21,7 @@ const SAMPLE: SponsorAlertData = {
   repoUrl: "https://repoherald.com/repos/sample",
 };
 
-export const metadata = { title: "Alert email preview · repoherald" };
+export const metadata = { title: "Alert email preview · repoherald", robots: NOINDEX };
 
 export default async function EmailPreviewPage() {
   const session = await auth();

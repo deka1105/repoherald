@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getUserLists } from "@/lib/lists";
 import { CreateListForm } from "./create-list-form";
+import { NOINDEX } from "@/lib/site";
 
-export const metadata = { title: "My lists — repoherald" };
+export const metadata = { title: "My lists — repoherald", robots: NOINDEX };
 
 export default async function ListsPage({
   searchParams,
