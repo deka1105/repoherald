@@ -8,8 +8,10 @@ import { PageTracker } from "@/components/page-tracker";
 import { GithubClickTracker } from "@/components/github-click-tracker";
 import { VercelAnalytics } from "@/components/vercel-analytics";
 import { GoogleAnalytics } from "@/components/google-analytics";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { htmlThemeAttrs, parseThemeId, THEME_COOKIE } from "@/lib/themes";
+import { requestCountry } from "@/lib/analytics";
+import { priorConsentRequired } from "@/lib/consent-region";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -77,6 +79,13 @@ export default async function RootLayout({
   const themeId = parseThemeId((await cookies()).get(THEME_COOKIE)?.value);
   const { className: themeClass, dataTheme } = htmlThemeAttrs(themeId);
 
+  // Whether analytics storage needs permission before it is used, decided here
+  // rather than in the browser: the country comes from the edge, and the client
+  // has to queue a consent signal before gtag.js loads, so it cannot wait on a
+  // lookup. Reading headers costs nothing extra — the cookie read above already
+  // opts every route into dynamic rendering.
+  const needsPriorConsent = priorConsentRequired(requestCountry(await headers()));
+
   return (
     // ClerkProvider wraps <html> rather than sitting inside <body>, so that
     // Clerk's modal sign-in and its hooks are available to every client
@@ -98,12 +107,12 @@ export default async function RootLayout({
         <ThemeProvider initialThemeId={themeId}>
           {children}
           <Toaster />
-          <StorageNotice />
+          <StorageNotice priorConsentRequired={needsPriorConsent} />
         </ThemeProvider>
         <PageTracker />
         <GithubClickTracker />
         <VercelAnalytics />
-        <GoogleAnalytics />
+        <GoogleAnalytics priorConsentRequired={needsPriorConsent} />
       </body>
     </html>
     </ClerkProvider>

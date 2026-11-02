@@ -12,6 +12,7 @@
  */
 
 import { requestCountry } from "@/lib/analytics";
+import { priorConsentRequired } from "@/lib/consent-region";
 import { scrubSentryEvent, scrubSentrySpan } from "@/lib/sentry-privacy";
 
 let pass = 0,
@@ -61,6 +62,54 @@ ok(
 ok(
   "ignores the latitude header",
   requestCountry(hdr("19.0760", "x-vercel-ip-latitude")) === null,
+);
+
+// ── priorConsentRequired: which default the visitor gets ────────────────────
+//
+// A wrong `false` here sets a cookie that needed asking first, in a
+// jurisdiction that fines for it. Every uncertain input must read true.
+
+for (const c of ["DE", "FR", "IE", "IT", "PL", "SE"])
+  ok(`EU requires prior consent (${c})`, priorConsentRequired(c) === true);
+for (const c of ["NO", "IS", "LI"])
+  ok(`non-EU EEA requires prior consent (${c})`, priorConsentRequired(c) === true);
+ok("UK requires prior consent", priorConsentRequired("GB") === true);
+for (const c of ["JE", "GG", "IM"])
+  ok(`Crown Dependency requires prior consent (${c})`, priorConsentRequired(c) === true);
+
+for (const c of ["US", "IN", "CA", "AU", "BR", "JP"])
+  ok(`outside the zone is opt-out (${c})`, priorConsentRequired(c) === false);
+// Excluded on purpose: the revised FADP has no prior-consent rule.
+ok("Switzerland is opt-out", priorConsentRequired("CH") === false);
+
+ok("lower case still matches", priorConsentRequired("de") === true);
+ok("mixed case still matches", priorConsentRequired("Gb") === true);
+
+// Fail closed: anything we cannot place is treated as inside the zone.
+ok("null requires consent", priorConsentRequired(null) === true);
+ok("undefined requires consent", priorConsentRequired(undefined) === true);
+ok("empty requires consent", priorConsentRequired("") === true);
+ok("three letters requires consent", priorConsentRequired("USA") === true);
+ok("digits require consent", priorConsentRequired("12") === true);
+
+// Shaped like a country, means "unknown". Must not read as permission.
+ok("ZZ requires consent", priorConsentRequired("ZZ") === true);
+ok("T1 (Tor) requires consent", priorConsentRequired("T1") === true);
+ok("XK user-assigned requires consent", priorConsentRequired("XK") === true);
+ok("QM user-assigned requires consent", priorConsentRequired("QM") === true);
+
+// The composition that actually runs in the layout.
+ok(
+  "an unresolved edge header ends up requiring consent",
+  priorConsentRequired(requestCountry(hdr("ZZ"))) === true,
+);
+ok(
+  "a German visitor ends up requiring consent",
+  priorConsentRequired(requestCountry(hdr("DE"))) === true,
+);
+ok(
+  "a US visitor ends up on opt-out",
+  priorConsentRequired(requestCountry(hdr("US"))) === false,
 );
 
 // ── Sentry scrubbers: what must never leave the process ─────────────────────
@@ -185,50 +234,98 @@ async function consentTests() {
       configurable: true,
     });
 
+  const realStorage = {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => void store.set(k, v),
+    removeItem: (k: string) => void store.delete(k),
+  };
+
   define("window", {
     addEventListener: () => {},
     removeEventListener: () => {},
     dispatchEvent: () => true,
   });
-  define("localStorage", {
-    getItem: (k: string) => store.get(k) ?? null,
-    setItem: (k: string, v: string) => void store.set(k, v),
-    removeItem: (k: string) => void store.delete(k),
-  });
+  define("localStorage", realStorage);
   define("navigator", gpc);
 
   const consent = await import("@/lib/analytics-consent");
+  const EU = true; // priorConsentRequired
+  const US = false;
 
-  ok("no stored value means not granted", consent.gaCookiesAllowed() === false);
-
+  // ── the stored choice is three-valued ────────────────────────────────────
+  store.clear();
+  ok("no stored value is 'no choice', not 'no'", consent.gaChoice() === null);
   store.set(consent.GA_CONSENT_KEY, "1");
-  ok("an explicit opt-in grants", consent.gaCookiesAllowed() === true);
+  ok("'1' is an explicit yes", consent.gaChoice() === true);
+  store.set(consent.GA_CONSENT_KEY, "0");
+  ok("'0' is an explicit no", consent.gaChoice() === false);
+  store.set(consent.GA_CONSENT_KEY, "true");
+  ok("a truthy-looking value is not a yes", consent.gaChoice() !== true);
 
-  // A value that is not exactly "1" is not a grant.
+  // ── inside the consent zone: nothing until asked ─────────────────────────
+  store.clear();
+  ok("EU: no choice means denied", consent.gaStorageGranted(EU) === false);
+  store.set(consent.GA_CONSENT_KEY, "1");
+  ok("EU: an explicit opt-in grants", consent.gaStorageGranted(EU) === true);
+  store.set(consent.GA_CONSENT_KEY, "0");
+  ok("EU: an explicit refusal denies", consent.gaStorageGranted(EU) === false);
   store.set(consent.GA_CONSENT_KEY, "true");
   ok(
-    "a truthy-looking value does not grant",
-    consent.gaCookiesAllowed() === false,
+    "EU: a truthy-looking value does not grant",
+    consent.gaStorageGranted(EU) === false,
+  );
+
+  // ── outside it: granted until refused ────────────────────────────────────
+  store.clear();
+  ok("US: no choice means granted", consent.gaStorageGranted(US) === true);
+  store.set(consent.GA_CONSENT_KEY, "0");
+  ok(
+    "US: an explicit refusal denies, and is what makes it stick",
+    consent.gaStorageGranted(US) === false,
   );
   store.set(consent.GA_CONSENT_KEY, "1");
+  ok("US: an explicit opt-in grants", consent.gaStorageGranted(US) === true);
 
-  // Opting out of counting entirely outranks the GA opt-in.
+  // A refusal must be WRITTEN, not stored as absence — otherwise opting out
+  // outside the consent zone silently reverts on the next visit.
+  store.clear();
+  consent.setGaCookiesAllowed(false);
+  ok(
+    "refusing writes '0' rather than clearing the key",
+    store.get(consent.GA_CONSENT_KEY) === "0",
+  );
+  ok(
+    "US: a written refusal survives as denied",
+    consent.gaStorageGranted(US) === false,
+  );
+  consent.setGaCookiesAllowed(true);
+  ok("allowing writes '1'", store.get(consent.GA_CONSENT_KEY) === "1");
+
+  // ── the overrides outrank the region in both directions ──────────────────
+  store.clear();
   store.set(consent.OPT_OUT_KEY, "1");
-  ok("an opt-out overrides the grant", consent.gaCookiesAllowed() === false);
+  ok("EU: an opt-out denies", consent.gaStorageGranted(EU) === false);
+  ok("US: an opt-out denies too", consent.gaStorageGranted(US) === false);
+  store.set(consent.GA_CONSENT_KEY, "1");
+  ok(
+    "an opt-out beats an explicit opt-in",
+    consent.gaStorageGranted(US) === false,
+  );
   store.delete(consent.OPT_OUT_KEY);
   ok(
     "grant returns once the opt-out is lifted",
-    consent.gaCookiesAllowed() === true,
+    consent.gaStorageGranted(US) === true,
   );
 
-  // Global Privacy Control outranks it too, without the visitor doing anything.
+  // Global Privacy Control outranks everything, without the visitor acting.
   gpc.globalPrivacyControl = true;
-  ok("GPC overrides the grant", consent.gaCookiesAllowed() === false);
+  ok("GPC denies in the EU", consent.gaStorageGranted(EU) === false);
+  ok("GPC denies outside it as well", consent.gaStorageGranted(US) === false);
   ok("GPC also reads as opted out", consent.analyticsOptedOut() === true);
   delete gpc.globalPrivacyControl;
 
-  // Unreadable storage (private mode, hardened settings) must not grant.
-  const throwing = {
+  // ── unreadable storage must never grant, in either region ────────────────
+  define("localStorage", {
     getItem: () => {
       throw new Error("storage blocked");
     },
@@ -238,13 +335,21 @@ async function consentTests() {
     removeItem: () => {
       throw new Error("storage blocked");
     },
-  };
-  define("localStorage", throwing);
-  ok("unreadable storage does not grant", consent.gaCookiesAllowed() === false);
+  });
+  ok("unreadable storage is an explicit no", consent.gaChoice() === false);
+  ok(
+    "unreadable storage does not grant in the EU",
+    consent.gaStorageGranted(EU) === false,
+  );
+  ok(
+    "unreadable storage does not grant outside it either",
+    consent.gaStorageGranted(US) === false,
+  );
   ok(
     "unreadable storage reads as opted out",
     consent.analyticsOptedOut() === true,
   );
+  define("localStorage", realStorage);
 }
 
 void gtagQueueTests()

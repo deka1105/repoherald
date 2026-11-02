@@ -3,28 +3,36 @@
 import { useEffect } from "react";
 import {
   analyticsOptedOut,
-  gaCookiesAllowed,
+  gaStorageGranted,
   subscribeConsent,
 } from "@/lib/analytics-consent";
 
 /**
- * Google Analytics 4, under Consent Mode v2 with storage denied by default.
+ * Google Analytics 4, under Consent Mode v2 with a region-conditional default.
  *
  * Dormant until NEXT_PUBLIC_GA_MEASUREMENT_ID is set, like Sentry — so local
  * development and preview builds never write into the production property.
  *
  * Why not the snippet Google hands you: `_ga` cookies are not consent-exempt
- * under ePrivacy in the EU and UK, and this site's storage notice is a notice
- * rather than a consent wall precisely because nothing it sets needs
- * permission. Dropping the stock snippet in would have made that false, and
- * made /cookies' "this is the complete list" false with it.
+ * under ePrivacy, so dropping the stock snippet in would have set a cookie
+ * before anyone was asked. Instead the consent signal is resolved before the
+ * tag is introduced, by `gaStorageGranted`, in this precedence: a full opt-out
+ * or Global Privacy Control, then the visitor's own explicit choice on
+ * /cookies, then the regional default.
  *
- * So the tag loads with every storage type **denied**. Google receives
- * cookieless, aggregated pings; no cookie is written; the three-cookie claim
- * on /cookies stays true for anyone who has not asked otherwise. Granting
- * `analytics_storage` requires an explicit opt-in on /cookies, and only that
- * one key is ever granted — the advertising keys stay denied permanently, so
- * no ad identifier or personalisation signal is ever created.
+ * `priorConsentRequired` arrives as a prop because it is decided on the
+ * **server**, from the edge's country header — never from a timezone, locale
+ * or anything else the browser could assert about itself, and never fetched,
+ * because the signal has to be queued before the tag loads and an async
+ * lookup could not be. Inside the EEA, UK and Crown Dependencies the default
+ * is denied and an opt-in is required; outside, analytics storage is lawful on
+ * an opt-out basis and the default is granted. An unresolved country counts as
+ * requiring consent. See src/lib/consent-region.ts.
+ *
+ * Only `analytics_storage` is ever granted. `ad_storage`, `ad_user_data` and
+ * `ad_personalization` are denied at the default and never revisited, which is
+ * what keeps /privacy's "no advertising or cross-site tracking identifiers"
+ * true everywhere, regardless of region.
  *
  * Order matters more than it looks: `consent default` must sit in the dataLayer
  * queue ahead of `config`, or the tag initialises with storage allowed and sets
@@ -68,20 +76,27 @@ export function createGtag(target: unknown[]): (...args: unknown[]) => void {
   return gtag as (...args: unknown[]) => void;
 }
 
-/** Queue consent + config, then inject gtag.js. Idempotent. */
-function ensureLoaded(measurementId: string) {
+/**
+ * Queue consent + config, then inject gtag.js. Idempotent.
+ *
+ * `granted` is the already-resolved signal, not the region flag: the default
+ * has to be the final answer for this visitor, because anything granted here
+ * and corrected a moment later by `consent update` could still have written a
+ * cookie in between.
+ */
+function ensureLoaded(measurementId: string, granted: boolean) {
   if (document.getElementById(SCRIPT_ID)) return;
 
   window.dataLayer = window.dataLayer ?? [];
   const gtag = createGtag(window.dataLayer);
   window.gtag = gtag;
 
-  // Denied first, before anything can act on it.
+  // The advertising keys are denied here and never granted anywhere.
   gtag("consent", "default", {
     ad_storage: "denied",
     ad_user_data: "denied",
     ad_personalization: "denied",
-    analytics_storage: "denied",
+    analytics_storage: granted ? "granted" : "denied",
   });
   gtag("js", new Date());
   gtag("config", measurementId);
@@ -93,7 +108,48 @@ function ensureLoaded(measurementId: string) {
   document.head.appendChild(script);
 }
 
-export function GoogleAnalytics() {
+/**
+ * Delete any `_ga*` cookies already in this browser.
+ *
+ * Consent Mode's "denied" stops gtag.js reading or refreshing storage, but it
+ * does not remove what a previous "granted" wrote. Without this, someone who
+ * switches the control off keeps carrying the two cookies until they expire
+ * two years later — which makes /cookies' promise that unticking stops them
+ * true only in the narrowest reading. Withdrawal should leave nothing behind.
+ *
+ * `_ga` is set on the registrable domain, so expiring it needs a matching
+ * domain attribute; the exact one is not knowable from script, so every
+ * suffix of the current host is tried, with and without a leading dot. A
+ * mismatched attempt is a no-op, so over-trying is free.
+ */
+function clearGaCookies() {
+  const names = document.cookie
+    .split("; ")
+    .map((c) => c.split("=")[0])
+    .filter((n) => n === "_ga" || n.startsWith("_ga_"));
+  if (names.length === 0) return;
+
+  const parts = location.hostname.split(".");
+  const domains = [undefined as string | undefined];
+  for (let i = 0; i < parts.length - 1; i++) {
+    const d = parts.slice(i).join(".");
+    domains.push(d, `.${d}`);
+  }
+
+  for (const name of names) {
+    for (const domain of domains) {
+      document.cookie =
+        `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/` +
+        (domain ? `; domain=${domain}` : "");
+    }
+  }
+}
+
+export function GoogleAnalytics({
+  priorConsentRequired,
+}: {
+  priorConsentRequired: boolean;
+}) {
   useEffect(() => {
     if (!MEASUREMENT_ID) return;
 
@@ -103,13 +159,22 @@ export function GoogleAnalytics() {
       // flipped, revoke its storage rather than leave it as it was.
       if (analyticsOptedOut()) {
         window.gtag?.("consent", "update", { analytics_storage: "denied" });
+        clearGaCookies();
         return;
       }
 
-      ensureLoaded(MEASUREMENT_ID);
-      // Only this key is ever granted. The advertising keys are never revisited.
+      const granted = gaStorageGranted(priorConsentRequired);
+      ensureLoaded(MEASUREMENT_ID, granted);
+      // Denied covers three cases that all end the same way: inside the consent
+      // zone with no opt-in, an explicit refusal anywhere, or a withdrawal just
+      // now. Only the last leaves cookies behind, and clearing is a no-op for
+      // the others.
+      if (!granted) clearGaCookies();
+      // Redundant on the first run, since the default above already carries
+      // this value. It is what makes a later toggle take effect, and it is
+      // also the only path that can revoke storage from an already-loaded tag.
       window.gtag?.("consent", "update", {
-        analytics_storage: gaCookiesAllowed() ? "granted" : "denied",
+        analytics_storage: granted ? "granted" : "denied",
       });
     };
 
@@ -117,7 +182,7 @@ export function GoogleAnalytics() {
     // Re-run on every consent change, so toggling either switch takes effect
     // without a reload — the same contract as src/lib/track-client.ts.
     return subscribeConsent(sync);
-  }, []);
+  }, [priorConsentRequired]);
 
   return null;
 }

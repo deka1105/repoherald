@@ -90,15 +90,22 @@ export default function PrivacyPage() {
       </p>
       <p>
         <strong>Google Analytics</strong> runs here as well, and it is the one measurement that
-        would normally need a permission banner — so we have set it up not to. It loads with every
-        storage type <em>denied</em>: no cookie is written, and Google receives aggregated,
-        cookieless measurements of pages viewed. Its advertising permissions are denied
-        permanently and are never granted by anything on this site, so no advertising identifier
-        or personalisation signal is created from your visit. If you would rather it measured
-        properly, there is an opt-in on{" "}
-        <Link href="/cookies">Cookies &amp; local storage</Link> that lets it set two cookies; it
-        is off until you tick it, and untick stops them. Opting out of view counting switches
-        Google Analytics off entirely, and Global Privacy Control does the same without you asking.
+        can use a cookie. Whether it does depends on where you are, because that is what the law
+        turns on. In the UK, the EU and the wider EEA it loads with every storage type{" "}
+        <em>denied</em>: no cookie is written, and Google receives only cookieless pings, until you
+        tick the opt-in on <Link href="/cookies">Cookies &amp; local storage</Link>. Everywhere
+        else, where analytics cookies are permitted on an opt-out basis, it starts allowed and may
+        set two cookies to recognise repeat visits — and the same control switches it off, for good,
+        from the moment you untick it. We work out which applies from the country our hosting
+        provider resolves at the network edge, and anything we cannot resolve is treated as needing
+        permission first.
+      </p>
+      <p>
+        What does <em>not</em> vary: its advertising permissions are denied permanently and are
+        never granted by anything on this site, in any country, so no advertising identifier or
+        personalisation signal is ever created from your visit. Opting out of view counting
+        switches Google Analytics off entirely, and Global Privacy Control does the same without
+        you asking.
       </p>
       <p>
         <strong>Your IP address is never written to our database.</strong> Because the secret
@@ -252,7 +259,8 @@ export default function PrivacyPage() {
             <td>Analytics (Google Analytics 4)</td>
             <td>
               Pages viewed, referrer, browser, device and approximate location, with advertising
-              storage denied; cookieless and aggregated unless you opt in on /cookies
+              storage denied everywhere; cookieless in the UK, EU and EEA unless you opt in on
+              /cookies, cookie-based elsewhere unless you opt out there
             </td>
           </tr>
           <tr>

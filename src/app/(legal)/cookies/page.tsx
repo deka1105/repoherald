@@ -1,14 +1,24 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { AnalyticsOptOut } from "@/components/analytics-opt-out";
 import { GaCookieConsent } from "@/components/ga-cookie-consent";
 import { LEGAL } from "@/lib/legal";
+import { requestCountry } from "@/lib/analytics";
+import { priorConsentRequired } from "@/lib/consent-region";
 
 export const metadata = {
   title: "Cookies & Local Storage — repoherald",
   description: "Every cookie and browser storage key repoherald uses, and how to opt out.",
 };
 
-export default function CookiesPage() {
+export default async function CookiesPage() {
+  // The polarity of the Google Analytics control, and the wording describing
+  // it, both follow the law where the reader is — so this page states what is
+  // true for *them* rather than a generality that is wrong half the time.
+  const needsPriorConsent = priorConsentRequired(
+    requestCountry(await headers())
+  );
+
   return (
     <>
       <h1>Cookies &amp; local storage</h1>
@@ -17,15 +27,27 @@ export default function CookiesPage() {
         keep you signed in, and two that remember display choices you made. We run no advertising
         cookies and nothing that follows you to other sites.
       </p>
-      <p>
-        <strong>Two more exist only if you ask for them.</strong> Google Analytics runs here with
-        cookie storage switched off, so by default it sets nothing and Google receives only
-        aggregated, cookieless measurements. If you tick{" "}
-        <em>Allow Google Analytics cookies</em> below, it may set <code>_ga</code> and{" "}
-        <code>_ga_*</code> so repeat visits can be recognised. Untick it and they stop being set.
-        Nothing is written before you tick it, which is why this page is a notice and not a
-        permission wall.
-      </p>
+      {needsPriorConsent ? (
+        <p>
+          <strong>Two more exist only if you ask for them.</strong> Google Analytics runs here with
+          cookie storage switched off, so by default it sets nothing and Google receives only
+          cookieless pings. If you tick <em>Allow Google Analytics cookies</em> below, it may set{" "}
+          <code>_ga</code> and <code>_ga_*</code> so repeat visits can be recognised. Untick it and
+          they stop being set. Nothing is written before you tick it, which is why this page is a
+          notice and not a permission wall.
+        </p>
+      ) : (
+        <p>
+          <strong>Two more are set unless you switch them off.</strong> Google Analytics may set{" "}
+          <code>_ga</code> and <code>_ga_*</code> so repeat visits can be recognised. Where you are
+          reading this, analytics cookies are allowed on an opt-out basis rather than needing
+          permission first, so the control below starts switched on — untick{" "}
+          <em>Allow Google Analytics cookies</em> and they stop being set immediately and stay off.
+          Visitors in the UK, EU and EEA get the opposite default: nothing until they tick it.
+          Either way these two are the only cookies here you have to decide anything about, and
+          none of them is an advertising cookie.
+        </p>
+      )}
 
       <h2>Cookies</h2>
       <table>
@@ -143,7 +165,7 @@ export default function CookiesPage() {
 
       <h2>Opt out of view counting</h2>
       <AnalyticsOptOut />
-      <GaCookieConsent />
+      <GaCookieConsent priorConsentRequired={needsPriorConsent} />
       <p>
         Opting out stops your browser sending view events at all. It is stored in your browser, so
         set it again on other devices. We also honour your browser’s{" "}
