@@ -121,6 +121,26 @@ export type ListSummary = {
   itemCount: number;
 };
 
+/**
+ * Where a listing was spotted: the post it came out of.
+ *
+ * Only present on a repo a moderator promoted from a sweep -- a repo its owner
+ * posted has no reel behind it, and the card must not imply one. Carries no
+ * usernames: the server holds who sent and who posted, and /privacy says those
+ * are never published, so the shape it sends has nowhere to put them.
+ */
+export type RepoSource = {
+  platform: "instagram" | "tiktok" | "x" | "reddit" | "facebook";
+  postUrl: string;
+  /**
+   * Where in the post the repo was named. A plain string, not a union, because
+   * the server's column has no CHECK constraint behind it and production
+   * already holds values the schema never listed -- anything rendering this
+   * tolerates one it has never heard of rather than printing `undefined`.
+   */
+  foundIn: string | null;
+};
+
 export type ListItem = {
   itemId: string;
   note: string | null;
@@ -128,7 +148,19 @@ export type ListItem = {
   addedByLogin: string | null;
   canRemove: boolean;
   repo: RepoSummary;
+  /**
+   * Owner and staff only; null for everyone else and for owner-posted repos.
+   *
+   * Optional, not just nullable: a deployment older than this field sends no
+   * such key at all, and `request` casts the response rather than validating
+   * it, so the type has to admit "absent" or the compiler lets a crash
+   * through.
+   */
+  source?: RepoSource | null;
 };
+
+/** How a list's items can be ordered. The server sends the labels. */
+export type ListSortOption = { key: string; label: string };
 
 export type ListDetail = {
   list: Omit<ListSummary, "itemCount"> & {
@@ -138,8 +170,28 @@ export type ListDetail = {
     views: number;
     visitors: number;
   };
+  /** What the server actually applied, not what was asked for: `sort` comes
+   *  back narrowed, and a query under `searchMin` comes back empty. */
+  query?: string;
+  sort?: string;
   items: ListItem[];
-  limits: { maxItems: number; noteMax: number };
+  limits: {
+    maxItems: number;
+    noteMax: number;
+    /**
+     * Everything below is optional because the app ships independently of the
+     * server. `request` casts rather than validates, so a binary newer than
+     * the deployment it talks to would read `sorts` as undefined and throw on
+     * `.map` — the same trap that once rendered every card with no title.
+     * Marking them optional is what makes the compiler demand the guard.
+     *
+     * `sorts` doubles as the capability flag: a server without it also ignores
+     * `q` and `sort`, so the screen offers neither control rather than
+     * offering two that do nothing.
+     */
+    searchMin?: number;
+    sorts?: ListSortOption[];
+  };
 };
 
 export type LedgerEntry = {
@@ -352,8 +404,20 @@ export function createList(title: string, description: string) {
   });
 }
 
-export function getList(slug: string) {
-  return request<ListDetail>(`/api/mobile/v1/lists/${slug}`);
+/**
+ * One list, optionally filtered and reordered.
+ *
+ * Both options are omitted when the whole list in its curated order is wanted,
+ * which is what every call did before searching existed and what `added` still
+ * means. The server narrows an unknown sort rather than refusing it.
+ */
+export function getList(
+  slug: string,
+  opts: { q?: string; sort?: string } = {}
+) {
+  return request<ListDetail>(
+    `/api/mobile/v1/lists/${slug}${qs({ q: opts.q, sort: opts.sort })}`
+  );
 }
 
 export function deleteList(slug: string) {
@@ -397,6 +461,74 @@ export function submitSupport(input: {
     "/api/mobile/v1/support",
     { method: "POST", body: JSON.stringify(input) }
   );
+}
+
+/* ── Identify ─────────────────────────────────────────────────────────── */
+
+/** One candidate the ladder produced, and what became of it. */
+export type IdentifyAttempt = {
+  fullName: string;
+  source: string;
+  via: "url" | "model-fast" | "model-deep" | "web-search";
+  resolved: boolean;
+  /** Dropped before GitHub was asked: the name appears nowhere in the post. */
+  ungrounded?: boolean;
+  /** Real, exists, and rejected by the verification rung as the wrong project. */
+  unverified?: boolean;
+};
+
+export type IdentifyResult = {
+  repo: {
+    fullName: string;
+    description: string | null;
+    language: string | null;
+    stars: number;
+    archived: boolean;
+    avatarUrl: string;
+  } | null;
+  foundIn: string | null;
+  confidence: number;
+  reasoning: string;
+  attempts: IdentifyAttempt[];
+  modelCalls: number;
+  tokens: number;
+  ms: number;
+  /**
+   * The model could not be reached, or this deployment has no key. Not an
+   * error: rung one is a regex over literal github.com links and needs no
+   * model, so the easy half still resolves. The screen has to say which --
+   * "found nothing" and "the clever rungs did not run" are different answers
+   * and must not be rendered as the same one.
+   */
+  degraded?: boolean;
+  /**
+   * The match came from web search, which measured wrong about a third of the
+   * time. A suggestion for a human, not an answer, and the screen says so.
+   */
+  needsReview?: boolean;
+};
+
+/**
+ * Identify which GitHub repository a post is about.
+ *
+ * Deliberately `/api/identify` rather than a route under `/api/mobile/v1`:
+ * this endpoint is public, unauthenticated and spends real credits, and it
+ * carries the per-visitor and global ceilings that keep a finite balance
+ * alive. A second copy for the app would be a second set of counters -- i.e.
+ * no ceiling at all. The app is one more visitor through the same door.
+ *
+ * Over the limit the server answers 429 with its own wording, which `request`
+ * lifts onto the thrown ApiError; relaying that is the whole handling needed.
+ */
+export function identify(input: {
+  caption?: string;
+  stillsText?: string;
+  transcript?: string;
+}) {
+  return request<IdentifyResult>("/api/identify", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
 /* ── Moderation ───────────────────────────────────────────────────────── */

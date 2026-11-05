@@ -164,13 +164,18 @@ export function Button({
 export function Field({
   label,
   hint,
+  style,
   ...props
 }: TextInputProps & { label: string; hint?: string }) {
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
-        style={styles.input}
+        // Merged rather than spread over: `style` used to arrive with the rest
+        // of the props and replace the base input entirely, so any caller that
+        // wanted only a taller box silently lost the border, padding and text
+        // colour with it.
+        style={[styles.input, style]}
         placeholderTextColor={C.dim}
         // Dark-only app: without this the iOS keyboard comes up white and the
         // caret is nearly invisible against the card.

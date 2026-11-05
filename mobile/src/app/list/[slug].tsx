@@ -5,9 +5,25 @@
  * repoherald. It cannot accept an arbitrary GitHub URL: that would create a
  * listing which bypassed the owner check in `postRepoFor`, so the server
  * refuses and this screen relays why.
+ *
+ * Searching and sorting are the web page's controls, done the way a phone does
+ * them: the query is debounced rather than submitted with a button, because
+ * there is no URL here to bookmark and a keyboard that has to be dismissed to
+ * press Apply is a worse trade than one extra request. Both are server-side —
+ * a 200-item list is well past what is worth filtering on the device, and the
+ * note is searched alongside the repo's own fields, which is the part that
+ * matters: a line on why a repo is there is the likeliest thing to remember.
  */
-import React, { useCallback, useState } from "react";
-import { Alert, RefreshControl, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import {
   addToList,
@@ -31,6 +47,9 @@ import {
 } from "@/components/ui";
 import { C } from "@/theme";
 
+/** Same as the Search tab: a request a keystroke is a request a keystroke. */
+const DEBOUNCE_MS = 300;
+
 export default function ListScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { moderate } = useAppState();
@@ -44,25 +63,60 @@ export default function ListScreen() {
   const [repoInput, setRepoInput] = useState("");
   const [note, setNote] = useState("");
   const [adding, setAdding] = useState(false);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState("added");
 
-  const load = useCallback(async () => {
-    if (!slug) return;
-    try {
-      setData(await getList(slug));
-      setError(null);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Couldn't load this list.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [slug]);
+  // Identifies the most recent request, so an earlier filter that resolves
+  // late cannot overwrite a later one's results.
+  const latest = useRef(0);
+
+  const load = useCallback(
+    async (q: string, s: string) => {
+      if (!slug) return;
+      const ticket = ++latest.current;
+      try {
+        const next = await getList(slug, { q, sort: s });
+        if (ticket !== latest.current) return;
+        setData(next);
+        setError(null);
+      } catch (e) {
+        if (ticket !== latest.current) return;
+        setError(e instanceof ApiError ? e.message : "Couldn't load this list.");
+      } finally {
+        if (ticket === latest.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      }
+    },
+    [slug]
+  );
+
+  // The focus reload must not re-run on every keystroke, so it reads the
+  // current filters through a ref rather than closing over them.
+  const filters = useRef({ query, sort });
+  useEffect(() => {
+    filters.current = { query, sort };
+  }, [query, sort]);
 
   useFocusEffect(
     useCallback(() => {
-      load();
+      load(filters.current.query, filters.current.sort);
     }, [load])
   );
+
+  // Refetch when a filter changes. Skips its own first run, which the focus
+  // effect above has already covered — without the guard every list opened
+  // would cost two identical requests.
+  const filtersReady = useRef(false);
+  useEffect(() => {
+    if (!filtersReady.current) {
+      filtersReady.current = true;
+      return;
+    }
+    const t = setTimeout(() => load(query, sort), DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [query, sort, load]);
 
   if (loading) {
     return (
@@ -83,6 +137,17 @@ export default function ListScreen() {
   }
 
   const { list, items, limits } = data;
+
+  // The app ships independently of the server, so a binary can be newer than
+  // the deployment it is talking to. `limits.sorts` is the capability flag: a
+  // server without it also ignores `q` and `sort`, so the controls are not
+  // offered at all rather than offered dead — and nothing calls `.map` on an
+  // undefined.
+  const sorts = limits.sorts ?? [];
+  const canFilter = sorts.length > 0;
+  // Under the floor the query is ignored rather than refused, matching the
+  // server: a stray single character shows the list, not an error.
+  const searching = canFilter && query.trim().length >= (limits.searchMin ?? 2);
 
   const confirmDelete = () =>
     Alert.alert(
@@ -113,7 +178,7 @@ export default function ListScreen() {
           tintColor={C.dim}
           onRefresh={() => {
             setRefreshing(true);
-            load();
+            load(query, sort);
           }}
         />
       }>
@@ -121,9 +186,14 @@ export default function ListScreen() {
 
       {list.description ? <Blurb>{list.description}</Blurb> : null}
       <View style={styles.meta}>
-        <Text style={styles.metaText}>
-          {items.length} of {limits.maxItems}
-        </Text>
+        {/* Hidden while filtered: this counts what is on the list, and
+            rendering a match count in its place would read as repos having
+            gone missing. The match line below says how many matched. */}
+        {searching ? null : (
+          <Text style={styles.metaText}>
+            {items.length} of {limits.maxItems}
+          </Text>
+        )}
         {list.ownerLogin ? (
           <Text style={styles.metaText}>by @{list.ownerLogin}</Text>
         ) : null}
@@ -132,14 +202,67 @@ export default function ListScreen() {
         </Text>
       </View>
 
+      {/* Shown once there is something to look through, and kept while a
+          search is active so a no-match query can be cleared. */}
+      {canFilter && (items.length > 0 || searching) ? (
+        <View style={styles.controls}>
+          <TextInput
+            style={styles.search}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search this list — name, language, or your note"
+            placeholderTextColor={C.dim}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            keyboardAppearance="dark"
+            clearButtonMode="while-editing"
+            accessibilityLabel="Search this list"
+          />
+          <View style={styles.sorts}>
+            {sorts.map((option) => {
+              const active = sort === option.key;
+              return (
+                <Pressable
+                  key={option.key}
+                  onPress={() => setSort(option.key)}
+                  // The pill is ~34pt tall, so hitSlop carries it to the 44pt
+                  // touch floor without a taller box crowding the row.
+                  hitSlop={6}
+                  style={[styles.sortPill, active && styles.sortPillActive]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`Sort by ${option.label}`}>
+                  <Text style={[styles.sortText, active && styles.sortTextActive]}>
+                    {option.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      {searching ? (
+        <Text style={styles.matches}>
+          {items.length} {items.length === 1 ? "match" : "matches"} for “
+          {data.query || query.trim()}”
+        </Text>
+      ) : null}
+
       {items.length === 0 ? (
-        <Notice>Nothing in this list yet.</Notice>
+        <Notice>
+          {searching
+            ? "Nothing on this list matches that."
+            : "Nothing in this list yet."}
+        </Notice>
       ) : (
         items.map((item) => (
           <RepoCard
             key={item.itemId}
             repo={item.repo}
             note={item.note}
+            source={item.source}
             onMore={moderate}
             footer={
               item.canRemove ? (
@@ -149,7 +272,7 @@ export default function ListScreen() {
                   accessibilityLabel={`Remove ${item.repo.fullName} from this list`}
                   onPress={() =>
                     removeListItem(list.slug, item.itemId)
-                      .then(load)
+                      .then(() => load(query, sort))
                       .catch(() => setError("Couldn't remove that."))
                   }>
                   Remove
@@ -195,7 +318,7 @@ export default function ListScreen() {
                 setRepoInput("");
                 setNote("");
                 setNotice("Added.");
-                await load();
+                await load(query, sort);
               } catch (e) {
                 setError(
                   e instanceof ApiError ? e.message : "Couldn't add that repo."
@@ -226,6 +349,31 @@ export default function ListScreen() {
 const styles = StyleSheet.create({
   meta: { flexDirection: "row", flexWrap: "wrap", gap: 14, marginVertical: 14 },
   metaText: { color: C.dim, fontSize: 13 },
+  controls: { marginBottom: 14, gap: 10 },
+  search: {
+    backgroundColor: C.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.line,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: C.text,
+    fontSize: 16,
+    minHeight: 46,
+  },
+  sorts: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  sortPill: {
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.line,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: C.card,
+  },
+  sortPillActive: { borderColor: C.accent, backgroundColor: C.accent },
+  sortText: { color: C.body, fontSize: 13 },
+  sortTextActive: { color: "#120b24", fontWeight: "700" },
+  matches: { color: C.dim, fontSize: 13, marginBottom: 12 },
   remove: { color: C.danger, fontSize: 13 },
   ok: { color: C.accent, fontSize: 14, marginTop: 12 },
 });

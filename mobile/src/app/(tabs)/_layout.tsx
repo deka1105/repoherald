@@ -1,11 +1,22 @@
 /**
- * The bottom tab bar — the same six destinations the website shows on a phone
- * (`src/components/mobile-nav.tsx` there), minus the two that cannot ship.
+ * The bottom tab bar — the destinations the website shows on a phone
+ * (`src/components/mobile-nav.tsx` there), minus the two that cannot ship,
+ * plus Identify.
  *
  * Sponsor is absent because it sells placement, and Admin is absent because a
  * consumer binary should not carry the moderation portal: a reviewer cannot
  * reach it, and shipping it would widen the privacy and metadata surface for
  * no one's benefit.
+ *
+ * Identify is the one deliberate divergence from the web's phone nav, where
+ * /identify is reached from /about and the footer rather than the tab bar. It
+ * is promoted here because pasting a caption you cannot search for is a
+ * phone-shaped problem — the post is on this device — and because a feature
+ * nobody can find is a feature nobody uses.
+ *
+ * Seven is the practical ceiling: React Navigation keeps the labels by
+ * shrinking the items, and an eighth would start truncating them. A further
+ * destination goes behind a screen, not into this bar.
  *
  * Every tab is reachable signed out. Tabs that need an account say so on the
  * screen and offer sign-in there, rather than vanishing — a tab bar that
@@ -57,6 +68,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="search"
         options={{ title: "Search", tabBarIcon: icon("search-outline") }}
+      />
+      <Tabs.Screen
+        name="identify"
+        options={{ title: "Identify", tabBarIcon: icon("sparkles-outline") }}
       />
       <Tabs.Screen
         name="post"

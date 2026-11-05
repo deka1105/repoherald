@@ -36,6 +36,7 @@ import {
 } from "@/components/ui";
 import { C } from "@/theme";
 import {
+  ABOUT_URL,
   COOKIES_URL,
   PRIVACY_URL,
   REFUNDS_URL,
@@ -154,6 +155,18 @@ export default function AccountScreen() {
 
       <Heading>Help</Heading>
       <LinkRow label="Contact support" onPress={() => router.push("/support")} />
+      {/* Opened in the browser rather than rebuilt as a screen, like the
+          policies below and for the same reason: /about is a factual-accuracy
+          surface whose every claim is derived from the server's code, so a copy
+          frozen into a signed binary is the one thing it must not be. */}
+      <LinkRow
+        label="About repoherald"
+        onPress={() => {
+          WebBrowser.openBrowserAsync(ABOUT_URL).catch(() =>
+            setError("Couldn't open that page.")
+          );
+        }}
+      />
 
       <Heading>Policies</Heading>
       {POLICIES.map((p) => (

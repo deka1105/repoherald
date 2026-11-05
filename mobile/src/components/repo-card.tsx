@@ -10,9 +10,10 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
+import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
 import { C } from "@/theme";
-import type { RepoSummary } from "@/api";
+import type { RepoSource, RepoSummary } from "@/api";
 
 /** "owner/name" is all the API sends, so the card derives both halves from it.
  *  Falls back to the whole string rather than rendering an empty title if a
@@ -20,17 +21,79 @@ import type { RepoSummary } from "@/api";
 export const repoOwner = (fullName: string) => fullName.split("/")[0] ?? fullName;
 export const repoName = (fullName: string) => fullName.split("/")[1] ?? fullName;
 
+const PLATFORM_LABEL: Record<RepoSource["platform"], string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  x: "X",
+  reddit: "Reddit",
+  facebook: "Facebook",
+};
+
+/**
+ * Keyed loosely on purpose. The server's column has no CHECK constraint behind
+ * it and production already holds values its own schema never listed, so an
+ * unrecognised one gets no hint -- which is better than asserting something
+ * untrue about where the repo was named.
+ */
+const FOUND_IN_LABEL: Record<string, string> = {
+  caption: "the caption",
+  "caption-cue": "the caption",
+  screen: "on-screen text",
+  narration: "the narration",
+};
+
+/** "Instagram reel", "TikTok post" -- the noun comes from the URL, so a reel
+ *  is not announced as a post. */
+function sourceLabel(source: RepoSource): string {
+  const noun = /\/reels?\//.test(source.postUrl) ? "reel" : "post";
+  return `${PLATFORM_LABEL[source.platform] ?? source.platform} ${noun}`;
+}
+
+/**
+ * Link out to the post a listing was rescued from.
+ *
+ * Opened in the in-app browser rather than handed to Safari, like every other
+ * outbound link here. Its own Pressable, nested inside the card's: the inner
+ * one takes the touch, so tapping the source opens the post while tapping
+ * anywhere else still opens the repo.
+ */
+function SourceLink({ source }: { source: RepoSource }) {
+  const label = sourceLabel(source);
+  const foundIn = source.foundIn ? FOUND_IN_LABEL[source.foundIn] : undefined;
+  return (
+    <Pressable
+      onPress={() => {
+        WebBrowser.openBrowserAsync(source.postUrl).catch(() => {});
+      }}
+      hitSlop={8}
+      accessibilityRole="link"
+      accessibilityLabel={
+        foundIn
+          ? `Source: ${label}. The repo was named in ${foundIn}.`
+          : `Source: ${label}`
+      }>
+      <Text style={styles.source} numberOfLines={1}>
+        {"\u2197"} Source: {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function RepoCard({
   repo,
   onMore,
   footer,
   note,
+  source,
 }: {
   repo: RepoSummary;
   /** Omitted where a long-press menu makes no sense (inside your own list). */
   onMore?: (repo: RepoSummary) => void;
   footer?: React.ReactNode;
   note?: string | null;
+  /** The post this listing was rescued from. Absent for an owner-posted repo,
+   *  and absent for anyone but the list's owner and staff. */
+  source?: RepoSource | null;
 }) {
   const router = useRouter();
   const open = () => router.push(`/repo/${repo.id}`);
@@ -84,6 +147,7 @@ export function RepoCard({
           <Text style={styles.lang}>{repo.primaryLanguage}</Text>
         ) : null}
         {repo.isArchived ? <Text style={styles.archived}>Archived</Text> : null}
+        {source ? <SourceLink source={source} /> : null}
         {footer}
       </View>
     </Pressable>
@@ -125,4 +189,5 @@ const styles = StyleSheet.create({
   },
   lang: { color: C.dim, fontSize: 12, letterSpacing: 0.5 },
   archived: { color: C.dim, fontSize: 12, letterSpacing: 0.5 },
+  source: { color: C.accent, fontSize: 12 },
 });

@@ -48,6 +48,14 @@ export const SSO_REDIRECT_PATH = "sso-callback";
  * build was signed, which for a privacy policy is the one thing it must not
  * be.
  */
+/**
+ * `/about` is in here with the policy pages rather than rebuilt as a screen
+ * for exactly the same reason: it is a factual-accuracy surface. Every claim
+ * on it is derived from the server's code and has to change in the same commit
+ * as the behaviour it describes, which a copy inside a signed binary cannot.
+ */
+export const ABOUT_URL = `${API_BASE}/about`;
+
 export const PRIVACY_URL = `${API_BASE}/privacy`;
 export const TERMS_URL = `${API_BASE}/terms`;
 export const COOKIES_URL = `${API_BASE}/cookies`;

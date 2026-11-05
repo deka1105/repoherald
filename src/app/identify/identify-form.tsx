@@ -13,6 +13,15 @@ type Attempt = {
   via: "url" | "model-fast" | "model-deep" | "web-search";
   resolved: boolean;
   ungrounded?: boolean;
+  /**
+   * Found by search, confirmed by GitHub to exist, then vetoed by the
+   * verification rung as not the project the post described.
+   *
+   * Listed here because without it this renders as "does not exist" about a
+   * repository that does — on the one page whose whole claim is that GitHub
+   * decides. It is real, and it is somebody else's.
+   */
+  unverified?: boolean;
 };
 
 type Result = {
@@ -315,7 +324,9 @@ export function IdentifyForm() {
                               ? ""
                               : a.ungrounded
                                 ? " — real, but this name is nowhere in the post"
-                                : " — does not exist"}
+                                : a.unverified
+                                  ? " — exists, but not the project described"
+                                  : " — does not exist"}
                           </span>
                         </li>
                       ))}
