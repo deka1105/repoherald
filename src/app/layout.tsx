@@ -12,7 +12,10 @@ import { cookies, headers } from "next/headers";
 import { htmlThemeAttrs, parseThemeId, THEME_COOKIE } from "@/lib/themes";
 import { requestCountry } from "@/lib/analytics";
 import { priorConsentRequired } from "@/lib/consent-region";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, FEED_ALTERNATE, APP_STORE_URL } from "@/lib/site";
+import { JsonLd } from "@/components/json-ld";
+import { organizationSchema } from "@/lib/schema";
+import { LEGAL } from "@/lib/legal";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -45,6 +48,9 @@ export const metadata: Metadata = {
   title: "repoherald",
   description: DESCRIPTION,
   manifest: "/manifest.webmanifest",
+  // Feed autodiscovery. Any page that sets its own `alternates` has to repeat
+  // this — see FEED_ALTERNATE.
+  alternates: { types: { "application/rss+xml": FEED_ALTERNATE } },
   appleWebApp: { capable: true, title: "repoherald", statusBarStyle: "default" },
   openGraph: {
     type: "website",
@@ -98,6 +104,26 @@ export default async function RootLayout({
       className={`${themeClass} ${geistSans.variable} ${geistMono.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {/* Publisher identity, on every page rather than only the home
+            page. A search or answer engine reading a single repo page in
+            isolation otherwise has no statement of who publishes it, and
+            Organization is a site-level fact that is equally true on all
+            of them. `legalName` is still omitted unless
+            LEGAL_ENTITY_NAME is set — see organizationSchema.
+
+            WebSite deliberately stays on the home page instead of moving
+            here: it carries `dateModified`, which is the newest listing
+            and costs a query, and duplicating the node across every
+            route would either repeat that query or emit the site's
+            freshness without it. */}
+        <JsonLd
+          data={organizationSchema({
+            entityName: LEGAL.entityName,
+            logoPath: "/brand/shield-black.png",
+            // The one profile that exists and resolves. See APP_STORE_URL.
+            sameAs: [APP_STORE_URL],
+          })}
+        />
         {/* First focusable element on every page. */}
         <a href="#main" className="skip-link">
           Skip to main content

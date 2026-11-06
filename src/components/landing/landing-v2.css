@@ -625,6 +625,31 @@
   background: var(--accent-soft);
   color: var(--accent-ink);
 }
+/* "Live" is the end of that scale and gets the loudest treatment the
+   palette can give it: the same amber field as review, with full-strength
+   foreground text instead of the softer accent ink.
+
+   Solid `--accent` behind `--btn-fg` was the obvious first choice and is
+   measurably wrong — 3.98:1 in light, under the 4.5:1 floor AGENTS.md
+   records as already met. This pair measures --fg on --accent-soft at
+   17.32:1 light and 16.39:1 dark. Do not swap it for a new green token
+   without measuring: the landing palette is one hue plus neutrals on
+   purpose, and a new colour would have to be defined in every theme. */
+.rhl-tag-live {
+  background: var(--accent-soft);
+  color: var(--fg);
+}
+/* Once a thing has shipped the row stops being a status and starts being a
+   way to get it, so the store name becomes the link. */
+a.rhl-row-where {
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+a.rhl-row-where:hover,
+a.rhl-row-where:focus-visible {
+  color: var(--fg);
+}
 .rhl-row p {
   flex: 1 1 380px;
   min-width: 0;

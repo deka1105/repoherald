@@ -36,7 +36,7 @@ import {
 } from "@/lib/credits";
 import { getComments, getLikeState } from "@/lib/social";
 import { isUuid } from "@/lib/analytics";
-import { abs, SITE_NAME } from "@/lib/site";
+import { abs, SITE_NAME, FEED_ALTERNATE } from "@/lib/site";
 import { JsonLd } from "@/components/json-ld";
 import { breadcrumbs, repoSchema } from "@/lib/schema";
 
@@ -69,7 +69,10 @@ export async function generateMetadata({
   return {
     title: `${repo.fullName} — ${SITE_NAME}`,
     description,
-    alternates: { canonical },
+    // `types` restated because Next replaces the whole `alternates` object per
+    // segment rather than merging it: without this the feed link vanishes from
+    // this page's head. See FEED_ALTERNATE.
+    alternates: { canonical, types: { "application/rss+xml": FEED_ALTERNATE } },
     robots: repo.status === "hidden" ? { index: false, follow: false } : undefined,
     openGraph: {
       type: "website",
@@ -178,7 +181,14 @@ export default async function RepoPage({
             {repo.primaryLanguage && <span>{repo.primaryLanguage}</span>}
             {poster && (
               <span>
-                posted by @{poster.githubLogin} · {timeAgo(repo.createdAt)}
+                posted by @{poster.githubLogin} ·{" "}
+                {/* The visible text stays relative, which is what a reader
+                    wants; `dateTime` is what makes the same date readable by a
+                    machine. Without it the page has a date only a human can
+                    parse, which is no date at all to a crawler. */}
+                <time dateTime={repo.createdAt.toISOString()}>
+                  {timeAgo(repo.createdAt)}
+                </time>
               </span>
             )}
             <ViewStats stats={views} />

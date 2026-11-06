@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LEGAL, hasBusinessIdentity } from "@/lib/legal";
 
 const LINKS = [
+  { href: "/about", label: "About" },
   { href: "/terms", label: "Terms" },
   { href: "/privacy", label: "Privacy" },
   { href: "/cookies", label: "Cookies" },
@@ -18,7 +19,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-auto border-t px-4 py-6 text-sm text-muted-foreground">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <nav aria-label="Legal and support" className="flex flex-wrap gap-x-4 gap-y-2">
+        <nav aria-label="About, legal and support" className="flex flex-wrap gap-x-4 gap-y-2">
           {LINKS.map((l) => (
             <Link
               key={l.href}

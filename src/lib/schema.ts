@@ -18,14 +18,24 @@ export type JsonLdObject = Record<string, unknown>;
 /**
  * The site itself. No `potentialAction`/SearchAction: Google retired the
  * sitelinks searchbox, so it would be markup nothing consumes.
+ *
+ * `dateModified` is emitted only when a real one is supplied. For this site
+ * that is the newest active listing, which is genuinely when the front page's
+ * content last changed — not the moment the page was rendered. A timestamp
+ * that advances on every request is the freshness equivalent of a uniform
+ * sitemap `lastmod`: it tells a consumer the field carries no information.
  */
-export function websiteSchema(description: string): JsonLdObject {
+export function websiteSchema(
+  description: string,
+  dateModified?: Date | null,
+): JsonLdObject {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: SITE_NAME,
     url: SITE_URL,
     description,
+    ...(dateModified ? { dateModified: dateModified.toISOString() } : {}),
   };
 }
 
@@ -36,12 +46,20 @@ export function websiteSchema(description: string): JsonLdObject {
  * `legalName` is only emitted when LEGAL_ENTITY_NAME is configured — the same
  * rule the policy pages follow, for the same reason: naming a legal entity we
  * have not been told about would be a false statement about a real company.
+ *
+ * `sameAs` follows that rule too, and it is the property an audit will keep
+ * asking for: it takes only URLs that actually resolve to a page about this
+ * entity. An invented Wikidata or Crunchbase link is a machine-readable
+ * claim to own a page that is not ours, so an empty list omits the property
+ * rather than filling it.
  */
 export function organizationSchema(opts: {
   entityName?: string | null;
   logoPath?: string | null;
+  sameAs?: readonly string[] | null;
 }): JsonLdObject {
-  const { entityName, logoPath } = opts;
+  const { entityName, logoPath, sameAs } = opts;
+  const profiles = (sameAs ?? []).map((u) => u.trim()).filter(Boolean);
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -49,6 +67,7 @@ export function organizationSchema(opts: {
     url: SITE_URL,
     ...(entityName ? { legalName: entityName } : {}),
     ...(logoPath ? { logo: abs(logoPath) } : {}),
+    ...(profiles.length ? { sameAs: profiles } : {}),
   };
 }
 
@@ -68,7 +87,10 @@ export function repoSchema(repo: {
   fullName: string;
   description: string | null;
   primaryLanguage: string | null;
+  createdAt?: Date | null;
+  lastSyncedAt?: Date | null;
 }): JsonLdObject {
+  const modified = repo.lastSyncedAt ?? repo.createdAt;
   return {
     "@context": "https://schema.org",
     "@type": "SoftwareSourceCode",
@@ -81,6 +103,37 @@ export function repoSchema(repo: {
     ...(repo.primaryLanguage
       ? { programmingLanguage: repo.primaryLanguage }
       : {}),
+    // Both dates are columns, not guesses: `createdAt` is when the listing was
+    // posted here, and `lastSyncedAt` is when its GitHub metadata was last
+    // refreshed — the same value the sitemap uses as `lastmod`, for the same
+    // reason. Falling back to `createdAt` keeps dateModified >= datePublished.
+    ...(repo.createdAt
+      ? { datePublished: repo.createdAt.toISOString() }
+      : {}),
+    ...(modified ? { dateModified: modified.toISOString() } : {}),
+  };
+}
+
+/**
+ * A page of questions and answers, as FAQPage.
+ *
+ * Marks up questions that are already on the page and visible to a reader —
+ * never a set written to produce the markup. Google retired FAQ rich results
+ * in May 2026, so this earns nothing in a search result; it is here because
+ * answer engines still parse FAQPage to lift a direct answer, and the content
+ * exists either way. If the visible list is ever removed, remove this with it.
+ */
+export function faqSchema(
+  items: readonly { q: string; a: string }[],
+): JsonLdObject {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
   };
 }
 

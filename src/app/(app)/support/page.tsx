@@ -5,6 +5,8 @@ import { users } from "@/db/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SupportForm } from "./support-form";
 import Link from "next/link";
+import { JsonLd } from "@/components/json-ld";
+import { faqSchema } from "@/lib/schema";
 
 const FAQ = [
   {
@@ -40,6 +42,10 @@ export default async function SupportPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {/* Marks up the questions rendered from FAQ below — the same four, in the
+          same words. Google retired FAQ rich results, so this is for answer
+          engines; if the visible list goes, this goes with it. */}
+      <JsonLd data={faqSchema(FAQ)} />
       <div>
         <h1 className="text-2xl font-semibold">Support</h1>
         <p className="mt-1 text-sm text-muted-foreground">

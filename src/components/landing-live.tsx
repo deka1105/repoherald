@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { SignInButton as ClerkSignInButton } from "@clerk/nextjs";
 import { PlanPrice } from "@/components/plan-price";
+import { APP_STORE_URL } from "@/lib/site";
 import { useTheme } from "@/components/theme-provider";
 import "./landing/landing-v2.css";
 
@@ -484,9 +485,16 @@ export function Landing({
                 <div className="rhl-row-head">
                   <div className="rhl-row-title">
                     <h3>iOS app</h3>
-                    <span className="rhl-tag rhl-tag-review">In review</span>
+                    <span className="rhl-tag rhl-tag-live">Live</span>
                   </div>
-                  <span className="rhl-row-where">App Store</span>
+                  <a
+                    className="rhl-row-where"
+                    href={APP_STORE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    App Store
+                  </a>
                 </div>
                 <p>
                   Everything this site&rsquo;s phone nav has, except anything that sells or
@@ -573,6 +581,9 @@ export function Landing({
 
             <nav aria-label="Footer" className="rhl-footnav">
               <ul>
+                <li>
+                  <Link href="/about" className="rhl-footlink">About</Link>
+                </li>
                 <li>
                   <Link href="/terms" className="rhl-footlink">Terms</Link>
                 </li>

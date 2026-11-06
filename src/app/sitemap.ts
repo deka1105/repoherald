@@ -30,6 +30,7 @@ export const revalidate = 3600;
 /** Public, crawlable, and worth a search result. */
 const STATIC_PATHS = [
   "/",
+  "/about",
   "/identify",
   "/support",
   "/privacy",
