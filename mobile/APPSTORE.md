@@ -5,7 +5,9 @@ what **this binary** actually does. Guideline 2.3.1 (accurate metadata) rejects
 a listing that describes features the reviewer cannot find — and, just as
 importantly, this file has to be rewritten whenever the app grows. It was
 rewritten on **2026-10-23**, when the app went from a single feed to the full
-set of screens the website has on a phone.
+set of screens the website has on a phone, and again on **2026-11-05** for
+**1.1.0 (build 11)**, which adds the Identify tab, search and sort inside a
+list, and a link from a rescued listing back to the post it came from.
 
 Character limits are Apple's; counts below are exact.
 
@@ -17,10 +19,11 @@ Native screens, over `/api/mobile/v1` on repoherald.com. No WebView anywhere.
 |---|---|
 | **Explore** | The public feed. No account. Sort by top or most donated. |
 | **Search** | The public feed, plus repos in your own lists when signed in. |
+| **Identify** | Paste a post's caption, on-screen text or transcript; get the repo it was about, checked against GitHub. |
 | **Post** | List a repo you own, or one belonging to an org you're in. |
 | **Lists** | Create and browse your lists; Instagram/TikTok lists are labelled. |
 | **Wallet** | Credit balance, claim caps, your listings, full credit history. |
-| **Account** | Identity, blocked accounts, support, policies, sign out, delete. |
+| **Account** | Identity, blocked accounts, support, About, policies, sign out, delete. |
 | Repo detail | Stars, language, poster, views, donations, categories, GitHub link, like, claim a star for credit, add to a list, report/block, comments. |
 | List detail | A list's repos with notes; add and remove; delete the list. |
 | Support | File a support ticket from inside the app, signed in or out. |
@@ -39,7 +42,7 @@ The admin portal is staff tooling and does not belong in a consumer binary.
 | **Subtitle** | `Find and keep GitHub repos` | 26 / 30 |
 | **Primary category** | Developer Tools | — |
 | **Secondary category** | Productivity | — |
-| **Version** | `1.0.0` (never released — 1.0.0 was rejected at review, so the string is reused with a new build number) | — |
+| **Version** | `1.1.0` (build 11). 1.0.0 was approved and is live, so this is an update, not a resubmission — release notes are required. | — |
 | **Age rating** | 4+ (no objectionable content; see note below) | — |
 | **Privacy Policy URL** | `https://repoherald.com/privacy` | verified 200 |
 | **Support URL** | `https://repoherald.com/support` | verified 200 |
@@ -58,9 +61,9 @@ the budget.
 ### Promotional text (170 chars, editable without a new build)
 
 ```
-Browse repos people actually wanted to show someone, search everything you have saved, and keep your finds in lists. No account needed to browse.
+Paste a post's caption or transcript and find the repo it was about. Browse the feed, search everything you have saved, and keep your finds in lists.
 ```
-145 / 170.
+149 / 170.
 
 ### Description (4000 chars)
 
@@ -86,10 +89,22 @@ you save it somewhere, and three weeks later it is gone — no title, no note,
 no search. Lists are the answer to that: private pages of repos with a line
 about why each one is there.
 
+WHEN A POST DOES NOT NAME IT
+
+Someone shows you a tool in a video and never says what it is called.
+Paste what you have — the caption, the text on screen, a transcript —
+and Identify works out which repository it was. Every candidate is checked
+against GitHub before you see it, so it can tell you it does not know, but
+it cannot invent a project that does not exist.
+
 WHAT YOU CAN DO
 
 - Browse the feed and sort it by what people have backed.
 - Search the feed, and your own lists at the same time.
+- Search and sort inside a list — by name, owner, language,
+  description or your own note.
+- Identify a repository from a post: paste the caption, the words on
+  screen or a transcript, and find the project it was about.
 - Open any repo for its description, language, stars, categories and comments.
 - Comment, and read what other people made of a project.
 - Keep repos in lists, with a note on why you kept them.
@@ -125,12 +140,30 @@ It is not a GitHub client. You cannot open issues, review pull requests or read
 code here. When you want any of that, the app hands you to GitHub, which is
 better at it.
 ```
-~2,540 / 4000.
+3,225 / 4000 (exact).
 
-### What's New
+### What's New (4000 chars)
 
-First release — leave blank. App Store Connect does not require release notes
-for version 1.0.
+**Required for 1.1.0.** 1.0.0 is live, so this is an update: an empty
+release-notes field on an update is a wasted field, not a permitted blank.
+
+```
+Identify — paste a post's caption, its on-screen text or a transcript,
+and the app finds the GitHub repository it was about. Every candidate is
+checked against GitHub before you see it, so Identify can tell you it does
+not know, but it cannot invent a project.
+
+Lists now search and sort. Filter a list by repo name, owner, language,
+description or your own note, and order it by when you added it, most
+stars, or name A–Z.
+
+A listing that was rescued from a post now links back to that post, on the
+lists you own.
+
+About — the page explaining how repoherald actually works is now one tap
+away in the Account tab.
+```
+614 / 4000.
 
 ## Age rating questionnaire
 

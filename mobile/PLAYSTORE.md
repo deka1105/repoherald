@@ -4,9 +4,11 @@ Copy-paste fields for the Play Console listing. As with `APPSTORE.md`, this
 describes **this binary only**. Play's policy on deceptive store listings is as
 strict as Apple's and enforced by automated scanning.
 
-**Rewritten 2026-10-23 for versionCode 4.** The app is no longer a single feed:
-it has six tabs (Explore, Search, Post, Lists, Wallet, Account), so repo lists
-*are* now in the binary and the listing says so. Still **not** in it, and still
+**Rewritten 2026-10-23 for versionCode 4, updated 2026-11-05 for
+versionCode 6 (1.1.0).** The app is no longer a single feed: it has seven
+tabs (Explore, Search, **Identify**, Post, Lists, Wallet, Account), so repo
+lists *are* now in the binary and the listing says so. Identify is the one
+screen the website does not put in a phone tab bar. Still **not** in it, and still
 absent from this listing: sponsorship, buying credits, spending credits, and
 Instagram/TikTok ingest (claiming a handle happens on the web; the app only
 shows the lists that ingest fills).
@@ -50,10 +52,22 @@ you save it somewhere, and three weeks later it is gone — no title, no note,
 no search. Lists are the answer to that: private pages of repos with a line
 about why each one is there.
 
+WHEN A POST DOES NOT NAME IT
+
+Someone shows you a tool in a video and never says what it is called.
+Paste what you have — the caption, the text on screen, a transcript —
+and Identify works out which repository it was. Every candidate is checked
+against GitHub before you see it, so it can tell you it does not know, but
+it cannot invent a project that does not exist.
+
 WHAT YOU CAN DO
 
 - Browse the feed and sort it by what people have backed.
 - Search the feed, and your own lists at the same time.
+- Search and sort inside a list — by name, owner, language,
+  description or your own note.
+- Identify a repository from a post: paste the caption, the words on
+  screen or a transcript, and find the project it was about.
 - Open any repo for its description, language, stars, categories and comments.
 - Comment, and read what other people made of a project.
 - Keep repos in lists, with a note on why you kept them.
@@ -89,9 +103,28 @@ It is not a GitHub client. You cannot open issues, review pull requests or read
 code here. When you want any of that, the app hands you to GitHub, which is
 better at it.
 ```
-~2,450 / 4000. **Note the one deliberate difference from the iOS description:**
+3,218 / 4000 (exact). **Note the one deliberate difference from the iOS description:**
 it says "Google or GitHub", not Apple — `src/signin.tsx` only offers Apple on
 iOS, and naming an unavailable method in the listing is a policy violation.
+
+### Release notes (500 chars — NOT the 4000 iOS allows)
+
+Play caps "What's new" at **500 characters per language**, so this is a
+different text from APPSTORE.md's, not a copy of it.
+
+```
+Identify: paste a post's caption, on-screen text or transcript and find the
+GitHub repository it was about. Every candidate is checked against GitHub
+first, so it can say it does not know, but it cannot invent a project.
+
+Lists now search and sort — by name, owner, language, description or your
+own note.
+
+A listing rescued from a post links back to that post.
+
+About: how repoherald works, from the Account tab.
+```
+414 / 500.
 
 ## Graphics
 
@@ -322,6 +355,15 @@ npx eas-cli@latest submit --platform android --profile production
    `mobile/play-service-account.json`. This is the Android equivalent of the
    `AuthKey_*.p8`, which **is** present. Until it exists, the `.aab` has to be
    uploaded to the internal track by hand from the EAS build page.
+   **A manual first upload is NOT required** (checked against
+   https://docs.expo.dev/submit/android/, page modified 2026-11-02): "If this
+   is your app's first submission, the default `eas submit` command works out
+   of the box" and "creates your app's first release on the internal testing
+   track". What *is* required first is creating the app in Play Console, and
+   for a `--non-interactive` run the key must already be assigned in EAS
+   credentials or given as `serviceAccountKeyPath` — "Google Service
+   Account Keys cannot be set up in --non-interactive mode". The app then
+   stays in **draft** until the store listing and setup tasks are complete.
 2. ~~No EAS project linked.~~ Done — project `7590d365-7da9-4a57-a134-c9b7fce48cf4`,
    owner `aryasoftech`, and Android builds are running (versionCode 4).
 3. ~~`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` for the production environment.~~ Done
