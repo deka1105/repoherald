@@ -12,6 +12,7 @@ import Link from "next/link";
 import { SignInButton as ClerkSignInButton } from "@clerk/nextjs";
 import { PlanPrice } from "@/components/plan-price";
 import { APP_STORE_URL } from "@/lib/site";
+import { StoreTiles } from "@/components/landing/store-tiles";
 import { useTheme } from "@/components/theme-provider";
 import "./landing/landing-v2.css";
 
@@ -395,23 +396,32 @@ export function Landing({
           </section>
         )}
 
-        {/* ── Upcoming ──────────────────────────────────────────── */}
+        {/* ── Get the app ───────────────────────────────────────── */}
         <section className="rhl-sec">
           <div className="rhl-wrap">
-            <h2 className="rhl-h2">Upcoming</h2>
-            {/* Two states, deliberately told apart. "In review" is submitted and
-                sitting with Apple, Google or Mozilla, so the date is not ours to
-                give; "not built" is nobody looking at it. Collapsing them into
-                one neutral tag is what would make this section a promise. */}
+            <h2 className="rhl-h2">Get the app</h2>
+            {/* The phones used to sit under "Upcoming", which stopped being
+                true the day Apple approved the build: the lede there said
+                nothing here is installable today while the row beside it
+                linked to the App Store. They are their own section now, and
+                "Upcoming" keeps only what genuinely is. */}
             <p className="rhl-lede">
-              None of this is something you can install today. Three are with a reviewer
-              &mdash; Apple, Google and Mozilla decide when, not us. The last one
-              isn&rsquo;t built.
+              The same catalogue and the same sign-in as this page &mdash; so the lists you
+              filled here are already in it the first time you open it.
             </p>
 
-            {/* Real screens from the builds that are with the reviewers, so
-                "in review" is something you can look at rather than take on
-                trust. Pre-cropped to one ratio and served at 1x/2x WebP;
+            <StoreTiles appStoreUrl={APP_STORE_URL} />
+
+            {/* The tile says "in review"; this says who is holding it, so the
+                grey reads as a queue rather than as something we withdrew. */}
+            <p className="rhl-stores-note">
+              The Android build is finished and submitted. Google decides when it lists,
+              not us, so there is no date here to give you.
+            </p>
+
+            {/* Real screens from the two builds, so neither "live" nor "in
+                review" has to be taken on trust. Pre-cropped to one ratio and
+                served at 1x/2x WebP;
                 plain <img> with the same disable header-nav.tsx uses: these are
                 already exact-size WebP, so next/image would add a billed
                 optimisation pass that has nothing left to do. */}
@@ -512,11 +522,29 @@ export function Landing({
                   <span className="rhl-row-where">Google Play</span>
                 </div>
                 <p>
-                  The same build, and the same sign-in as the website &mdash; so the lists you
-                  filled here are already in it the first time you open it.
+                  Byte for byte the build above, compiled for Android: the same six tabs, the
+                  same read-only wallet, nothing in it to buy. It is submitted and waiting on
+                  Google&rsquo;s review queue.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
 
+        {/* ── Upcoming ──────────────────────────────────────────── */}
+        <section className="rhl-sec">
+          <div className="rhl-wrap">
+            <h2 className="rhl-h2">Upcoming</h2>
+            {/* Two states, deliberately told apart. "In review" is submitted and
+                sitting with Mozilla, so the date is not ours to give; "not
+                built" is nobody looking at it. Collapsing them into one neutral
+                tag is what would make this section a promise. */}
+            <p className="rhl-lede">
+              Neither of these is something you can install today. One is with a reviewer
+              &mdash; Mozilla decides when, not us. The other isn&rsquo;t built.
+            </p>
+
+            <div className="rhl-rows">
               <div className="rhl-row">
                 <div className="rhl-row-head">
                   <div className="rhl-row-title">

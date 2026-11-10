@@ -563,6 +563,94 @@
   color: var(--accent-ink);
 }
 
+/* ── Get the app: the store tiles ──────────────────────────────────
+ * Drawn, not Apple's and Google's badge artwork — src/components/landing/
+ * store-tiles.tsx records why. Consequences for this file: the tiles take the
+ * page's own 2px radius rather than the badges' pill, and they follow the
+ * theme instead of being a fixed black raster that disappears into a dark
+ * background.
+ */
+
+/* Grid, not flex: the two tiles must be the same size, and under flex they
+   size to their own text — "Google Play" is wider than "App Store", so the
+   available one came out the smaller of the pair, which reads as the lesser
+   of the two. Equal columns until they no longer fit, then one per row. */
+.rhl-stores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 238px));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+@media (max-width: 560px) {
+  .rhl-stores {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 320px;
+  }
+}
+.rhl-store {
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  text-decoration: none;
+}
+a.rhl-store {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+a.rhl-store:hover {
+  color: var(--btn-fg);
+  opacity: 0.88;
+}
+.rhl-store-glyph {
+  flex: none;
+}
+.rhl-store-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rhl-store-kicker {
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+/* Dimmed on the live tile only, where the pair sits on a solid field and the
+   kicker would otherwise compete with the wordmark. Measured on the real
+   tokens: 11.6:1 light, 9.8:1 dark. The unavailable tile is already drawn in
+   --muted and gets no second reduction, which would take it under the floor. */
+a.rhl-store .rhl-store-kicker {
+  opacity: 0.78;
+}
+.rhl-store-name {
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+/* Unavailable, and saying so without pretending to be a control: no pointer
+   affordance, no hover, nothing that implies a click is being refused.
+   --muted on --chip measures 4.81:1 in light and 6.19:1 in dark, both clear of
+   the 4.5:1 floor AGENTS.md records as already met — "greyed out" here means
+   visibly secondary, not unreadable. */
+.rhl-store-off {
+  background: var(--chip);
+  border-color: var(--hair);
+  color: var(--muted);
+}
+.rhl-stores-note {
+  max-width: 560px;
+  margin: 0 0 40px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
 .rhl-rows {
   display: flex;
   flex-direction: column;
