@@ -15,6 +15,8 @@ import "@/components/landing/landing.css";
 
 export type NavUser = {
   githubLogin: string;
+  /** The public handle: set for every account, GitHub-connected or not. */
+  username: string;
   image: string | null;
   role: "user" | "moderator" | "admin";
 };
@@ -126,7 +128,9 @@ export function HeaderNav({
             ) : (
               <span className="rh-user-avatar" />
             )}
-            <span className="rh-user-name">{user.githubLogin ?? "Account"}</span>
+            <span className="rh-user-name">
+              {user.username || user.githubLogin || "Account"}
+            </span>
             <SignOutButton redirectUrl="/">
               <button type="button" className="rh-signout">
                 Sign out

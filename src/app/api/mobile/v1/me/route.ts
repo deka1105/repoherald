@@ -29,6 +29,7 @@ async function liveUser(req: Request) {
       id: users.id,
       clerkUserId: users.clerkUserId,
       githubLogin: users.githubLogin,
+      username: users.username,
       name: users.name,
       avatarUrl: users.avatarUrl,
       creditBalance: users.creditBalance,
@@ -58,6 +59,7 @@ export async function GET(req: Request) {
     user: {
       id: row.id,
       githubLogin: row.githubLogin,
+      username: row.username,
       name: row.name,
       avatarUrl: row.avatarUrl,
       creditBalance: row.creditBalance,

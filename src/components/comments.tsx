@@ -50,7 +50,7 @@ export function Comments({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">
                     <span className="font-medium">
-                      {formatHandle(c.authorLogin, c.authorName)}
+                      {formatHandle(c.authorUsername ?? c.authorLogin, c.authorName)}
                     </span>{" "}
                     <span className="text-xs text-muted-foreground">
                       {timeAgo(c.createdAt)}

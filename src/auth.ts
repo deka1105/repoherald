@@ -22,6 +22,13 @@ export type Session = {
     isAdmin: boolean;
     /** NULL when the account has not connected GitHub. */
     githubLogin: string | null;
+    /**
+     * The public handle, and the right thing to show a user in the chrome:
+     * unlike githubLogin it is set for every account, including the Google-only
+     * ones that used to fall back to "Account". Null only in the moment before
+     * an account that predates the column has been given one.
+     */
+    username: string | null;
     image?: string | null;
   };
 } | null;
@@ -48,6 +55,7 @@ export const auth = cache(async (): Promise<Session> => {
       role: row.role,
       isAdmin: row.role === "admin",
       githubLogin: row.githubLogin,
+      username: row.username,
     },
   };
 });

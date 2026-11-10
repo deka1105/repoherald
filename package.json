@@ -13,7 +13,8 @@
     "eval:resolve": "tsx --env-file-if-exists=.env.local tests/eval-resolve.ts",
     "nemotron:doctor": "tsx --env-file-if-exists=.env.local scripts/nemotron-doctor.ts",
     "test:nemotron": "tsx tests/nemotron-wire.test.ts",
-    "test:seo": "tsx --conditions=react-server tests/seo.test.ts"
+    "test:seo": "tsx --conditions=react-server tests/seo.test.ts",
+    "test:username": "tsx tests/username.test.ts"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",

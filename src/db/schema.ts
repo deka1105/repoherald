@@ -30,6 +30,22 @@ export const users = pgTable("users", {
   // here so a mobile-only account keeps working.
   googleId: text("google_id").unique(),
   name: text("name"),
+  // The public handle. Every account gets one at sign-up (seeded from the
+  // GitHub login where there is one, generated otherwise) and can change it
+  // later — see src/lib/username.ts for the rules and username-claim.ts for
+  // the assignment.
+  //
+  // Stored lowercase, which is what makes this plain UNIQUE a case-insensitive
+  // one without citext: "Octocat" normalises before it reaches here, so a
+  // taken name has exactly one spelling.
+  //
+  // NULLABLE, though nothing should leave it null: the 73 accounts that
+  // predate the column are backfilled by migration 0021, and a sign-in fills
+  // one in if it ever finds a row without it. Making it NOT NULL would mean an
+  // account whose handle generation lost every retry could not exist at all,
+  // and a missing handle is a cosmetic problem, not a reason to refuse a
+  // sign-in. Every read coalesces (see src/lib/display-name.ts).
+  username: text("username").unique(),
   // UNIQUE because it is the account-linking key: signing in with Google using
   // the address already on a GitHub account lands you in that account rather
   // than a second one. Both providers hand us a provider-verified address.

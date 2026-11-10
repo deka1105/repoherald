@@ -22,12 +22,24 @@ export async function purgeAccount(user: {
   clerkUserId: string | null;
 }): Promise<void> {
   const anonLogin = `deleted-${user.id.slice(0, 8)}`;
+  // The whole id, not the first 8 characters: `username` is UNIQUE where
+  // `github_login` is not, and two purges that happened to share a uuid prefix
+  // would abort the second one — permanently, since a retry recomputes the
+  // same value. Deletion is a right, so it must not be able to collide. It is
+  // longer than a handle anyone could type, which only shows on the bylines a
+  // deleted account leaves behind.
+  const anonUsername = `deleted-${user.id.replace(/-/g, "")}`;
 
   await db.transaction(async (tx) => {
     await tx
       .update(users)
       .set({
         githubLogin: anonLogin,
+        // Overwritten rather than cleared: releasing the handle would let the
+        // next person claim the name a deleted account's comment bylines still
+        // carry. `deleted-` is reserved from manual claims (src/lib/username.ts)
+        // so this value can never be typed in by anyone.
+        username: anonUsername,
         name: null,
         email: null,
         avatarUrl: null,

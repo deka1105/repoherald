@@ -9,6 +9,8 @@ import { FEED_LAYOUT_COOKIE, parseFeedLayout } from "@/lib/feed-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialHandleForm } from "@/components/social-handle-form";
 import { ConnectGithub } from "@/components/account/connect-github";
+import { UsernameForm } from "@/components/account/username-form";
+import { changeUsername } from "@/app/actions/username";
 import {
   setInstagramHandle,
   setTiktokHandle,
@@ -64,10 +66,27 @@ export default async function AccountPage({
       <div>
         <h1 className="text-xl font-semibold">Account settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Signed in as {user.githubLogin ?? user.email ?? "a member"}. Manage your
-          listings, alerts, and appearance.
+          Signed in as @{user.username ?? user.githubLogin ?? "member"}. Manage
+          your listings, alerts, and appearance.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Username</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            How you&apos;re shown across the site — in the header, on the feed,
+            and on any comment you leave. We picked one when you signed up;
+            it&apos;s yours to change.
+          </p>
+          <UsernameForm
+            current={user.username ?? ""}
+            action={changeUsername}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

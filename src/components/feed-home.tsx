@@ -76,7 +76,9 @@ export async function FeedHome({
         <Avatar className="size-9 shrink-0">
           <AvatarImage src={session?.user?.image ?? undefined} />
           <AvatarFallback>
-            {(session?.user?.githubLogin ?? "?").slice(0, 2).toUpperCase()}
+            {(session?.user?.username ?? session?.user?.githubLogin ?? "?")
+              .slice(0, 2)
+              .toUpperCase()}
           </AvatarFallback>
         </Avatar>
         <Link
@@ -84,7 +86,9 @@ export async function FeedHome({
           className="min-w-0 flex-1 truncate rounded-full border bg-muted/40 px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           Share a repo worth starring
-          {session?.user?.githubLogin ? `, @${session.user.githubLogin}` : ""}…
+          {session?.user?.username || session?.user?.githubLogin
+            ? `, @${session.user.username ?? session.user.githubLogin}`
+            : ""}…
         </Link>
         <Button asChild size="sm" className="shrink-0">
           <Link href="/post">Post</Link>

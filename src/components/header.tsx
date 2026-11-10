@@ -11,6 +11,7 @@ export async function Header() {
   const user: NavUser | null = session?.user
     ? {
         githubLogin: session.user.githubLogin ?? "",
+        username: session.user.username ?? "",
         image: session.user.image ?? null,
         role: session.user.role ?? "user",
       }

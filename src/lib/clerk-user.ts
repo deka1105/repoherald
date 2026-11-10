@@ -7,11 +7,14 @@ import { findLinkTarget, type UserRole } from "@/lib/account-link";
 import { bootstrapAdminLogins, computeMintEligible } from "@/lib/github-user";
 import { isPrimaryAdminEmail } from "@/lib/primary-admins";
 import { grantWelcomeCredit } from "@/lib/credits";
+import { ensureUsername } from "@/lib/username-claim";
 
 export type AppUser = {
   id: string;
   role: UserRole;
   githubLogin: string | null;
+  /** The public handle. Assigned here, so it is never null after a sign-in. */
+  username: string | null;
   /**
    * True only on the request that first inserted this row.
    *
@@ -46,6 +49,7 @@ export async function resolveClerkUser(clerkUserId: string): Promise<AppUser | n
       id: users.id,
       role: users.role,
       githubLogin: users.githubLogin,
+      username: users.username,
       email: users.email,
     })
     .from(users)
@@ -53,6 +57,13 @@ export async function resolveClerkUser(clerkUserId: string): Promise<AppUser | n
     .limit(1);
 
   if (existing) {
+    // Accounts that predate the username column, and any the backfill missed,
+    // get one on their next sign-in. Null is the only case that writes, so the
+    // fast path stays a single query for everybody else.
+    const username =
+      existing.username ??
+      (await ensureUsername(existing.id, { githubLogin: existing.githubLogin }));
+
     // The configuration outranks the row. Without this the guarantee would
     // only hold on first sign-in: anything that lowered the role afterwards —
     // a direct edit, a restored dump — would stick, because this fast path is
@@ -65,6 +76,7 @@ export async function resolveClerkUser(clerkUserId: string): Promise<AppUser | n
         id: existing.id,
         role: "admin",
         githubLogin: existing.githubLogin,
+        username,
         created: false,
       };
     }
@@ -72,6 +84,7 @@ export async function resolveClerkUser(clerkUserId: string): Promise<AppUser | n
       id: existing.id,
       role: existing.role,
       githubLogin: existing.githubLogin,
+      username,
       created: false,
     };
   }
@@ -126,8 +139,16 @@ async function provisionFromClerk(clerkUserId: string): Promise<AppUser | null> 
         ...(isPrimaryAdminEmail(verifiedEmail) ? { role: "admin" as const } : {}),
       })
       .where(eq(users.id, target.id))
-      .returning({ id: users.id, role: users.role, githubLogin: users.githubLogin });
-    return { ...row, created: false };
+      .returning({
+        id: users.id,
+        role: users.role,
+        githubLogin: users.githubLogin,
+        username: users.username,
+      });
+    // An adopted row predates Clerk and may predate the username column too.
+    const username =
+      row.username ?? (await ensureUsername(row.id, { githubLogin: row.githubLogin }));
+    return { ...row, username, created: false };
   }
 
   // Two ways to be an admin before anyone has clicked anything: a configured
@@ -150,7 +171,12 @@ async function provisionFromClerk(clerkUserId: string): Promise<AppUser | null> 
     })
     .returning({ id: users.id, role: users.role, githubLogin: users.githubLogin });
 
-  return { ...row, created: true };
+  // A second write rather than a column on the INSERT above, deliberately: a
+  // handle collision would otherwise abort the whole account creation, and
+  // `ensureUsername` can retry a candidate where an INSERT cannot.
+  const username = await ensureUsername(row.id, { githubLogin: row.githubLogin });
+
+  return { ...row, username, created: true };
 }
 
 /** Re-export so callers do not need to know where the heuristic lives. */

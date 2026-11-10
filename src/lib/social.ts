@@ -14,6 +14,8 @@ export type RepoComment = {
   authorId: string;
   /** NULL when the account has no GitHub connected — render authorName then. */
   authorLogin: string | null;
+  /** The public handle, set for every account. Prefer it for the byline. */
+  authorUsername: string | null;
   authorName: string;
   authorAvatarUrl: string | null;
 };
@@ -40,6 +42,7 @@ export async function getComments(repoId: string): Promise<RepoComment[]> {
       createdAt: repoComments.createdAt,
       authorId: repoComments.userId,
       authorLogin: users.githubLogin,
+      authorUsername: users.username,
       authorName: displayNameSql(),
       authorAvatarUrl: users.avatarUrl,
     })

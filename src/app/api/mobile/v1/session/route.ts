@@ -85,6 +85,7 @@ export async function POST(req: Request) {
   const [row] = await db
     .select({
       githubLogin: users.githubLogin,
+      username: users.username,
       name: users.name,
       avatarUrl: users.avatarUrl,
     })
@@ -99,6 +100,9 @@ export async function POST(req: Request) {
     user: {
       id: user.id,
       githubLogin: row?.githubLogin ?? null,
+      // Resolved by resolveClerkUser above, so this is never null for a
+      // brand-new account: the handle is assigned before the token is minted.
+      username: row?.username ?? user.username,
       name: row?.name ?? null,
       avatarUrl: row?.avatarUrl ?? null,
     },
