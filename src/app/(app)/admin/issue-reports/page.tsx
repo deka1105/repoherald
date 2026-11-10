@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ISSUE_REPORT_CREDITS, ISSUE_VALIDATION_DAYS } from "@/lib/credits";
 import { timeAgo } from "@/lib/utils";
+import { displayNameSql } from "@/lib/display-name";
 
 // The reward queue. "Validate now" runs exactly what the nightly cron would,
 // which is the only way to exercise the payout without waiting out the window.
@@ -17,7 +18,7 @@ export default async function AdminIssueReportsPage() {
   const rows = await db
     .select({
       report: issueReports,
-      reporterLogin: users.githubLogin,
+      reporterLogin: displayNameSql(),
       repoName: repos.fullName,
     })
     .from(issueReports)

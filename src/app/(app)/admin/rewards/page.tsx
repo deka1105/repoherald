@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { socialShares, users } from "@/db/schema";
 import { approveShare, rejectShare } from "@/app/actions/admin";
 import { PLATFORM_LABELS } from "@/lib/shares";
+import { displayNameSql } from "@/lib/display-name";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,7 @@ import {
 
 export default async function AdminRewardsPage() {
   const rows = await db
-    .select({ share: socialShares, login: users.githubLogin })
+    .select({ share: socialShares, login: displayNameSql() })
     .from(socialShares)
     .innerJoin(users, eq(socialShares.userId, users.id))
     .orderBy(desc(socialShares.createdAt))

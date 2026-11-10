@@ -38,12 +38,24 @@ function EligibilityBadge({
 }
 
 /**
- * Not every account has a GitHub login any more, and a row rendering as an
- * empty cell is indistinguishable from a broken query. Admin screens are the
- * one place the address is the most useful handle, and only admins see it.
+ * Who a row is, in one cell.
+ *
+ * The username leads, because every account has one and it is the name this
+ * person is known by everywhere else in the product — the same order
+ * `displayNameSql` uses, so a user reads identically here and in a byline.
+ *
+ * The email address used to be the last resort, on the reasoning that an
+ * admin screen is the one place it is the most useful handle. That stopped
+ * being true the moment every account had a username: showing an address
+ * where a name would do is a quiet privacy cost for no remaining benefit,
+ * and it is still searchable below for the cases that need it.
  */
-function who(u: { githubLogin: string | null; name: string | null; email: string | null }) {
-  return u.githubLogin ?? u.name ?? u.email ?? "—";
+function who(u: {
+  username: string | null;
+  githubLogin: string | null;
+  name: string | null;
+}) {
+  return u.username ?? u.githubLogin ?? u.name ?? "—";
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -140,6 +152,7 @@ export default async function AdminUsersPage({
       .where(
         q
           ? or(
+              ilike(users.username, `%${q}%`),
               ilike(users.githubLogin, `%${q}%`),
               ilike(users.email, `%${q}%`),
               ilike(users.name, `%${q}%`)

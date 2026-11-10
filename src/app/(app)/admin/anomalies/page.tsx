@@ -18,7 +18,7 @@ type MutualPair = {
 };
 
 type HeavyClaimer = {
-  github_login: string;
+  handle: string;
   mints_7d: number;
   revoked_total: number;
   account_age_days: number;
@@ -37,8 +37,8 @@ export default async function AdminAnomaliesPage() {
         GROUP BY sm.user_id, r.posted_by_user_id
       )
       SELECT
-        ua.github_login AS user_a,
-        ub.github_login AS user_b,
+        coalesce(nullif(ua.username, ''), nullif(ua.github_login, ''), nullif(ua.name, ''), 'member') AS user_a,
+        coalesce(nullif(ub.username, ''), nullif(ub.github_login, ''), nullif(ub.name, ''), 'member') AS user_b,
         c1.n::int AS a_to_b,
         c2.n::int AS b_to_a
       FROM claims c1
@@ -51,7 +51,7 @@ export default async function AdminAnomaliesPage() {
     `),
     db.execute(sql`
       SELECT
-        u.github_login,
+        coalesce(nullif(u.username, ''), nullif(u.github_login, ''), nullif(u.name, ''), 'member') AS handle,
         (SELECT count(*) FROM star_mints sm
           WHERE sm.user_id = u.id AND sm.minted_at > now() - interval '7 days')::int AS mints_7d,
         (SELECT count(*) FROM star_mints sm
@@ -126,8 +126,8 @@ export default async function AdminAnomaliesPage() {
               </TableHeader>
               <TableBody>
                 {heavy.map((h) => (
-                  <TableRow key={h.github_login}>
-                    <TableCell>{h.github_login}</TableCell>
+                  <TableRow key={h.handle}>
+                    <TableCell>{h.handle}</TableCell>
                     <TableCell className="text-right">{h.mints_7d}</TableCell>
                     <TableCell className="text-right">{h.revoked_total}</TableCell>
                     <TableCell className="text-right">

@@ -22,6 +22,20 @@ export function displayNameSql(): SQL<string> {
 }
 
 /**
+ * The same handle, but NULL-preserving — for a LEFT JOIN that may not have
+ * matched a user at all.
+ *
+ * `displayNameSql` ends in 'member', which is right for a byline and wrong
+ * here: an audit row written by the cron has no actor, and coalescing it to
+ * 'member' would report a system action as a person's. A support ticket has no
+ * user when a signed-out visitor sent it. Both of those callers test for null
+ * and substitute something truer, so the null has to survive the query.
+ */
+export function userHandleSql(): SQL<string | null> {
+  return sql<string | null>`coalesce(nullif(${users.username}, ''), nullif(${users.githubLogin}, ''), nullif(${users.name}, ''))`;
+}
+
+/**
  * Client-side twin: "@octocat" for anything handle-shaped, a plain name
  * otherwise. Pass the username in preference to the GitHub login — both are
  * handles, and the username is the one every account has.

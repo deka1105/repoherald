@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/db";
 import { reports, repos, users } from "@/db/schema";
 import { resolveReport, setRepoStatus } from "@/app/actions/admin";
+import { displayNameSql } from "@/lib/display-name";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +24,7 @@ export default async function AdminListingsPage() {
   const isAdmin = session?.user?.role === "admin";
   const [listings, openReports] = await Promise.all([
     db
-      .select({ repo: repos, posterLogin: users.githubLogin })
+      .select({ repo: repos, posterLogin: displayNameSql() })
       .from(repos)
       .innerJoin(users, eq(repos.postedByUserId, users.id))
       .orderBy(desc(repos.createdAt))

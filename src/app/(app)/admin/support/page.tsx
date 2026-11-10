@@ -2,6 +2,7 @@ import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { supportTickets, users } from "@/db/schema";
 import { setSupportTicketStatus } from "@/app/actions/admin";
+import { userHandleSql } from "@/lib/display-name";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +16,9 @@ import {
 
 export default async function AdminSupportPage() {
   const rows = await db
-    .select({ ticket: supportTickets, login: users.githubLogin })
+    // NULL-preserving: the Support form accepts messages from signed-out
+    // visitors, so a ticket need not have an account behind it.
+    .select({ ticket: supportTickets, login: userHandleSql() })
     .from(supportTickets)
     .leftJoin(users, eq(supportTickets.userId, users.id))
     .orderBy(desc(supportTickets.createdAt))
@@ -47,14 +50,28 @@ export default async function AdminSupportPage() {
             rows.map(({ ticket, login }) => (
               <TableRow key={ticket.id} className="align-top">
                 <TableCell className="whitespace-nowrap">
-                  <a
-                    href={`mailto:${ticket.email}`}
-                    className="text-sm hover:underline"
-                  >
-                    {ticket.email}
-                  </a>
-                  {login && (
-                    <div className="text-xs text-muted-foreground">@{login}</div>
+                  {/* The handle identifies them; the address is how you answer.
+                      Both are needed here — this page's whole instruction is
+                      "reply by email" — so the username leads and the address
+                      stays one click away. A ticket from a signed-out visitor
+                      has no handle, and then the address is all there is. */}
+                  {login ? (
+                    <>
+                      <div className="text-sm">@{login}</div>
+                      <a
+                        href={`mailto:${ticket.email}`}
+                        className="text-xs text-muted-foreground hover:underline"
+                      >
+                        {ticket.email}
+                      </a>
+                    </>
+                  ) : (
+                    <a
+                      href={`mailto:${ticket.email}`}
+                      className="text-sm hover:underline"
+                    >
+                      {ticket.email}
+                    </a>
                   )}
                 </TableCell>
                 <TableCell className="max-w-md">

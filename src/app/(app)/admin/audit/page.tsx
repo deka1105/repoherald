@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { auditLog, users } from "@/db/schema";
+import { userHandleSql } from "@/lib/display-name";
 import {
   Table,
   TableBody,
@@ -18,7 +19,9 @@ export default async function AdminAuditPage() {
   const session = await auth();
   if (session?.user?.role !== "admin") notFound();
   const rows = await db
-    .select({ entry: auditLog, actorLogin: users.githubLogin })
+    // userHandleSql, not displayNameSql: a row with no actor is the cron,
+    // and it must stay NULL so the actorType shows instead of 'member'.
+    .select({ entry: auditLog, actorLogin: userHandleSql() })
     .from(auditLog)
     .leftJoin(users, eq(auditLog.actorUserId, users.id))
     .orderBy(desc(auditLog.createdAt))

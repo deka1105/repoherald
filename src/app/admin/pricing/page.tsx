@@ -16,6 +16,7 @@ import {
   updateClaimCaps,
 } from "@/app/actions/admin-pricing";
 import { Header } from "@/components/header";
+import { userHandleSql } from "@/lib/display-name";
 import { PlanPrice } from "@/components/plan-price";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,7 +56,7 @@ export default async function AdminPricingPage({
         kind: discountCodes.kind,
         value: discountCodes.value,
         userId: discountCodes.userId,
-        login: users.githubLogin,
+        login: userHandleSql(),
         maxRedemptions: discountCodes.maxRedemptions,
         timesRedeemed: discountCodes.timesRedeemed,
         minAmountCents: discountCodes.minAmountCents,
