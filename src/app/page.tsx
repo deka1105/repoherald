@@ -9,6 +9,7 @@ import { FeedHome } from "@/components/feed-home";
 import { Header } from "@/components/header";
 import { UserCount } from "@/components/user-count";
 import { Landing } from "@/components/landing-live";
+import { ZeroToSalePixel } from "@/components/zero-to-sale-pixel";
 import { CreditNotifier } from "@/components/credit-notifier";
 import { JsonLd } from "@/components/json-ld";
 import { websiteSchema } from "@/lib/schema";
@@ -133,6 +134,7 @@ export default async function HomePage({
           currency: p.currency,
         }))}
       />
+      <ZeroToSalePixel />
     </>
   );
 }

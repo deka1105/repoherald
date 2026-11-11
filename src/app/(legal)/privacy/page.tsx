@@ -89,6 +89,14 @@ export default function PrivacyPage() {
         at all.
       </p>
       <p>
+        The landing page, which only signed-out visitors see, also loads a small page-view pixel
+        from <strong>Zero to Sale</strong>. It sets no cookies and reads nothing from the page: it
+        requests one tiny image when the page loads and one when a form on it is submitted, so
+        what reaches them is that the event happened plus what any web request carries — your IP
+        address and browser details. The same opt-out covers it: with view counting turned off,
+        or Global Privacy Control on, the pixel is never loaded.
+      </p>
+      <p>
         <strong>Google Analytics</strong> runs here as well, and it is the one measurement that
         can use a cookie. Whether it does depends on where you are, because that is what the law
         turns on. In the UK, the EU and the wider EEA it loads with every storage type{" "}
@@ -261,6 +269,15 @@ export default function PrivacyPage() {
               Pages viewed, referrer, browser, device and approximate location, with advertising
               storage denied everywhere; cookieless in the UK, EU and EEA unless you opt in on
               /cookies, cookie-based elsewhere unless you opt out there
+            </td>
+          </tr>
+          <tr>
+            <td>Zero to Sale</td>
+            <td>Counting visits to the landing page</td>
+            <td>
+              That a visit or a form submission happened on the landing page, with the IP address
+              and browser details any web request carries; no cookies, and nothing read from the
+              page
             </td>
           </tr>
           <tr>

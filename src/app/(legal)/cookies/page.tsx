@@ -159,6 +159,11 @@ export default async function CookiesPage() {
         reporting as well, so there is still nothing here you need to accept or refuse.
       </p>
       <p>
+        The landing page also loads Zero to Sale&rsquo;s page-view pixel, which likewise sets no
+        cookies and stores nothing in your browser. The same switch covers it: opting out means the
+        pixel is never loaded.
+      </p>
+      <p>
         This needs no cookie and no consent prompt. We are still giving you the switch, because
         being countable should be your call.
       </p>
