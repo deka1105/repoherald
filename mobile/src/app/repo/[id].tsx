@@ -17,7 +17,6 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import { Stack, useLocalSearchParams } from "expo-router";
 import {
   addToList,
@@ -32,6 +31,7 @@ import {
 import { useAuth } from "@/auth";
 import { useAppState } from "@/app-state";
 import {
+  Avatar,
   Blurb,
   Button,
   Card,
@@ -44,7 +44,7 @@ import {
   Screen,
   timeAgo,
 } from "@/components/ui";
-import { C } from "@/theme";
+import { C, R } from "@/theme";
 
 const COMMENT_MAX = 1000;
 
@@ -172,11 +172,7 @@ export default function RepoScreen() {
       <Stack.Screen options={{ title: repo.name }} />
 
       <View style={styles.head}>
-        {repo.avatarUrl ? (
-          <Image source={{ uri: repo.avatarUrl }} style={styles.avatar} contentFit="cover" />
-        ) : (
-          <View style={[styles.avatar, { backgroundColor: C.line }]} />
-        )}
+        <Avatar uri={repo.avatarUrl} name={repo.name} size={52} />
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>{repo.fullName}</Text>
           {repo.isArchived ? <Text style={styles.archived}>Archived</Text> : null}
@@ -330,7 +326,13 @@ export default function RepoScreen() {
       {data.comments.map((c) => (
         <Card key={c.id}>
           <View style={styles.commentHead}>
-            <Text style={styles.commentAuthor}>
+            <Avatar
+              uri={c.authorAvatarUrl}
+              name={c.authorLogin ?? c.authorName}
+              size={28}
+              radius={14}
+            />
+            <Text style={styles.commentAuthor} numberOfLines={1}>
               {c.authorLogin ? `@${c.authorLogin}` : c.authorName}
             </Text>
             <Text style={styles.commentWhen}>{timeAgo(c.createdAt)}</Text>
@@ -371,7 +373,6 @@ export default function RepoScreen() {
 
 const styles = StyleSheet.create({
   head: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 12 },
-  avatar: { width: 52, height: 52, borderRadius: 13 },
   title: { color: C.text, fontSize: 20, fontWeight: "700" },
   archived: { color: C.dim, fontSize: 12, marginTop: 4, letterSpacing: 0.5 },
   metaRow: {
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.line,
-    borderRadius: 12,
+    borderRadius: R.control,
     padding: 14,
     color: C.text,
     fontSize: 15,
@@ -396,11 +397,10 @@ const styles = StyleSheet.create({
   },
   commentHead: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     gap: 10,
   },
-  commentAuthor: { color: C.text, fontSize: 14, fontWeight: "700" },
+  commentAuthor: { color: C.text, fontSize: 14, fontWeight: "700", flex: 1 },
   commentWhen: { color: C.dim, fontSize: 12 },
   commentBody: { color: C.body, fontSize: 15, lineHeight: 21, marginTop: 8 },
   delete: { color: C.danger, fontSize: 13, marginTop: 12 },

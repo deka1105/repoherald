@@ -5,13 +5,19 @@ describes **this binary only**. Play's policy on deceptive store listings is as
 strict as Apple's and enforced by automated scanning.
 
 **Rewritten 2026-10-23 for versionCode 4, updated 2026-11-05 for
-versionCode 6 (1.1.0).** The app is no longer a single feed: it has seven
-tabs (Explore, Search, **Identify**, Post, Lists, Wallet, Account), so repo
-lists *are* now in the binary and the listing says so. Identify is the one
-screen the website does not put in a phone tab bar. Still **not** in it, and still
-absent from this listing: sponsorship, buying credits, spending credits, and
+versionCode 6 (1.1.0).** The app is no longer a single feed: repo lists *are*
+in the binary and the listing says so. Identify is the one screen the website
+does not put in a phone tab bar. Still **not** in it, and still absent from
+this listing: sponsorship, buying credits, spending credits, and
 Instagram/TikTok ingest (claiming a handle happens on the web; the app only
 shows the lists that ingest fills).
+
+**1.2.0 (2026-11-15)** moved things without removing any: the bar is four
+native Material 3 tabs (Explore, Search, Lists, Account) with the pill
+indicator and, on Android 12+, the wallpaper's accent. Post is the **Post**
+floating action button on Explore, Identify is reached from Search, and Wallet
+is the first row of Account and the credit chip on Explore. The description
+below never named the tabs, so it still holds.
 
 Shares `app.json`, the API and the codebase with iOS. Differences from
 `APPSTORE.md` are called out; where this file is silent, the iOS answer applies.

@@ -1,11 +1,16 @@
 /**
- * Account — who you are, the block list, the policies, and deletion.
+ * Account — who you are, your wallet, the block list, the policies, and
+ * deletion.
  *
  * The delete control is the reason this screen cannot be an afterthought.
  * App Store Guideline 5.1.1(v) requires an app that supports account creation
  * to also support account deletion from inside the app — pointing at the
  * website is an explicit rejection — and it has to be reachable, not buried.
  * It is one tab away from everything.
+ *
+ * The Wallet lives under here rather than as a tab of its own: it is
+ * read-only and visited rarely, and the credit chip on Explore opens it
+ * directly for the one moment someone wants it.
  *
  * There is deliberately no way to *buy* credits here. Selling a digital
  * currency outside In-App Purchase breaks Guideline 3.1.1, and even linking
@@ -21,10 +26,11 @@ import {
   Text,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import {
+  Avatar,
   Blurb,
   Button,
   ErrorText,
@@ -34,7 +40,7 @@ import {
   Row,
   Screen,
 } from "@/components/ui";
-import { C } from "@/theme";
+import { C, R } from "@/theme";
 import {
   ABOUT_URL,
   COOKIES_URL,
@@ -84,19 +90,17 @@ export default function AccountScreen() {
     );
   };
 
+  const displayName = me?.name ?? me?.githubLogin ?? "Signed in";
+
   return (
     <Screen>
       {me ? (
         <>
           <View style={styles.identity}>
-            {me.avatarUrl ? (
-              <Image source={{ uri: me.avatarUrl }} style={styles.avatar} contentFit="cover" />
-            ) : (
-              <View style={[styles.avatar, { backgroundColor: C.line }]} />
-            )}
+            <Avatar uri={me.avatarUrl} name={displayName} size={56} radius={R.avatar} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name} numberOfLines={1}>
-                {me.name ?? me.githubLogin ?? "Signed in"}
+                {displayName}
               </Text>
               {me.githubLogin ? (
                 <Text style={styles.handle} numberOfLines={1}>
@@ -106,8 +110,27 @@ export default function AccountScreen() {
             </View>
           </View>
 
-          <Row label="Credits" value={me.creditBalance} />
-          <Row label="Can earn credits" value={me.mintEligible ? "Yes" : "Not yet"} />
+          <Pressable
+            onPress={() => router.push("/wallet")}
+            style={({ pressed }) => [styles.wallet, pressed && { opacity: 0.85 }]}
+            android_ripple={{ color: "rgba(255,255,255,0.06)", foreground: true }}
+            accessibilityRole="button"
+            accessibilityLabel={`Wallet, ${me.creditBalance} ${me.creditBalance === 1 ? "credit" : "credits"}`}
+            accessibilityHint="Opens your wallet and credit history">
+            <View style={styles.walletIcon}>
+              <Ionicons name="wallet-outline" size={20} color={C.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.walletTitle}>Wallet</Text>
+              <Text style={styles.walletSub}>
+                {me.mintEligible
+                  ? "Credits earned for verified stars"
+                  : "Not yet eligible to earn credits"}
+              </Text>
+            </View>
+            <Text style={styles.walletBalance}>{me.creditBalance}</Text>
+            <Ionicons name="chevron-forward" size={18} color={C.faint} />
+          </Pressable>
         </>
       ) : (
         <>
@@ -126,8 +149,8 @@ export default function AccountScreen() {
       <Heading>Blocked accounts</Heading>
       {blocked.length === 0 ? (
         <Blurb>
-          You haven&rsquo;t blocked anyone. Tap &bull;&bull;&bull; on any repo
-          to report it or block the account that posted it.
+          You haven&rsquo;t blocked anyone. Open the &bull;&bull;&bull; menu on
+          any repo to report it or block the account that posted it.
         </Blurb>
       ) : (
         blocked.map((owner) => (
@@ -213,9 +236,31 @@ export default function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  identity: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 8 },
-  avatar: { width: 56, height: 56, borderRadius: 14 },
+  identity: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 },
   name: { color: C.text, fontSize: 18, fontWeight: "700" },
   handle: { color: C.dim, fontSize: 14, marginTop: 2 },
+  wallet: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: C.card,
+    borderRadius: R.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.line,
+    padding: 14,
+    minHeight: 64,
+    overflow: "hidden",
+  },
+  walletIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(157,120,255,0.14)",
+  },
+  walletTitle: { color: C.text, fontSize: 15, fontWeight: "700" },
+  walletSub: { color: C.dim, fontSize: 12, marginTop: 2 },
+  walletBalance: { color: C.text, fontSize: 20, fontWeight: "800" },
   unblock: { color: C.accent, fontSize: 15, fontWeight: "600" },
 });

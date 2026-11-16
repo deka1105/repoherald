@@ -13,11 +13,16 @@
  * a 200-item list is well past what is worth filtering on the device, and the
  * note is searched alongside the repo's own fields, which is the part that
  * matters: a line on why a repo is there is the likeliest thing to remember.
+ *
+ * On iOS the search field is the system's: on 26 it sits in a bottom toolbar
+ * where the thumbs are, before 26 under the title. Android keeps a Material
+ * field at the top of the content. Removing a repo is behind the card's
+ * overflow menu rather than a red control on every row.
  */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Pressable,
+  Platform,
   RefreshControl,
   StyleSheet,
   Text,
@@ -25,6 +30,7 @@ import {
   View,
 } from "react-native";
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   addToList,
   ApiError,
@@ -32,9 +38,10 @@ import {
   getList,
   removeListItem,
   type ListDetail,
+  type ListItem,
 } from "@/api";
 import { useAppState } from "@/app-state";
-import { RepoCard } from "@/components/repo-card";
+import { RepoCard, repoName } from "@/components/repo-card";
 import {
   Blurb,
   Button,
@@ -44,8 +51,9 @@ import {
   Loading,
   Notice,
   Screen,
+  Segments,
 } from "@/components/ui";
-import { C } from "@/theme";
+import { C, LIQUID_GLASS } from "@/theme";
 
 /** Same as the Search tab: a request a keystroke is a request a keystroke. */
 const DEBOUNCE_MS = 300;
@@ -148,6 +156,9 @@ export default function ListScreen() {
   // Under the floor the query is ignored rather than refused, matching the
   // server: a stray single character shows the list, not an error.
   const searching = canFilter && query.trim().length >= (limits.searchMin ?? 2);
+  // Shown once there is something to look through, and kept while a search is
+  // active so a no-match query can be cleared.
+  const showControls = canFilter && (items.length > 0 || searching);
 
   const confirmDelete = () =>
     Alert.alert(
@@ -170,6 +181,25 @@ export default function ListScreen() {
       ]
     );
 
+  /** The card's overflow menu: remove (where allowed) ahead of report/block. */
+  const openMenu = (item: ListItem) =>
+    moderate(
+      item.repo,
+      item.canRemove
+        ? [
+            {
+              label: "Remove from this list",
+              hint: "Takes it off the list. The repo itself is untouched.",
+              destructive: true,
+              onPress: () =>
+                removeListItem(list.slug, item.itemId)
+                  .then(() => load(query, sort))
+                  .catch(() => setError("Couldn't remove that.")),
+            },
+          ]
+        : []
+    );
+
   return (
     <Screen
       refreshControl={
@@ -183,6 +213,29 @@ export default function ListScreen() {
         />
       }>
       <Stack.Screen options={{ title: list.title }} />
+
+      {Platform.OS === "ios" && showControls ? (
+        <>
+          {/* iOS 26: a bottom toolbar whose only item is the search field, so
+              it lands where the thumbs are. The slot is ignored before 26. */}
+          {LIQUID_GLASS ? (
+            <Stack.Toolbar placement="bottom">
+              <Stack.Toolbar.SearchBarSlot />
+            </Stack.Toolbar>
+          ) : null}
+          <Stack.SearchBar
+            placeholder="Name, language, or your note"
+            placement={LIQUID_GLASS ? "integrated" : "stacked"}
+            onChangeText={(e) => setQuery(e.nativeEvent.text)}
+            onCancelButtonPress={() => setQuery("")}
+            autoCapitalize="none"
+            hideWhenScrolling={false}
+            textColor={C.text}
+            hintTextColor={C.dim}
+            tintColor={C.accent}
+          />
+        </>
+      ) : null}
 
       {list.description ? <Blurb>{list.description}</Blurb> : null}
       <View style={styles.meta}>
@@ -202,44 +255,31 @@ export default function ListScreen() {
         </Text>
       </View>
 
-      {/* Shown once there is something to look through, and kept while a
-          search is active so a no-match query can be cleared. */}
-      {canFilter && (items.length > 0 || searching) ? (
+      {showControls ? (
         <View style={styles.controls}>
-          <TextInput
-            style={styles.search}
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search this list — name, language, or your note"
-            placeholderTextColor={C.dim}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-            keyboardAppearance="dark"
-            clearButtonMode="while-editing"
-            accessibilityLabel="Search this list"
+          {Platform.OS === "android" ? (
+            <View>
+              <Ionicons name="search" size={18} color={C.dim} style={styles.searchGlyph} />
+              <TextInput
+                style={styles.search}
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Name, language, or your note"
+                placeholderTextColor={C.dim}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+                keyboardAppearance="dark"
+                accessibilityLabel="Search this list"
+              />
+            </View>
+          ) : null}
+          <Segments
+            options={sorts.map((o) => ({ key: o.key, label: o.label }))}
+            value={sort}
+            onChange={setSort}
+            label="Sort"
           />
-          <View style={styles.sorts}>
-            {sorts.map((option) => {
-              const active = sort === option.key;
-              return (
-                <Pressable
-                  key={option.key}
-                  onPress={() => setSort(option.key)}
-                  // The pill is ~34pt tall, so hitSlop carries it to the 44pt
-                  // touch floor without a taller box crowding the row.
-                  hitSlop={6}
-                  style={[styles.sortPill, active && styles.sortPillActive]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  accessibilityLabel={`Sort by ${option.label}`}>
-                  <Text style={[styles.sortText, active && styles.sortTextActive]}>
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
         </View>
       ) : null}
 
@@ -263,21 +303,13 @@ export default function ListScreen() {
             repo={item.repo}
             note={item.note}
             source={item.source}
-            onMore={moderate}
-            footer={
-              item.canRemove ? (
-                <Text
-                  style={styles.remove}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${item.repo.fullName} from this list`}
-                  onPress={() =>
-                    removeListItem(list.slug, item.itemId)
-                      .then(() => load(query, sort))
-                      .catch(() => setError("Couldn't remove that."))
-                  }>
-                  Remove
-                </Text>
-              ) : null
+            addedBy={item.addedByLogin}
+            addedAt={item.addedAt}
+            onMore={() => openMenu(item)}
+            moreLabel={
+              item.canRemove
+                ? `Options for ${repoName(item.repo.fullName)}: remove, report or block`
+                : `Options for ${repoName(item.repo.fullName)}: report or block`
             }
           />
         ))
@@ -350,30 +382,19 @@ const styles = StyleSheet.create({
   meta: { flexDirection: "row", flexWrap: "wrap", gap: 14, marginVertical: 14 },
   metaText: { color: C.dim, fontSize: 13 },
   controls: { marginBottom: 14, gap: 10 },
+  searchGlyph: { position: "absolute", left: 14, top: 15, zIndex: 1 },
   search: {
     backgroundColor: C.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.line,
-    borderRadius: 12,
-    paddingHorizontal: 14,
+    borderRadius: 999,
+    paddingLeft: 42,
+    paddingRight: 16,
     paddingVertical: 12,
     color: C.text,
     fontSize: 16,
-    minHeight: 46,
+    minHeight: 48,
   },
-  sorts: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  sortPill: {
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: C.line,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: C.card,
-  },
-  sortPillActive: { borderColor: C.accent, backgroundColor: C.accent },
-  sortText: { color: C.body, fontSize: 13 },
-  sortTextActive: { color: "#120b24", fontWeight: "700" },
   matches: { color: C.dim, fontSize: 13, marginBottom: 12 },
-  remove: { color: C.danger, fontSize: 13 },
   ok: { color: C.accent, fontSize: 14, marginTop: 12 },
 });

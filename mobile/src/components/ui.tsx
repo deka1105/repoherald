@@ -2,8 +2,14 @@
  * The small set of primitives every screen is built from.
  *
  * Deliberately hand-rolled rather than a component library: the app is dark
- * only, six screens wide, and a dependency here would be a native module to
- * keep in step with every Expo SDK bump for the sake of a button.
+ * only, a handful of screens wide, and a dependency here would be a native
+ * module to keep in step with every Expo SDK bump for the sake of a button.
+ *
+ * What *is* native is the chrome around these: tab bar, navigation bars and
+ * the iOS search field come from the system (see `(tabs)/_layout.tsx`), so
+ * Liquid Glass on iOS 26 and Material 3 on Android arrive without a second
+ * visual system being maintained here. These primitives only have to look
+ * right *inside* a card.
  */
 import React from "react";
 import {
@@ -17,9 +23,20 @@ import {
   TextInput,
   type TextInputProps,
   View,
+  type ColorValue,
+  type ImageStyle,
+  type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { C, CONTENT_MAX_WIDTH } from "@/theme";
+import { Image } from "expo-image";
+import { GlassView } from "expo-glass-effect";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+// Its own entry point, not the package root: the root re-exports every icon
+// set and Metro then bundles ~3MB of fonts for the sake of a few glyphs.
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { C, CONTENT_MAX_WIDTH, LIQUID_GLASS, R } from "@/theme";
+
+export type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 /** The reading column. Caps width on iPad, where app.json keeps
  *  `supportsTablet: true` and the app is reviewed on a 13" screen. */
@@ -33,6 +50,16 @@ export function Column({
   return <View style={[styles.column, style]}>{children}</View>;
 }
 
+/**
+ * A scrolling page.
+ *
+ * `contentInsetAdjustmentBehavior="automatic"` is what lets the iOS header be
+ * glass: the bar is transparent and floats, and the scroll view asks UIKit how
+ * far down to start so content begins under the title and slides beneath it.
+ * Inside the native tabs it also clears the tab bar. Android bars are solid
+ * and sit outside the content, so there the only inset to add by hand is the
+ * system navigation bar on an edge-to-edge device.
+ */
 export function Screen({
   children,
   scroll = true,
@@ -42,14 +69,20 @@ export function Screen({
   scroll?: boolean;
   refreshControl?: React.ReactElement<RefreshControlProps>;
 }) {
+  const insets = useSafeAreaInsets();
   if (!scroll) {
     return <View style={styles.screen}>{children}</View>;
   }
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={styles.scrollBody}
+      contentContainerStyle={[
+        styles.scrollBody,
+        { paddingBottom: 24 + (Platform.OS === "android" ? insets.bottom : 0) },
+      ]}
+      contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
       refreshControl={refreshControl}>
       <Column>{children}</Column>
     </ScrollView>
@@ -111,6 +144,15 @@ export function Row({
   );
 }
 
+/**
+ * The button.
+ *
+ * A disabled primary is grey, not a faded purple. Fading the brand colour
+ * reads as "purple, but dim" — indistinguishable at a glance from an enabled
+ * button on a dark screen — so a form whose submit was waiting on input looked
+ * broken before anyone typed. Grey with grey text can only mean "not yet", and
+ * the moment the form is valid it snaps to full brightness.
+ */
 export function Button({
   label,
   onPress,
@@ -126,15 +168,20 @@ export function Button({
   busy?: boolean;
   accessibilityLabel?: string;
 }) {
+  const off = Boolean(disabled) && !busy;
   const box =
     variant === "primary"
-      ? styles.btnPrimary
+      ? off
+        ? styles.btnPrimaryOff
+        : styles.btnPrimary
       : variant === "destructive"
         ? styles.btnDestructive
         : styles.btnSecondary;
   const text =
     variant === "primary"
-      ? styles.btnPrimaryText
+      ? off
+        ? styles.btnPrimaryTextOff
+        : styles.btnPrimaryText
       : variant === "destructive"
         ? styles.btnDestructiveText
         : styles.btnSecondaryText;
@@ -144,7 +191,7 @@ export function Button({
       style={({ pressed }) => [
         styles.btn,
         box,
-        (disabled || busy) && styles.btnDisabled,
+        off && variant !== "primary" && styles.btnFaded,
         pressed && !disabled && !busy && styles.btnPressed,
       ]}
       onPress={onPress}
@@ -153,10 +200,39 @@ export function Button({
       accessibilityState={{ disabled: Boolean(disabled || busy), busy }}
       accessibilityLabel={accessibilityLabel ?? label}>
       {busy ? (
-        <ActivityIndicator color={variant === "primary" ? C.bg : C.text} />
+        <ActivityIndicator color={variant === "primary" ? C.onAccent : C.text} />
       ) : (
         <Text style={text}>{label}</Text>
       )}
+    </Pressable>
+  );
+}
+
+/** A 44pt square tap target around a single glyph. */
+export function IconButton({
+  name,
+  label,
+  onPress,
+  color = C.dim,
+  size = 20,
+  style,
+}: {
+  name: IoniconName;
+  /** Spoken by VoiceOver and TalkBack; the glyph itself says nothing. */
+  label: string;
+  onPress: () => void;
+  color?: ColorValue;
+  size?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={4}
+      style={({ pressed }) => [styles.iconBtn, pressed && styles.btnPressed, style]}
+      accessibilityRole="button"
+      accessibilityLabel={label}>
+      <Ionicons name={name} size={size} color={color} />
     </Pressable>
   );
 }
@@ -218,6 +294,178 @@ export function Pill({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * A toggleable chip, for picking several from a set (the Post screen's
+ * categories). For picking exactly one, use `Segments`.
+ */
+export function Chip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      // The chip is 36pt tall; the slop carries it to the 44pt touch floor
+      // without a taller box crowding the row.
+      hitSlop={4}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipOn,
+        pressed && styles.btnPressed,
+      ]}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: selected }}
+      accessibilityLabel={label}>
+      {selected ? (
+        <Ionicons name="checkmark" size={14} color={C.onAccent} />
+      ) : null}
+      <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * A single-choice control that never wraps.
+ *
+ * Sort options used to be free-floating pills in a wrapping row, so on a
+ * narrow phone the last one orphaned onto a second line. These sit in one
+ * horizontally scrolling row instead, drawn the way each platform draws its
+ * own: on iOS a capsule container (Liquid Glass on 26, a plain capsule
+ * before it) with the selection filled, and on Android a Material 3 connected
+ * button group — adjoining segments with a 2dp gap, the selected one rounding
+ * out to a pill.
+ */
+export function Segments<T extends string | undefined>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: readonly { key: T; label: string }[];
+  value: T;
+  onChange: (key: T) => void;
+  /** What is being chosen, for screen readers: "Sort". */
+  label: string;
+}) {
+  const ios = Platform.OS === "ios";
+  const last = options.length - 1;
+  const items = options.map((o, i) => {
+    const on = o.key === value;
+    return (
+      <Pressable
+        key={o.label}
+        onPress={() => onChange(o.key)}
+        hitSlop={4}
+        style={({ pressed }) => [
+          ios ? styles.segIos : styles.segAndroid,
+          // The group's outer corners are full pills; only the seams between
+          // segments are the tighter radius.
+          !ios && i === 0 && styles.segAndroidFirst,
+          !ios && i === last && styles.segAndroidLast,
+          on && (ios ? styles.segIosOn : styles.segAndroidOn),
+          pressed && !on && styles.btnPressed,
+        ]}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: on }}
+        accessibilityLabel={`${label}: ${o.label}`}>
+        <Text style={[styles.segText, on && styles.segTextOn]}>{o.label}</Text>
+      </Pressable>
+    );
+  });
+
+  let group: React.ReactNode;
+  if (!ios) {
+    group = <View style={styles.segGroupAndroid}>{items}</View>;
+  } else if (LIQUID_GLASS) {
+    group = (
+      <GlassView glassEffectStyle="regular" style={styles.segGroupGlass}>
+        {items}
+      </GlassView>
+    );
+  } else {
+    group = <View style={styles.segGroupIos}>{items}</View>;
+  }
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      // Never bounces past the tab bar's edge-fade: these are controls, not
+      // content, and an over-scroll here reads as a broken row.
+      bounces={false}
+      contentContainerStyle={styles.segScroll}
+      accessibilityRole="tablist"
+      accessibilityLabel={label}>
+      {group}
+    </ScrollView>
+  );
+}
+
+/**
+ * A repo or account avatar, with a real fallback.
+ *
+ * GitHub serves an avatar for every owner, but a listing can arrive without
+ * one, and a flat grey square next to cards that all have logos reads as an
+ * image that failed to load. The fallback is the first letter on a tint
+ * derived from the name, so it is stable across renders and distinct between
+ * neighbours. Letter contrast on the tint is 7:1 or better at every hue — the
+ * lightness is fixed and only the hue moves.
+ */
+export function Avatar({
+  uri,
+  name,
+  size = 38,
+  radius = R.avatar,
+  style,
+}: {
+  uri: string | null | undefined;
+  name: string;
+  size?: number;
+  radius?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const box = { width: size, height: size, borderRadius: Math.min(radius, size / 2) };
+  if (uri) {
+    return (
+      <Image
+        source={{ uri }}
+        // expo-image types its style as ImageStyle; the layout props callers
+        // pass (margins, flex) are common to both.
+        style={[box, style as StyleProp<ImageStyle>]}
+        contentFit="cover"
+        // Disk-cached by default; the recycling key lets a FlatList reuse the
+        // native view for a different repo without flashing the old logo.
+        recyclingKey={uri}
+        transition={120}
+        accessible={false}
+      />
+    );
+  }
+  const initial = (name.trim().replace(/^[^a-z0-9]+/i, "")[0] ?? "?").toUpperCase();
+  return (
+    <View
+      style={[box, styles.avatarFallback, { backgroundColor: tint(name) }, style]}
+      accessible={false}>
+      <Text style={[styles.avatarInitial, { fontSize: Math.round(size * 0.44) }]}>
+        {initial}
+      </Text>
+    </View>
+  );
+}
+
+/** A dark, saturated hue picked from the string — the same name always gets
+ *  the same colour. Lightness is fixed at 32% so white text clears 7:1. */
+function tint(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return `hsl(${h % 360}, 42%, 32%)`;
+}
+
 /** "3 days ago" — the same shape the web's `timeAgo` renders. */
 export function timeAgo(iso: string | Date): string {
   const then = typeof iso === "string" ? Date.parse(iso) : iso.getTime();
@@ -237,11 +485,7 @@ export function timeAgo(iso: string | Date): string {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: C.bg },
-  scrollBody: {
-    padding: 16,
-    // Clears the tab bar, which overlays the end of a scroll view.
-    paddingBottom: Platform.OS === "android" ? 112 : 96,
-  },
+  scrollBody: { padding: 16 },
   column: { width: "100%", maxWidth: CONTENT_MAX_WIDTH, alignSelf: "center" },
   centre: { flex: 1, alignItems: "center", justifyContent: "center", padding: 40 },
   heading: {
@@ -258,7 +502,7 @@ const styles = StyleSheet.create({
   error: { color: C.danger, fontSize: 14, marginTop: 12, lineHeight: 20 },
   card: {
     backgroundColor: C.card,
-    borderRadius: 14,
+    borderRadius: R.card,
     padding: 16,
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
@@ -276,18 +520,20 @@ const styles = StyleSheet.create({
   rowLabel: { color: C.body, fontSize: 15, flexShrink: 1 },
   rowValue: { color: C.text, fontSize: 15, fontWeight: "600" },
   btn: {
-    borderRadius: 12,
+    borderRadius: R.pill,
     paddingVertical: 14,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 12,
     minHeight: 48,
   },
   btnPressed: { opacity: 0.75 },
-  btnDisabled: { opacity: 0.45 },
+  btnFaded: { opacity: 0.45 },
   btnPrimary: { backgroundColor: C.accent },
-  btnPrimaryText: { color: "#120b24", fontSize: 16, fontWeight: "700" },
+  btnPrimaryText: { color: C.onAccent, fontSize: 16, fontWeight: "700" },
+  btnPrimaryOff: { backgroundColor: C.line },
+  btnPrimaryTextOff: { color: C.dim, fontSize: 16, fontWeight: "700" },
   btnSecondary: {
     backgroundColor: C.card,
     borderWidth: StyleSheet.hairlineWidth,
@@ -299,6 +545,13 @@ const styles = StyleSheet.create({
     borderColor: C.danger,
   },
   btnDestructiveText: { color: C.danger, fontSize: 16, fontWeight: "600" },
+  iconBtn: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+  },
   field: { marginTop: 16 },
   fieldLabel: {
     color: C.body,
@@ -310,7 +563,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.line,
-    borderRadius: 12,
+    borderRadius: R.control,
     paddingHorizontal: 14,
     paddingVertical: 13,
     color: C.text,
@@ -318,14 +571,72 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   hint: { color: C.dim, fontSize: 12, lineHeight: 17, marginTop: 6 },
-  linkRow: { paddingVertical: 13 },
+  linkRow: { paddingVertical: 13, minHeight: 44, justifyContent: "center" },
   linkText: { color: C.accent, fontSize: 15 },
   pill: {
-    borderRadius: 999,
+    borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.line,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   pillText: { color: C.dim, fontSize: 12 },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: R.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.line,
+    backgroundColor: C.card,
+    paddingHorizontal: 14,
+    minHeight: 36,
+  },
+  chipOn: { backgroundColor: C.accent, borderColor: C.accent },
+  chipText: { color: C.body, fontSize: 13, fontWeight: "600" },
+  chipTextOn: { color: C.onAccent },
+  segScroll: { flexGrow: 1, paddingRight: 4 },
+  segGroupIos: {
+    flexDirection: "row",
+    backgroundColor: C.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.line,
+    borderRadius: R.pill,
+    padding: 3,
+  },
+  segGroupGlass: {
+    flexDirection: "row",
+    borderRadius: R.pill,
+    overflow: "hidden",
+    padding: 3,
+  },
+  segIos: {
+    paddingHorizontal: 14,
+    minHeight: 32,
+    justifyContent: "center",
+    borderRadius: R.pill,
+  },
+  segIosOn: { backgroundColor: C.accent },
+  segGroupAndroid: { flexDirection: "row", gap: 2 },
+  segAndroid: {
+    paddingHorizontal: 16,
+    minHeight: 38,
+    justifyContent: "center",
+    backgroundColor: C.card,
+    borderRadius: 8,
+  },
+  segAndroidFirst: { borderTopLeftRadius: R.pill, borderBottomLeftRadius: R.pill },
+  segAndroidLast: { borderTopRightRadius: R.pill, borderBottomRightRadius: R.pill },
+  segAndroidOn: {
+    backgroundColor: C.accent,
+    borderRadius: R.pill,
+    borderTopLeftRadius: R.pill,
+    borderBottomLeftRadius: R.pill,
+    borderTopRightRadius: R.pill,
+    borderBottomRightRadius: R.pill,
+  },
+  segText: { color: C.body, fontSize: 13, fontWeight: "600" },
+  segTextOn: { color: C.onAccent, fontWeight: "700" },
+  avatarFallback: { alignItems: "center", justifyContent: "center" },
+  avatarInitial: { color: "#ffffff", fontWeight: "700" },
 });

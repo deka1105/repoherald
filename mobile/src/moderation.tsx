@@ -24,12 +24,29 @@ import { C, ANDROID_TOP_INSET } from "./theme";
 
 type Step = "menu" | "reasons" | "reported" | "blocked";
 
+/**
+ * An action a screen adds to the top of the options menu for one repo.
+ *
+ * This is how "Remove from this list" left the card: a red inline control on
+ * every row was noisy and easy to hit by accident, and a destructive action
+ * belongs one deliberate tap further away, alongside report and block.
+ */
+export type SheetAction = {
+  label: string;
+  /** One line under the label saying what happens. */
+  hint?: string;
+  destructive?: boolean;
+  onPress: () => void | Promise<void>;
+};
+
 export function ModerationSheet({
   repo,
+  actions = [],
   onClose,
   onBlocked,
 }: {
   repo: RepoSummary | null;
+  actions?: SheetAction[];
   onClose: () => void;
   /**
    * Receives the canonical list straight from the store, not the owner string.
@@ -112,6 +129,27 @@ export function ModerationSheet({
 
           {step === "menu" ? (
             <>
+              {actions.map((a) => (
+                <Pressable
+                  key={a.label}
+                  style={styles.action}
+                  disabled={busy}
+                  onPress={() => {
+                    // The sheet closes first so the screen's own feedback
+                    // (a removed card, an error line) is not hidden behind it.
+                    close();
+                    void a.onPress();
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={a.label}>
+                  <Text
+                    style={[styles.actionText, a.destructive && { color: C.danger }]}>
+                    {a.label}
+                  </Text>
+                  {a.hint ? <Text style={styles.actionHint}>{a.hint}</Text> : null}
+                </Pressable>
+              ))}
+
               <Pressable
                 style={styles.action}
                 onPress={() => setStep("reasons")}

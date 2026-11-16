@@ -4,9 +4,9 @@
  *
  * Both sheets live at the root rather than inside each screen. Sign-in can be
  * reached from the repo screen, the lists tab, the wallet and the account tab;
- * reporting can be reached from every card in three different lists. Mounting
- * one copy of each here means a screen only has to ask, and the sheet is never
- * fighting a navigation transition for the same bit of UI.
+ * the options sheet can be reached from every card in three different lists.
+ * Mounting one copy of each here means a screen only has to ask, and the sheet
+ * is never fighting a navigation transition for the same bit of UI.
  */
 import React, {
   createContext,
@@ -17,9 +17,11 @@ import React, {
   useState,
 } from "react";
 import { SignInSheet } from "@/signin";
-import { ModerationSheet } from "@/moderation";
+import { ModerationSheet, type SheetAction } from "@/moderation";
 import { isBlocked, loadBlocked } from "@/blocks";
 import type { RepoSummary } from "@/api";
+
+export type { SheetAction };
 
 type AppState = {
   /** Owner logins this device has blocked, lower-cased. */
@@ -28,7 +30,13 @@ type AppState = {
   /** True when a listing's owner is on this device's block list. */
   hidden: (fullName: string) => boolean;
   promptSignIn: () => void;
-  moderate: (repo: RepoSummary) => void;
+  /**
+   * Open the options sheet for a repo. Report and block are always there;
+   * a screen adds its own actions ahead of them — "Remove from list" on a
+   * list you can edit — so destructive controls live behind one menu rather
+   * than inline on every card.
+   */
+  moderate: (repo: RepoSummary, actions?: SheetAction[]) => void;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -42,7 +50,10 @@ export function useAppState() {
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
   const [blocked, setBlocked] = useState<string[]>([]);
   const [signingIn, setSigningIn] = useState(false);
-  const [moderating, setModerating] = useState<RepoSummary | null>(null);
+  const [moderating, setModerating] = useState<{
+    repo: RepoSummary;
+    actions: SheetAction[];
+  } | null>(null);
 
   // Read once at launch; every later change comes back through the sheets, so
   // no screen ever has to hit the disk again.
@@ -56,7 +67,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       setBlocked,
       hidden: (fullName: string) => isBlocked(fullName, blocked),
       promptSignIn: () => setSigningIn(true),
-      moderate: (repo: RepoSummary) => setModerating(repo),
+      moderate: (repo: RepoSummary, actions: SheetAction[] = []) =>
+        setModerating({ repo, actions }),
     }),
     [blocked]
   );
@@ -69,7 +81,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       {children}
       <SignInSheet visible={signingIn} onClose={closeSignIn} />
       <ModerationSheet
-        repo={moderating}
+        repo={moderating?.repo ?? null}
+        actions={moderating?.actions ?? []}
         onClose={closeModeration}
         onBlocked={setBlocked}
       />

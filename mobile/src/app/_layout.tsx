@@ -9,6 +9,13 @@
  * flow. Selling a digital currency outside In-App Purchase is a Guideline
  * 3.1.1 rejection, so purchasing stays on the web — and the app does not link
  * to it either.
+ *
+ * Structure: the four tabs live in `(tabs)`, each with a Stack of its own so it
+ * carries a native header. Everything that is reached *from* a tab rather than
+ * being one — a repo, a list, the wallet, posting, identifying, support — is a
+ * screen on this root Stack, pushed over the tab bar. Paths are unchanged from
+ * when Wallet, Post and Identify were tabs (`/wallet`, `/post`, `/identify`),
+ * so no deep link moved.
  */
 import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -19,7 +26,7 @@ import { tokenCache } from "@clerk/expo/token-cache";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/auth";
 import { AppStateProvider } from "@/app-state";
-import { NAV_THEME } from "@/theme";
+import { NAV_THEME, STACK_SCREEN_OPTIONS } from "@/theme";
 import { CLERK_PUBLISHABLE_KEY } from "@/config";
 
 // Held until Clerk has decided whether this launch is signed in, so the app
@@ -35,25 +42,18 @@ function Navigator() {
   }, [loading]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: NAV_THEME.colors.background },
-        headerTintColor: NAV_THEME.colors.primary as string,
-        headerTitleStyle: { color: NAV_THEME.colors.text as string },
-        contentStyle: { backgroundColor: NAV_THEME.colors.background },
-      }}>
-      {/* The tab bar is the app's chrome; a stack header above it would be a
-          second title bar saying the same thing. The title is still needed:
-          a pushed screen's back button takes its label from the screen it came
-          from, and without one the button reads "(tabs)" — the route group's
-          folder name, leaking into the UI on every repo, list and support
-          screen. */}
-      <Stack.Screen
-        name="(tabs)"
-        options={{ headerShown: false, title: "Back" }}
-      />
+    <Stack screenOptions={STACK_SCREEN_OPTIONS}>
+      {/* Each tab draws its own header, so the root draws none over them. The
+          title is still needed: a pushed screen's back button takes its label
+          from the screen it came from, and without one the button reads
+          "(tabs)" — the route group's folder name, leaking into the UI on
+          every repo, list and support screen. */}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false, title: "Back" }} />
       <Stack.Screen name="repo/[id]" options={{ title: "Repo" }} />
       <Stack.Screen name="list/[slug]" options={{ title: "List" }} />
+      <Stack.Screen name="wallet" options={{ title: "Wallet" }} />
+      <Stack.Screen name="post" options={{ title: "Post a repo" }} />
+      <Stack.Screen name="identify" options={{ title: "Identify" }} />
       <Stack.Screen name="support" options={{ title: "Support" }} />
     </Stack>
   );

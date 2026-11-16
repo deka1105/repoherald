@@ -8,6 +8,9 @@
  *
  * Credits are still *earned* here: star a repo on GitHub, claim it on the
  * repo screen, and the entry appears in this ledger.
+ *
+ * Reached from Account and from the credit chip on Explore, not from the tab
+ * bar: a read-only ledger visited now and then did not earn one of five slots.
  */
 import React, { useCallback, useState } from "react";
 import { Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
@@ -64,7 +67,6 @@ export default function WalletScreen() {
   if (!me) {
     return (
       <Screen>
-        <Heading>Wallet</Heading>
         <Blurb>
           Star a repo on GitHub, claim it here, and you earn a credit. Sign in
           to start.

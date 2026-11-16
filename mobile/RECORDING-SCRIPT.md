@@ -8,6 +8,10 @@ when the app was a single feed: it told you to tap `•••` *in the header* a
 said a card tap opens Safari. Neither is true any more — Account is a tab, and
 a card opens the repo screen.
 
+**Updated 2026-11-15 for 1.2.0**, which has four tabs. Wallet is no longer a
+tab (step 10 now goes through Account), Post is the **+** in the Explore bar,
+and Identify is reached from Search. Every other step is unchanged.
+
 **Before you start**
 - Install **build 9 or later** from TestFlight. Anything earlier is the
   single-screen app and does not match this script or the listing.
@@ -131,8 +135,9 @@ From the repo screen, scroll to the comment box. Type a short sentence and tap
 
 ## 10 · Wallet — 8s
 
-Tap the **Wallet** tab. Hold two seconds on the balance, the claim counters
-and the history rows.
+Tap the **Account** tab, then the **Wallet** row at the top (it shows your
+balance). Hold two seconds on the balance, the claim counters and the history
+rows.
 
 > Shows: credits are earned, tracked and visible. **Nothing is for sale here —
 > there is no purchase control anywhere in the app.**

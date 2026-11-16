@@ -6,14 +6,24 @@
  * the star claim reachable at all — on the web they live on /repos/[id], and
  * a card that jumped straight to github.com would leave them with no door.
  * "View on GitHub" is the first button on the screen it opens.
+ *
+ * The whole card is the tap target, not just the title, and it is well past
+ * the 44pt floor. Everything else on it is a nested Pressable that takes its
+ * own touch: the source link, the "more" toggle and the overflow menu.
  */
-import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Image } from "expo-image";
+import React, { useState } from "react";
+import {
+  LayoutAnimation,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
-import { C } from "@/theme";
+import { C, R } from "@/theme";
 import type { RepoSource, RepoSummary } from "@/api";
+import { Avatar, IconButton, timeAgo } from "@/components/ui";
 
 /** "owner/name" is all the API sends, so the card derives both halves from it.
  *  Falls back to the whole string rather than rendering an empty title if a
@@ -65,7 +75,8 @@ function SourceLink({ source }: { source: RepoSource }) {
       onPress={() => {
         WebBrowser.openBrowserAsync(source.postUrl).catch(() => {});
       }}
-      hitSlop={8}
+      // 12pt text; the slop takes the target to the 44pt floor.
+      hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
       accessibilityRole="link"
       accessibilityLabel={
         foundIn
@@ -73,72 +84,145 @@ function SourceLink({ source }: { source: RepoSource }) {
           : `Source: ${label}`
       }>
       <Text style={styles.source} numberOfLines={1}>
-        {"\u2197"} Source: {label}
+        {"↗"} Source: {label}
       </Text>
     </Pressable>
+  );
+}
+
+/** How many lines a description gets before it has to ask for a tap. */
+const DESCRIPTION_LINES = 2;
+
+/**
+ * The description, capped at two lines with a "more" that expands it in place.
+ *
+ * Every card used to clamp at three lines and end in an ellipsis with no way
+ * to read the rest, and because GitHub descriptions run anywhere from five
+ * words to a paragraph, the cut landed somewhere different on every card and
+ * the list looked uneven. Two lines is the same height everywhere; the toggle
+ * only appears when there is actually more to read.
+ *
+ * Whether it overflows is measured on an invisible unclamped copy, because a
+ * clamped `Text` reports only the lines it drew. The copy is absolutely
+ * positioned so it adds no height, and hidden from assistive tech so the
+ * description is not read twice.
+ */
+function Description({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+
+  const toggle = () => {
+    LayoutAnimation.configureNext({
+      duration: 220,
+      update: { type: "spring", springDamping: 0.85 },
+      create: { type: "easeInEaseOut", property: "opacity" },
+    });
+    setExpanded((v) => !v);
+  };
+
+  return (
+    <View style={styles.descBox}>
+      <Text style={styles.desc} numberOfLines={expanded ? undefined : DESCRIPTION_LINES}>
+        {text}
+      </Text>
+      <Text
+        style={[styles.desc, styles.descMeasure]}
+        onTextLayout={(e) => setOverflows(e.nativeEvent.lines.length > DESCRIPTION_LINES)}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        pointerEvents="none">
+        {text}
+      </Text>
+      {overflows ? (
+        <Pressable
+          onPress={toggle}
+          hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+          style={styles.moreBtn}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          accessibilityLabel={expanded ? "Show less of the description" : "Read the whole description"}>
+          <Text style={styles.more}>{expanded ? "Less" : "More"}</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
 export function RepoCard({
   repo,
   onMore,
+  moreLabel = `More options for ${repoName(repo.fullName)}`,
   footer,
   note,
   source,
+  addedBy,
+  addedAt,
 }: {
   repo: RepoSummary;
-  /** Omitted where a long-press menu makes no sense (inside your own list). */
+  /** Opens the overflow menu — report and block, plus whatever the screen
+   *  adds (remove from list). Omitted where no action applies. */
   onMore?: (repo: RepoSummary) => void;
+  /** Spoken label for the overflow control; defaults to a generic one. */
+  moreLabel?: string;
   footer?: React.ReactNode;
   note?: string | null;
   /** The post this listing was rescued from. Absent for an owner-posted repo,
    *  and absent for anyone but the list's owner and staff. */
   source?: RepoSource | null;
+  /** Who put it on this list, and when — provenance a star count does not
+   *  carry. Only list items have it. */
+  addedBy?: string | null;
+  addedAt?: string | null;
 }) {
   const router = useRouter();
   const open = () => router.push(`/repo/${repo.id}`);
+  const name = repoName(repo.fullName);
+  const owner = repoOwner(repo.fullName);
+  const added = addedAt ? timeAgo(addedAt) : "";
 
   return (
     <Pressable
-      style={styles.card}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      android_ripple={{ color: "rgba(255,255,255,0.06)", foreground: true }}
       onPress={open}
       // Long-press is the gesture people reach for, but it is invisible and
-      // VoiceOver users would never find it — hence the "More" control too.
+      // VoiceOver users would never find it — hence the overflow control and
+      // the accessibility action too.
       onLongPress={onMore ? () => onMore(repo) : undefined}
       accessibilityRole="button"
-      accessibilityLabel={`${repo.fullName}, ${repo.starsCount} stars`}>
+      accessibilityLabel={`${repo.fullName}, ${repo.starsCount.toLocaleString()} stars`}
+      accessibilityHint="Opens the repo"
+      accessibilityActions={onMore ? [{ name: "more", label: moreLabel }] : undefined}
+      onAccessibilityAction={onMore ? () => onMore(repo) : undefined}>
       <View style={styles.head}>
-        {repo.avatarUrl ? (
-          <Image source={{ uri: repo.avatarUrl }} style={styles.avatar} contentFit="cover" />
-        ) : (
-          <View style={[styles.avatar, { backgroundColor: C.line }]} />
-        )}
+        <Avatar uri={repo.avatarUrl} name={name} size={38} />
         <View style={{ flex: 1 }}>
           <Text style={styles.name} numberOfLines={1}>
-            {repoName(repo.fullName)}
+            {name}
           </Text>
           <Text style={styles.owner} numberOfLines={1}>
-            {repoOwner(repo.fullName)}
+            {owner}
           </Text>
         </View>
         <Text style={styles.stars}>★ {repo.starsCount.toLocaleString()}</Text>
         {onMore ? (
-          <Pressable
+          // Quiet by default — it is a safety control, not a feature to
+          // advertise, and at full contrast it competed with the star count.
+          // `faint` clears the 3:1 floor for a non-text control; the full
+          // 44pt target is kept and pulled into the card's padding so the
+          // row stays compact.
+          <IconButton
+            name="ellipsis-horizontal"
+            size={18}
+            color={C.faint}
+            label={moreLabel}
             onPress={() => onMore(repo)}
-            style={styles.more}
-            hitSlop={12}
-            accessibilityRole="button"
-            accessibilityLabel={`Report or block ${repoOwner(repo.fullName)}`}>
-            <Text style={styles.moreGlyph}>•••</Text>
-          </Pressable>
+            style={styles.more44}
+          />
         ) : null}
       </View>
 
-      {repo.description ? (
-        <Text style={styles.desc} numberOfLines={3}>
-          {repo.description}
-        </Text>
-      ) : null}
+      {repo.description ? <Description text={repo.description} /> : null}
 
       {note ? <Text style={styles.note}>“{note}”</Text> : null}
 
@@ -147,6 +231,12 @@ export function RepoCard({
           <Text style={styles.lang}>{repo.primaryLanguage}</Text>
         ) : null}
         {repo.isArchived ? <Text style={styles.archived}>Archived</Text> : null}
+        {addedBy || added ? (
+          <Text style={styles.added} numberOfLines={1}>
+            {addedBy ? `added by @${addedBy}` : "added"}
+            {added ? ` · ${added}` : ""}
+          </Text>
+        ) : null}
         {source ? <SourceLink source={source} /> : null}
         {footer}
       </View>
@@ -157,22 +247,25 @@ export function RepoCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: C.card,
-    borderRadius: 14,
+    borderRadius: R.card,
     padding: 16,
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.line,
+    // Clips the Android ripple to the rounded corners.
+    overflow: "hidden",
   },
+  cardPressed: { opacity: 0.92 },
   head: { flexDirection: "row", alignItems: "center", gap: 12 },
-  avatar: { width: 38, height: 38, borderRadius: 10 },
   name: { color: C.text, fontSize: 16, fontWeight: "700" },
   owner: { color: C.dim, fontSize: 13, marginTop: 1 },
   stars: { color: C.dim, fontSize: 13 },
-  // The report/block affordance. Quiet by default — it is a safety control,
-  // not a feature to advertise — but a real target, not just a long-press.
-  more: { paddingLeft: 12, paddingVertical: 2 },
-  moreGlyph: { color: C.dim, fontSize: 13, letterSpacing: 1, fontWeight: "700" },
-  desc: { color: C.body, fontSize: 14, lineHeight: 20, marginTop: 12 },
+  more44: { marginRight: -14, marginVertical: -12, marginLeft: -4 },
+  descBox: { marginTop: 12 },
+  desc: { color: C.body, fontSize: 14, lineHeight: 20 },
+  descMeasure: { position: "absolute", left: 0, right: 0, top: 0, opacity: 0 },
+  moreBtn: { alignSelf: "flex-start", marginTop: 4 },
+  more: { color: C.accent, fontSize: 13, fontWeight: "600" },
   note: {
     color: C.body,
     fontSize: 13,
@@ -189,5 +282,6 @@ const styles = StyleSheet.create({
   },
   lang: { color: C.dim, fontSize: 12, letterSpacing: 0.5 },
   archived: { color: C.dim, fontSize: 12, letterSpacing: 0.5 },
+  added: { color: C.dim, fontSize: 12 },
   source: { color: C.accent, fontSize: 12 },
 });

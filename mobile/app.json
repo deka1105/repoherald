@@ -2,7 +2,7 @@
   "expo": {
     "name": "repoherald",
     "slug": "repoherald",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "repoherald",
@@ -71,6 +71,7 @@
     },
     "android": {
       "package": "com.dekisuki05.repoherald",
+      "predictiveBackGestureEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",

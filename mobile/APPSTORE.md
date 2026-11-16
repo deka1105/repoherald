@@ -9,6 +9,14 @@ set of screens the website has on a phone, and again on **2026-11-05** for
 **1.1.0 (build 11)**, which adds the Identify tab, search and sort inside a
 list, and a link from a rescued listing back to the post it came from.
 
+**1.2.0 (2026-11-15)** changes no feature but moves three of them: the tab bar
+is now four native tabs (Explore, Search, Lists, Account), drawn by the system
+so it is Liquid Glass on iOS 26. Post is the **+** in the Explore navigation
+bar, Identify is reached from Search (the card on its empty state, and the
+suggestion under a search that finds nothing), and Wallet is the first row of
+Account and the credit chip on Explore. Nothing a reviewer could reach in 1.1.0
+is unreachable now; the paths below say where each moved to.
+
 Character limits are Apple's; counts below are exact.
 
 ## What is in this build
@@ -17,15 +25,15 @@ Native screens, over `/api/mobile/v1` on repoherald.com. No WebView anywhere.
 
 | Tab / screen | What it does |
 |---|---|
-| **Explore** | The public feed. No account. Sort by top or most donated. |
-| **Search** | The public feed, plus repos in your own lists when signed in. |
-| **Identify** | Paste a post's caption, on-screen text or transcript; get the repo it was about, checked against GitHub. |
-| **Post** | List a repo you own, or one belonging to an org you're in. |
-| **Lists** | Create and browse your lists; Instagram/TikTok lists are labelled. |
-| **Wallet** | Credit balance, claim caps, your listings, full credit history. |
-| **Account** | Identity, blocked accounts, support, About, policies, sign out, delete. |
+| **Explore** (tab) | The public feed. No account. Sort by top or most donated. The **+** in the navigation bar opens Post; the credit chip opens Wallet. |
+| **Search** (tab) | The public feed, plus repos in your own lists when signed in. Its empty state carries the door to Identify. |
+| **Lists** (tab) | Create and browse your lists; Instagram/TikTok lists are labelled. |
+| **Account** (tab) | Identity, **Wallet** row, blocked accounts, support, About, policies, sign out, delete. |
+| Identify | From Search. Paste a post's caption, on-screen text or transcript; get the repo it was about, checked against GitHub. |
+| Post | From the **+** on Explore. List a repo you own, or one belonging to an org you're in. |
+| Wallet | From Account, or the credit chip on Explore. Credit balance, claim caps, your listings, full credit history. |
 | Repo detail | Stars, language, poster, views, donations, categories, GitHub link, like, claim a star for credit, add to a list, report/block, comments. |
-| List detail | A list's repos with notes; add and remove; delete the list. |
+| List detail | A list's repos with notes; add, and remove from each card's `•••` menu; delete the list. |
 | Support | File a support ticket from inside the app, signed in or out. |
 
 **Not in this build, deliberately:** buying credits, spending credits on

@@ -6,9 +6,12 @@
  * The form therefore cannot pre-validate much; it takes a URL, and the server
  * says yes or no after checking GitHub. Saying so up front is kinder than
  * letting someone fill in categories for a repo that will be refused.
+ *
+ * Reached from Explore — the FAB on Android, the "+" in the bar on iOS —
+ * rather than from a tab: posting is an action, not a place.
  */
 import React, { useCallback, useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   ApiError,
@@ -21,13 +24,13 @@ import { useAppState } from "@/app-state";
 import {
   Blurb,
   Button,
+  Chip,
   ErrorText,
   Field,
   Heading,
   Notice,
   Screen,
 } from "@/components/ui";
-import { C } from "@/theme";
 
 const MAX_PER_GROUP = 3;
 
@@ -62,7 +65,6 @@ export default function PostScreen() {
   if (!me) {
     return (
       <Screen>
-        <Heading>Post a repo</Heading>
         <Blurb>
           Listing a repo needs a GitHub account, because repoherald verifies
           that you own it before it goes in the feed.
@@ -110,22 +112,14 @@ export default function PostScreen() {
       <>
         <Heading>{title}</Heading>
         <View style={styles.chips}>
-          {items.map((c) => {
-            const on = picked.includes(c.id);
-            return (
-              <Pressable
-                key={c.id}
-                onPress={() => toggle(c.id, items)}
-                style={[styles.chip, on && styles.chipOn]}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={c.label}>
-                <Text style={[styles.chipText, on && styles.chipTextOn]}>
-                  {c.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {items.map((c) => (
+            <Chip
+              key={c.id}
+              label={c.label}
+              selected={picked.includes(c.id)}
+              onPress={() => toggle(c.id, items)}
+            />
+          ))}
         </View>
       </>
     );
@@ -167,6 +161,8 @@ export default function PostScreen() {
         autoCapitalize="none"
       />
 
+      {/* Above the button, so it is read before committing rather than after. */}
+      <Notice>Five listings a day, so the feed stays worth reading.</Notice>
       <Button
         label="Post repo"
         busy={busy}
@@ -174,21 +170,10 @@ export default function PostScreen() {
         onPress={submit}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Notice>Five listings a day, so the feed stays worth reading.</Notice>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: {
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: C.line,
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-  },
-  chipOn: { backgroundColor: C.accent, borderColor: C.accent },
-  chipText: { color: C.dim, fontSize: 13, fontWeight: "600" },
-  chipTextOn: { color: "#120b24" },
 });

@@ -25,7 +25,6 @@
  */
 import React, { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
 import {
   ApiError,
@@ -34,6 +33,7 @@ import {
   type IdentifyResult,
 } from "@/api";
 import {
+  Avatar,
   Blurb,
   Button,
   ErrorText,
@@ -43,7 +43,7 @@ import {
   Pill,
   Screen,
 } from "@/components/ui";
-import { C } from "@/theme";
+import { C, R } from "@/theme";
 
 type Fields = { caption: string; stillsText: string; transcript: string };
 
@@ -306,13 +306,11 @@ export default function IdentifyScreen() {
                 }}
                 accessibilityRole="link"
                 accessibilityLabel={`Open ${found.fullName} on GitHub`}>
-                {found.avatarUrl ? (
-                  <Image
-                    source={{ uri: found.avatarUrl }}
-                    style={styles.avatar}
-                    contentFit="cover"
-                  />
-                ) : null}
+                <Avatar
+                  uri={found.avatarUrl}
+                  name={found.fullName.split("/")[1] ?? found.fullName}
+                  size={38}
+                />
                 <Text style={styles.repoName} numberOfLines={2}>
                   {found.fullName}
                 </Text>
@@ -433,16 +431,17 @@ const styles = StyleSheet.create({
   presetIntro: { color: C.dim, fontSize: 13, lineHeight: 19, marginBottom: 10 },
   presets: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   preset: {
-    borderRadius: 999,
+    borderRadius: R.pill,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.line,
     backgroundColor: C.card,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    minHeight: 36,
+    justifyContent: "center",
   },
   presetActive: { borderColor: C.accent, backgroundColor: C.accent },
   presetText: { color: C.body, fontSize: 13 },
-  presetTextActive: { color: "#120b24", fontWeight: "700" },
+  presetTextActive: { color: C.onAccent, fontWeight: "700" },
   hint: { color: C.dim, fontSize: 12, lineHeight: 17, marginTop: 8 },
   // Tall enough for a few lines of a caption without turning the screen into
   // one long box per field.
@@ -455,13 +454,12 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: C.card,
-    borderRadius: 14,
+    borderRadius: R.card,
     padding: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: C.line,
   },
   repoHead: { flexDirection: "row", alignItems: "center", gap: 12 },
-  avatar: { width: 38, height: 38, borderRadius: 10 },
   repoName: {
     color: C.accent,
     fontSize: 16,

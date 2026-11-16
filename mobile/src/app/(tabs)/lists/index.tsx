@@ -9,6 +9,7 @@
 import React, { useCallback, useState } from "react";
 import { Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   ApiError,
   createList,
@@ -35,6 +36,9 @@ const SOURCE_LABELS: Record<ListSummary["source"], string | null> = {
   instagram: "From Instagram",
   tiktok: "From TikTok",
 };
+
+/** The server's floor for a title; the button is grey until it is met. */
+const TITLE_MIN = 3;
 
 export default function ListsScreen() {
   const { me } = useAuth();
@@ -77,7 +81,6 @@ export default function ListsScreen() {
   if (!me) {
     return (
       <Screen>
-        <Heading>Lists</Heading>
         <Blurb>
           Lists are private, link-shareable pages of repos. Claim your
           Instagram or TikTok handle on the web and everything you sent us in a
@@ -89,6 +92,8 @@ export default function ListsScreen() {
   }
 
   if (loading) return <Loading />;
+
+  const canCreate = title.trim().length >= TITLE_MIN;
 
   return (
     <Screen
@@ -109,14 +114,16 @@ export default function ListsScreen() {
           <Pressable
             key={l.id}
             onPress={() => router.push(`/list/${l.slug}`)}
+            style={({ pressed }) => pressed && { opacity: 0.92 }}
             accessibilityRole="button"
-            accessibilityLabel={`${l.title}, ${l.itemCount} repos`}>
+            accessibilityLabel={`${l.title}, ${l.itemCount} ${l.itemCount === 1 ? "repo" : "repos"}`}>
             <Card>
               <View style={styles.row}>
                 <Text style={styles.title} numberOfLines={1}>
                   {l.title}
                 </Text>
                 <Text style={styles.count}>{l.itemCount}</Text>
+                <Ionicons name="chevron-forward" size={16} color={C.faint} />
               </View>
               {l.description ? (
                 <Text style={styles.desc} numberOfLines={2}>
@@ -146,6 +153,11 @@ export default function ListsScreen() {
         onChangeText={setTitle}
         placeholder="Scrapers worth keeping"
         maxLength={80}
+        hint={
+          canCreate || title.length === 0
+            ? undefined
+            : `At least ${TITLE_MIN} characters.`
+        }
       />
       <Field
         label="Description"
@@ -155,10 +167,15 @@ export default function ListsScreen() {
         maxLength={300}
         multiline
       />
+      {/* Above the button, so it is read before committing rather than after. */}
+      <Notice>
+        A list is reachable by anyone holding its link unless you make it
+        private on the web. The link is not guessable.
+      </Notice>
       <Button
         label="Create list"
         busy={creating}
-        disabled={title.trim().length < 3}
+        disabled={!canCreate}
         onPress={async () => {
           setCreating(true);
           setError(null);
@@ -178,10 +195,6 @@ export default function ListsScreen() {
         }}
       />
       {error ? <ErrorText>{error}</ErrorText> : null}
-      <Notice>
-        A list is reachable by anyone holding its link unless you make it
-        private on the web. The link is not guessable.
-      </Notice>
     </Screen>
   );
 }
@@ -190,10 +203,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 10,
   },
-  title: { color: C.text, fontSize: 16, fontWeight: "700", flexShrink: 1 },
+  title: { color: C.text, fontSize: 16, fontWeight: "700", flex: 1 },
   count: { color: C.dim, fontSize: 14 },
   desc: { color: C.body, fontSize: 14, lineHeight: 20, marginTop: 8 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 },
