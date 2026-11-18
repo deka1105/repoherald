@@ -63,3 +63,6 @@ marketing/reels/out/
 marketing/reels/render/node_modules/
 marketing/reels/render/frames/
 marketing/reels/render/stills/
+
+# Owner's private working notes, kept out of the public repo
+PLAN.md
