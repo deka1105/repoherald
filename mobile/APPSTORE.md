@@ -152,6 +152,20 @@ better at it.
 
 ### What's New (4000 chars)
 
+**1.2.0** — paste this one; the 1.1.0 text below is history.
+
+```
+A cleaner, more native app.
+
+Four tabs instead of seven: Explore, Search, Lists and Account. The tab bar and navigation bars are now the system's own, so on iOS 26 they are Liquid Glass and shrink as you scroll.
+
+Post a repo with the + in the Explore bar. Identify a repo from a post's text from the Search tab. Your Wallet is the first row of Account, and the credit balance on Explore opens it.
+
+Long descriptions now show two lines with More to expand them. List items show who added them and when. Removing a repo from a list has moved into the ••• menu, next to Report and Block.
+
+Better contrast on secondary text and larger tap targets throughout.
+```
+
 **Required for 1.1.0.** 1.0.0 is live, so this is an update: an empty
 release-notes field on an update is a wasted field, not a permitted blank.
 
