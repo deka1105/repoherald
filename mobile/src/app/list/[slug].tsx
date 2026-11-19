@@ -193,7 +193,10 @@ export default function ListScreen() {
               destructive: true,
               onPress: () =>
                 removeListItem(list.slug, item.itemId)
-                  .then(() => load(query, sort))
+                  .then(() => {
+                    confirmHaptic();
+                    return load(query, sort);
+                  })
                   .catch(() => setError("Couldn't remove that.")),
             },
           ]

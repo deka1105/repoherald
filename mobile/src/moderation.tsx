@@ -21,6 +21,7 @@ import {
 import { REPORT_REASONS, reportRepo, type RepoSummary, type ReportReason } from "./api";
 import { blockOwner } from "./blocks";
 import { C, ANDROID_TOP_INSET } from "./theme";
+import { confirmHaptic } from "./components/ui";
 
 type Step = "menu" | "reasons" | "reported" | "blocked";
 
