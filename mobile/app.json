@@ -12,6 +12,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.dekisuki05.repoherald",
+      "icon": "./assets/AppIcon.icon",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -81,8 +82,7 @@
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.VIBRATE"
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
