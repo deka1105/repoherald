@@ -75,17 +75,25 @@ export const C = {
 /**
  * Corner radii, per platform.
  *
- * Material 3 Expressive wants larger corners (24dp cards) and round avatars;
+ * Material 3 Expressive wants larger corners (24dp cards) and squircle
+ * avatars (see `avatarRadius`);
  * iOS 26 keeps tighter card corners but its own controls are capsules. Both
  * platforms get capsule buttons and chips, which is what each design language
  * now draws its own as.
  */
 export const R = {
   card: Platform.select({ android: 24, default: 16 }) as number,
-  avatar: Platform.select({ android: 999, default: 10 }) as number,
   control: 12,
   pill: 999,
 };
+
+/**
+ * An avatar's corner radius for its size. Android gets a squircle-like
+ * rounded square (30% of the side, the M3 Expressive avatar shape) rather
+ * than a circle; iOS keeps its 10pt rounded square.
+ */
+export const avatarRadius = (size: number) =>
+  Platform.OS === "android" ? Math.round(size * 0.3) : 10;
 
 /**
  * Caps the reading column on iPad.

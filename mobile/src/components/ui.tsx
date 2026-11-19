@@ -30,11 +30,12 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { GlassView } from "expo-glass-effect";
+import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 // Its own entry point, not the package root: the root re-exports every icon
 // set and Metro then bundles ~3MB of fonts for the sake of a few glyphs.
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { C, CONTENT_MAX_WIDTH, LIQUID_GLASS, R } from "@/theme";
+import { C, CONTENT_MAX_WIDTH, LIQUID_GLASS, R, avatarRadius } from "@/theme";
 
 export type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -298,6 +299,19 @@ export function Pill({ children }: { children: React.ReactNode }) {
  * A toggleable chip, for picking several from a set (the Post screen's
  * categories). For picking exactly one, use `Segments`.
  */
+/**
+ * A light selection tick. Fire-and-forget: a device without a haptic engine,
+ * or with system haptics switched off, must not turn a tap into an error.
+ */
+export function tick() {
+  Haptics.selectionAsync().catch(() => {});
+}
+
+/** A success buzz, for an action that just completed (report, block, remove). */
+export function confirmHaptic() {
+  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+}
+
 export function Chip({
   label,
   selected,
@@ -309,7 +323,10 @@ export function Chip({
 }) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        tick();
+        onPress();
+      }}
       // The chip is 36pt tall; the slop carries it to the 44pt touch floor
       // without a taller box crowding the row.
       hitSlop={4}
@@ -359,7 +376,12 @@ export function Segments<T extends string | undefined>({
     return (
       <Pressable
         key={o.label}
-        onPress={() => onChange(o.key)}
+        onPress={() => {
+          if (!on) {
+            tick();
+            onChange(o.key);
+          }
+        }}
         // iOS: a 38pt segment plus 3pt above and below reaches 44pt and stops
         // at the group's edge — a slop past the ScrollView would be clipped.
         hitSlop={ios ? { top: 3, bottom: 3 } : 4}
@@ -422,7 +444,7 @@ export function Avatar({
   uri,
   name,
   size = 38,
-  radius = R.avatar,
+  radius,
   style,
 }: {
   uri: string | null | undefined;
@@ -431,7 +453,7 @@ export function Avatar({
   radius?: number;
   style?: StyleProp<ViewStyle>;
 }) {
-  const box = { width: size, height: size, borderRadius: Math.min(radius, size / 2) };
+  const box = { width: size, height: size, borderRadius: Math.min(radius ?? avatarRadius(size), size / 2) };
   if (uri) {
     return (
       <Image

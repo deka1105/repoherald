@@ -78,6 +78,7 @@ export function ModerationSheet({
     setError(null);
     try {
       await reportRepo(repo.id, reason);
+      confirmHaptic();
       setStep("reported");
     } catch {
       setError("Couldn't send that report. Please try again.");
@@ -92,6 +93,7 @@ export function ModerationSheet({
     setError(null);
     try {
       onBlocked(await blockOwner(owner));
+      confirmHaptic();
       setStep("blocked");
     } catch {
       setError("Couldn't block that account. Please try again.");

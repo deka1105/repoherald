@@ -97,7 +97,7 @@ export default function AccountScreen() {
       {me ? (
         <>
           <View style={styles.identity}>
-            <Avatar uri={me.avatarUrl} name={displayName} size={56} radius={R.avatar} />
+            <Avatar uri={me.avatarUrl} name={displayName} size={56} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name} numberOfLines={1}>
                 {displayName}
