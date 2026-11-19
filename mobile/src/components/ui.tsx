@@ -360,7 +360,9 @@ export function Segments<T extends string | undefined>({
       <Pressable
         key={o.label}
         onPress={() => onChange(o.key)}
-        hitSlop={4}
+        // iOS: a 38pt segment plus 3pt above and below reaches 44pt and stops
+        // at the group's edge — a slop past the ScrollView would be clipped.
+        hitSlop={ios ? { top: 3, bottom: 3 } : 4}
         style={({ pressed }) => [
           ios ? styles.segIos : styles.segAndroid,
           // The group's outer corners are full pills; only the seams between
@@ -612,7 +614,7 @@ const styles = StyleSheet.create({
   },
   segIos: {
     paddingHorizontal: 14,
-    minHeight: 32,
+    minHeight: 38,
     justifyContent: "center",
     borderRadius: R.pill,
   },

@@ -136,7 +136,8 @@ function Description({ text }: { text: string }) {
       {overflows ? (
         <Pressable
           onPress={toggle}
-          hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+          // ~17pt of text + 14pt either side clears 44pt.
+          hitSlop={{ top: 14, bottom: 14, left: 12, right: 12 }}
           style={styles.moreBtn}
           accessibilityRole="button"
           accessibilityState={{ expanded }}
