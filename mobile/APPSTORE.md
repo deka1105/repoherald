@@ -163,7 +163,7 @@ Post a repo with the + in the Explore bar. Identify a repo from a post's text fr
 
 Long descriptions now show two lines with More to expand them. List items show who added them and when. Removing a repo from a list has moved into the ••• menu, next to Report and Block.
 
-Better contrast on secondary text and larger tap targets throughout.
+Better contrast on secondary text, larger tap targets throughout, a light haptic tick when you change a sort or filter, and a new app icon made for iOS 26.
 ```
 
 **Required for 1.1.0.** 1.0.0 is live, so this is an update: an empty
