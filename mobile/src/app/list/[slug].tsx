@@ -51,7 +51,8 @@ import {
   Loading,
   Notice,
   Screen,
-  Segments,
+  Segments,,
+  confirmHaptic,
 } from "@/components/ui";
 import { C, LIQUID_GLASS } from "@/theme";
 
