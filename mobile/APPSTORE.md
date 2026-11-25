@@ -152,7 +152,19 @@ better at it.
 
 ### What's New (4000 chars)
 
-**1.2.0** — paste this one; the 1.1.0 text below is history.
+**1.3.0** — paste this one; the texts below are history.
+
+```
+Links open in the app. A repoherald.com link to a repo or a list now opens straight into the app instead of Safari.
+
+Share a repo or a list from the button in its top bar. Private lists don't show one, since nobody else could open them.
+
+Share to repoherald from any app. Spot a project in Safari, GitHub or a post, tap Share, pick repoherald, and Identify opens with the text ready to look up.
+
+Notifications, if you allow them: when someone donates highlight time to a repo you posted, when credits arrive that you didn't just claim, and when a highlight you paid for ends. Nothing else, and never marketing.
+```
+
+**1.2.0** — history.
 
 ```
 A cleaner, more native app.
