@@ -24,6 +24,7 @@
  * by web search, which measured wrong about a third of the time.
  */
 import React, { useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import {
@@ -154,10 +155,27 @@ function attemptNote(attempt: IdentifyAttempt): string {
 }
 
 export default function IdentifyScreen() {
-  const [fields, setFields] = useState<Fields>(EMPTY);
-  const [active, setActive] = useState<string | null>(null);
+  // `caption` arrives from the share extension (see ShareIntentHandler in the
+  // root layout). It only prefills: identifying spends model credits, so the
+  // person still presses the button — a share is not consent to a lookup.
+  const { caption: shared } = useLocalSearchParams<{ caption?: string }>();
+  const [fields, setFields] = useState<Fields>(
+    shared ? { ...EMPTY, caption: shared } : EMPTY
+  );
   const [result, setResult] = useState<IdentifyResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // A second share while this screen is open changes the param in place;
+  // adjust during render (React's documented pattern) rather than in an effect.
+  const [lastShared, setLastShared] = useState(shared);
+  if (shared !== lastShared) {
+    setLastShared(shared);
+    if (shared) {
+      setFields({ ...EMPTY, caption: shared });
+      setResult(null);
+      setError(null);
+    }
+  }
+  const [active, setActive] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showRungs, setShowRungs] = useState(false);
 

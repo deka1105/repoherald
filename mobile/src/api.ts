@@ -557,3 +557,19 @@ export function reportRepo(repoId: string, reason: ReportReason) {
     body: JSON.stringify({ repoId, reason }),
   });
 }
+
+/** Register this device's Expo push token against the signed-in account. */
+export function registerPushToken(token: string, platform: "ios" | "android") {
+  return request<{ ok: true }>("/api/mobile/v1/push", {
+    method: "POST",
+    body: JSON.stringify({ token, platform }),
+  });
+}
+
+/** Stop sending to this device — on sign-out, before the bearer token goes. */
+export function unregisterPushToken(token: string) {
+  return request<{ ok: true }>("/api/mobile/v1/push", {
+    method: "DELETE",
+    body: JSON.stringify({ token }),
+  });
+}

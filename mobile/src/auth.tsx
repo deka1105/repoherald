@@ -33,6 +33,7 @@ import { Platform } from "react-native";
 import { useAuth as useClerkAuth, useSSO } from "@clerk/expo";
 import { useSignInWithApple } from "@clerk/expo/apple";
 import { SSO_REDIRECT_PATH } from "./config";
+import { unregisterPush } from "./push";
 import {
   exchangeClerkToken,
   getMe,
@@ -193,6 +194,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     setBusy(true);
     try {
+      // Before forgetLocal: unregistering needs the bearer token it clears.
+      await unregisterPush();
       await forgetLocal();
       await clerkSignOut().catch(() => {});
     } finally {

@@ -45,6 +45,7 @@ import {
   timeAgo,
 } from "@/components/ui";
 import { C, R } from "@/theme";
+import { ShareButton } from "@/components/share-button";
 
 const COMMENT_MAX = 1000;
 
@@ -169,7 +170,12 @@ export default function RepoScreen() {
           }}
         />
       }>
-      <Stack.Screen options={{ title: repo.name }} />
+      <Stack.Screen
+        options={{
+          title: repo.name,
+          headerRight: () => <ShareButton path={`/repos/${repo.id}`} title={repo.fullName} />,
+        }}
+      />
 
       <View style={styles.head}>
         <Avatar uri={repo.avatarUrl} name={repo.name} size={52} />

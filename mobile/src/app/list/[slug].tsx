@@ -55,6 +55,7 @@ import {
   confirmHaptic,
 } from "@/components/ui";
 import { C, LIQUID_GLASS } from "@/theme";
+import { ShareButton } from "@/components/share-button";
 
 /** Same as the Search tab: a request a keystroke is a request a keystroke. */
 const DEBOUNCE_MS = 300;
@@ -216,7 +217,17 @@ export default function ListScreen() {
           }}
         />
       }>
-      <Stack.Screen options={{ title: list.title }} />
+      {/* Private lists are only visible to their owner, so a link to one would
+          open a "not found" for anyone it was sent to — no share button. */}
+      <Stack.Screen
+        options={{
+          title: list.title,
+          headerRight:
+            list.visibility === "private"
+              ? undefined
+              : () => <ShareButton path={`/lists/${list.slug}`} title={list.title} />,
+        }}
+      />
 
       {Platform.OS === "ios" && showControls ? (
         <>
