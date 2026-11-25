@@ -91,7 +91,8 @@ export default function ExploreScreen() {
   const [items, setItems] = useState<FeedRepo[]>(() => readCachedFeed() ?? []);
   const [cursor, setCursor] = useState<string | null>(null);
   const [sort, setSort] = useState<FeedFilters["sort"]>(undefined);
-  const [loading, setLoading] = useState(true);
+  // No spinner over a cached feed: it is already something to read.
+  const [loading, setLoading] = useState(items.length === 0);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
