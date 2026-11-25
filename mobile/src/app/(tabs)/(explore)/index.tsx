@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getFeed, type FeedRepo, type FeedFilters } from "@/api";
 import { useAuth } from "@/auth";
+import { readCachedFeed, writeCachedFeed } from "@/feed-cache";
 import { useAppState } from "@/app-state";
 import { RepoCard } from "@/components/repo-card";
 import { Column, Loading, Segments } from "@/components/ui";
@@ -85,7 +86,9 @@ export default function ExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [items, setItems] = useState<FeedRepo[]>([]);
+  // Seeded from the last page this device saw, so a cold start offline shows
+  // the feed. It is replaced by the network result as soon as one arrives.
+  const [items, setItems] = useState<FeedRepo[]>(() => readCachedFeed() ?? []);
   const [cursor, setCursor] = useState<string | null>(null);
   const [sort, setSort] = useState<FeedFilters["sort"]>(undefined);
   const [loading, setLoading] = useState(true);
@@ -105,17 +108,22 @@ export default function ExploreScreen() {
         setError(null);
         const incoming = [...res.pinned, ...res.items];
         setItems((prev) => (reset ? incoming : [...prev, ...res.items]));
+        if (reset && !nextSort) writeCachedFeed(incoming);
         setCursor(res.nextCursor);
       } catch {
         // Keep whatever is already on screen; a failed page must not blank
         // the feed.
-        setError("Couldn't reach repoherald.");
+        setError(
+          items.length > 0
+            ? "Offline — showing the last feed this phone saw."
+            : "Couldn't reach repoherald."
+        );
       } finally {
         setLoading(false);
         setRefreshing(false);
       }
     },
-    [cursor, sort]
+    [cursor, sort, items.length]
   );
 
   // The first page, once. `load` is async and awaits getFeed before it touches
